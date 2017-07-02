@@ -67,17 +67,10 @@ public:
 	// used for viewing the point cloud
 	ofEasyCam easyCam;
     
-    //add in gui  DB 14-5-17
-    ofxPanel gui;
-    ofxIntSlider blobSize, gridSize, backPlane, frontPlane;
-
-    bool showGui;
-    bool paintMesh;
     
-    
-    // kinect recorder hack from code by Pelayo MŽndez   https://github.com/pelayomendez
+    // with elements of kinect recorder hack from code by Pelayo MŽndez   https://github.com/pelayomendez
     //
-    // Estructura de datos:
+    // data structure
     
     typedef struct {
         float x;
@@ -95,7 +88,6 @@ public:
     // Guardar Datos:
     
     
-    
     ofDirectory dirHelper;
     string generateFileName();
     int frame;
@@ -110,21 +102,22 @@ public:
     
     
     //////////////////////////////////////////////////////
-    // Configuracion de la APP/GUI
+    // GUI  Configuration
     //////////////////////////////////////////////////////
+    ofxPanel gui;
+    ofxIntSlider blobSize, gridSize, backPlane, frontPlane;
+    ofxColorSlider backgroundColor;
+    bool showGui;
+    bool paintMesh;
     
     ofTrueTypeFont myFont;
-    
-    //////////////////////////////////////////////////////
-    // Configuracion de la APP/GUI
-    //////////////////////////////////////////////////////
     
     bool recording;
     bool playing;
     bool colorMode;
     
     //////////////////////////////////////////////////////
-    // Reproduccion del PointCloud
+    // Point cloud reproduction
     //////////////////////////////////////////////////////
     
     int frameToPlay;

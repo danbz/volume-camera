@@ -1,40 +1,26 @@
 #include "ofApp.h"
 
-/*
-    If you are struggling to get the device to connect ( especially Windows Users )
-    please look at the ReadMe: in addons/ofxKinect/README.md
-*/
+// If you are struggling to get the device to connect ( especially Windows Users )
+// please look at the ReadMe: in addons/ofxKinect/README.md
+// kinect.setDepthClipping(float nearClip=500, float farClip=10000); //set depth clipping range
 
+string _timestamp = "default"; //default value for filepath opening on playback
+int step = 4; // default point cloud step size for recorded mesh playback
+int recordingStep =1; // default point cloud step size for recorded mesh quality
 
-  //kinect.setDepthClipping(float nearClip=500, float farClip=10000); //set depth clipping range
-
-
-//--------------------------------------------------------------
-
-//-- recorder hack
-
-string _timestamp = "default";
-int step = 4;
-
-//--
-
-
+//----------------------------------------------------------------
 void ofApp::setup() {
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	
-	// enable depth->video image calibration
-	kinect.setRegistration(true);
-    
-	kinect.init();
-	//kinect.init(true); // shows infrared instead of RGB video image
-	//kinect.init(false, false); // disable video image (faster fps)
+	kinect.setRegistration(true); // enable depth->video image calibration
+	kinect.init(); //kinect.init(true); // shows infrared instead of RGB video image
+    //kinect.init(false, false); // disable video image (faster fps)
 	
 	kinect.open();		// opens first available kinect
 	//kinect.open(1);	// open a kinect by id, starting with 0 (sorted by serial # lexicographically))
 	//kinect.open("A00362A08602047A");	// open a kinect using it's unique serial #
-	
-	// print the intrinsic IR sensor values
-	if(kinect.isConnected()) {
+		
+	if(kinect.isConnected()) { // print the intrinsic IR sensor values
 		ofLogNotice() << "sensor-emitter dist: " << kinect.getSensorEmitterDistance() << "cm";
 		ofLogNotice() << "sensor-camera dist:  " << kinect.getSensorCameraDistance() << "cm";
 		ofLogNotice() << "zero plane pixel size: " << kinect.getZeroPlanePixelSize() << "mm";
@@ -46,92 +32,75 @@ void ofApp::setup() {
 	kinect2.open();
 #endif
 	
-	colorImg.allocate(kinect.width, kinect.height);
+    //////////////////////////////////////////////////////
+    // application / depth sensing configuration
+    //////////////////////////////////////////////////////
+    colorImg.allocate(kinect.width, kinect.height);
 	grayImage.allocate(kinect.width, kinect.height);
 	grayThreshNear.allocate(kinect.width, kinect.height);
 	grayThreshFar.allocate(kinect.width, kinect.height);
-	
-	nearThreshold = 230;
+    nearThreshold = 230;
 	farThreshold = 70;
 	bThreshWithOpenCV = true;
-	
 	ofSetFrameRate(60);
-	
-	// zero the tilt on startup
-	angle = 0;
+	angle = 0; // zero the tilt on startup
 	kinect.setCameraTiltAngle(angle);
-	
-	// start from the camera
-	bDrawPointCloud = true;
-    
-    //-- DB
-    gui.setup( "Parameters", "settings.xml" );
-    
-    gui.add( blobSize.setup( "blobSize", 3, 1, 100 ) );
-    gui.add( gridSize.setup( "gridSize", 2, 1, 50 ) );
-    gui.add( frontPlane.setup( "frontPlane", 0, 0, 2550 ) );
-     gui.add( backPlane.setup( "backPlane", 3000, 0, 15000 ) );
-    
-    showGui = true;
-    paintMesh = true;
-    
-    //-- recorder hack
     
     //////////////////////////////////////////////////////
-    // Recording / Playing:
+    // Recording / Playing configuration
     //////////////////////////////////////////////////////
-    
     recording = false;
     playing = false;
-    colorMode = true;
-    
-    frame = 0;
+    paintMesh = true;
+    bDrawPointCloud = true;   // start from the camera view
+    kinect.setDepthClipping( 500,  10000); //set depth clipping range
+    frame = 0; //plat back frame initialisation
     distanciaMinima = 200;
     distanciaMaxima = 5000;
     
     //////////////////////////////////////////////////////
-    // Configuracion de la APP/GUI
+    // Gui Configuration
     //////////////////////////////////////////////////////
-    
     myFont.load("fonts/profaisal-elitetahreerv1-0/ProfaisalEliteTahreer.ttf",9);
- 
+    gui.setup( "Parameters", "settings.xml" );
+    gui.add( blobSize.setup( "blobSize", 3, 1, 100 ) );
+    gui.add( gridSize.setup( "gridSize", 2, 1, 50 ) );
+    gui.add( frontPlane.setup( "frontPlane", 0, 0, 2550 ) );
+    gui.add( backPlane.setup( "backPlane", 3000, 0, 15000 ) );
+    gui.add(backgroundColor.setup("background color",
+                              ofColor::black,
+                              ofColor(80,80,80,0),
+                              ofColor::white));
+    showGui = true;
     
-    
-    
-    kinect.setDepthClipping( 500,  10000); //set depth clipping range
-    
+    if( !kinect.hasAccelControl()) {
+        ofSystemAlertDialog("Note: this is a newer Xbox Kinect or Kinect For Windows device, motor / led / accel controls are not currently supported" );
+    }
 }
 
 //--------------------------------------------------------------
 void ofApp::update() {
 	
-	ofBackground(100, 100, 100);
+	ofBackground(backgroundColor); // background color
 	kinect.update();
     
     //////////////////////////////////////////////////////
-    // Grabando
+    // mesh capture
     //////////////////////////////////////////////////////
-    // Guardamos la info del Mesh:
-    
     if(recording) {
         savePointCloud();
     }
     
     //////////////////////////////////////////////////////
-    // Reproduciendo
+    // Playback
     //////////////////////////////////////////////////////
-    
     if(playing) {
         frameToPlay += 1;
         if(frameToPlay >= meshRecorder.TotalFrames) frameToPlay = 0;
     }
     
-    //--
-	// there is a new frame and we are connected
-	if(kinect.isFrameNew()) {
-		
-		// load grayscale depth image from the kinect source
-		grayImage.setFromPixels(kinect.getDepthPixels());
+    if(kinect.isFrameNew()) { 	// there is a new frame and we are connected
+		grayImage.setFromPixels(kinect.getDepthPixels()); // load grayscale depth image from the kinect source
 		
 		// we do two thresholds - one for the far plane and one for the near plane
 		// we then do a cvAnd to get the pixels which are a union of the two thresholds
@@ -154,18 +123,14 @@ void ofApp::update() {
 				}
 			}
 		}
-		
-		// update the cv images
-		grayImage.flagImageChanged();
+			
+		grayImage.flagImageChanged(); // update the cv images
 		
 		// find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
 		// also, find holes is set to true so we will get interior contours as well....
 		contourFinder.findContours(grayImage, 10, (kinect.width*kinect.height)/2, 20, false);
 	}
-	
-    
-    //-- recorder hack
-    
+
 #ifdef USE_TWO_KINECTS
 	kinect2.update();
 #endif
@@ -175,61 +140,53 @@ void ofApp::update() {
 void ofApp::draw() {
 	
 	ofSetColor(255, 255, 255);
-	
-	if(bDrawPointCloud) {
+	 
+	if(bDrawPointCloud) { //show pointcloud view or 3 camera view
 		easyCam.begin();
-		//drawPointCloud();
-        
-        if(!playing) {
+        if(!playing) { // if we are not playing then draw  live pointcloud
             drawPointCloud();
         } else {
             if(meshRecorder.readyToPlay) {
-                drawRecordedPointCloud();
+                drawRecordedPointCloud(); //draw recorded point cloud
             }
         }
         easyCam.end();
-	} else {
-		// draw from the live kinect
+	} else { 		// draw from the live kinect as 3 windows
 		kinect.drawDepth(10, 10, 400, 300);
 		kinect.draw(420, 10, 400, 300);
-		
 		grayImage.draw(10, 320, 400, 300);
 		contourFinder.draw(10, 320, 400, 300);
-		
 #ifdef USE_TWO_KINECTS
 		kinect2.draw(420, 320, 400, 300);
 #endif
 	}
     
-    
-    
     //-- recorder  // Loadinf info:
-    
     if(!meshRecorder.readyToPlay) {
         string l = ofToString(meshRecorder.FramesLoaded);
         string t = ofToString(meshRecorder.TotalFrames);
-        myFont.drawString("loading... " + l + "/" + t,10, 612);
+        ofDrawBitmapString("loading... " + l + "/" + t,20, 20);
     }
-    //--
 	
 	// draw instructions
 	ofSetColor(255, 255, 255);
 	stringstream reportStream;
         
-    if(kinect.hasAccelControl()) {
-        reportStream << "accel is: " << ofToString(kinect.getMksAccel().x, 2) << " / "
-        << ofToString(kinect.getMksAccel().y, 2) << " / "
-        << ofToString(kinect.getMksAccel().z, 2) << endl;
-    } else {
-        reportStream << "Note: this is a newer Xbox Kinect or Kinect For Windows device," << endl
-		<< "motor / led / accel controls are not currently supported" << endl << endl;
-    }
+//    if(kinect.hasAccelControl()) {
+//        reportStream << "accel is: " << ofToString(kinect.getMksAccel().x, 2) << " / "
+//        << ofToString(kinect.getMksAccel().y, 2) << " / "
+//        << ofToString(kinect.getMksAccel().z, 2) << endl;
+//    } else {
+//        reportStream << "Note: this is a newer Xbox Kinect or Kinect For Windows device," << endl
+//		<< "motor / led / accel controls are not currently supported" << endl << endl;
+//    }
     
 	reportStream << "press p to switch between images and point cloud, rotate the point cloud with the mouse" << endl
 	<< "using opencv threshold = " << bThreshWithOpenCV <<" (press spacebar)" << endl
 	<< "set near threshold " << nearThreshold << " (press: + -)" << endl
 	<< "set far threshold " << farThreshold << " (press: < >) num blobs found " << contourFinder.nBlobs
 	<< ", fps: " << ofGetFrameRate() << endl
+      << "a: paint mesh" << endl
     << "r: START RECORDING" << endl
     << "s: STOP RECORDING" << endl
     << "l: LAST RECORDING / LIVE MODE" << endl
@@ -240,8 +197,92 @@ void ofApp::draw() {
         << "press 1-5 & 0 to change the led mode" << endl;
     }
     
-	ofDrawBitmapString(reportStream.str(), 20, 652);
-    if (showGui) gui.draw();
+    if (showGui) { // show or hide the gui and instruction texts
+        ofDrawBitmapString(reportStream.str(), 20, 600);
+        gui.draw();
+    }
+}
+
+//--------------------------------------------------------------
+void ofApp::drawRecordedPointCloud() {
+    int w = 640;
+    int h = 480;
+    ofMesh mesh;
+    mesh.setMode(OF_PRIMITIVE_POINTS);
+    int pCount = 0;
+    //int step = gridSize; //DB this crashes the mesh playback  .....
+    for(int y = 0; y < h; y += step) {
+        for(int x = 0; x < w; x += step) {
+            ofVec3f v2;
+            v2.set(0,0,0);
+            v2 = meshRecorder.getVectorAt(frameToPlay, pCount);
+            mesh.addVertex(v2);
+            ofColor c;
+            c = meshRecorder.getColorAt(frameToPlay, pCount);
+            if(paintMesh) mesh.addColor(c);
+            //}
+            pCount ++;
+        }
+    }
+    glPointSize(blobSize);
+    //glEnable(GL_POINT_SMOOTH); // use circular points instead of square points
+    ofPushMatrix();
+    // the projected points are 'upside down' and 'backwards'
+    ofScale(1, -1, -1);
+    ofTranslate(0, 0, -750); // center the points a bit
+    glEnable(GL_DEPTH_TEST);
+    mesh.drawVertices();
+    glDisable(GL_DEPTH_TEST);
+    mesh.clear();
+    ofPopMatrix();
+}
+
+//-----------------------------------------
+void ofApp::drawPointCloud() {
+	int w = 640;
+	int h = 480;
+	ofMesh mesh;
+    //OF_PRIMITIVE_TRIANGLES, OF_PRIMITIVE_TRIANGLE_STRIP, OF_PRIMITIVE_TRIANGLE_FAN, OF_PRIMITIVE_LINES, OF_PRIMITIVE_LINE_STRIP, OF_PRIMITIVE_LINE_LOOP, OF_PRIMITIVE_POINTS
+    
+	mesh.setMode(OF_PRIMITIVE_POINTS);
+	int step = gridSize;
+	for(int y = 0; y < h; y += step) {
+		for(int x = 0; x < w; x += step) {
+			if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) {
+				if (paintMesh)mesh.addColor(kinect.getColorAt(x,y));
+				mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
+               // mesh.addTriangle(kinect.getWorldCoordinateAt(x, y) , (kinect.getDistanceAt(x, y)));
+            }
+		}
+	}
+	glPointSize(blobSize);
+	ofPushMatrix();
+	// the projected points are 'upside down' and 'backwards' 
+	ofScale(1, -1, -1);
+	ofTranslate(0, 0, -1000); // center the points a bit
+	ofEnableDepthTest();
+    mesh.draw();
+	//mesh.drawFaces(); //alternative draw modes //mesh.drawVertices(); //mesh.drawWireframe();
+	ofDisableDepthTest();
+	ofPopMatrix();
+}
+
+//--------------------------------------------------------------
+string ofApp::generateFileName() {
+    string _root = "";
+    _timestamp = ofToString(ofGetDay()) +
+    ofToString(ofGetMonth()) +
+    ofToString(ofGetYear()) +
+    ofToString(ofGetHours()) +
+    ofToString(ofGetMinutes()) +
+    ofToString(ofGetSeconds());
+    
+    string _filename = (_root + _timestamp + "/");
+    
+    dirHelper.createDirectory(_filename);
+    ofFile file(ofToDataPath(_filename));
+    //cout << file.getAbsolutePath();
+    return file.getAbsolutePath() + "/";
 }
 
 //--------------------------------------------------------------
@@ -252,8 +293,8 @@ void ofApp::savePointCloud() {
     //stringstream stringToSave;
     FILE* fout = fopen((saveTo + "frame" + ofToString(frame) + ".txt").c_str(), "w");
     int pIndex = 0;
-    for(int y = 0; y < h; y += step) {
-        for(int x = 0; x < w; x += step) {
+    for(int y = 0; y < h; y += recordingStep) {
+        for(int x = 0; x < w; x += recordingStep) {
             ofVec3f v2;
             v2.set(0,0,0);
             float distancia;
@@ -289,112 +330,11 @@ void ofApp::savePointCloud() {
 }
 
 //--------------------------------------------------------------
-void ofApp::drawRecordedPointCloud() {
-    int w = 640;
-    int h = 480;
-    ofMesh mesh;
-    mesh.setMode(OF_PRIMITIVE_POINTS);
-    int pCount = 0;
-    //int step = gridSize; //DB
-    for(int y = 0; y < h; y += step) {
-        for(int x = 0; x < w; x += step) {
-            
-            ofVec3f v2;
-            v2.set(0,0,0);
-            //float distancia;
-            //distancia = kinect.getDistanceAt(x, y);
-            //if(distancia > distanciaMinima && distancia < distanciaMaxima) {
-            v2 = meshRecorder.getVectorAt(frameToPlay, pCount);
-            //if(v2.z > 0)
-            mesh.addVertex(v2);
-            ofColor c;
-            c = meshRecorder.getColorAt(frameToPlay, pCount);
-            if(colorMode) mesh.addColor(c);
-            //}
-            pCount ++;
-        }
-    }
-    
-    glPointSize(1);
-    //glEnable(GL_POINT_SMOOTH); // use circular points instead of square points
-    ofPushMatrix();
-    // the projected points are 'upside down' and 'backwards'
-    ofScale(1, -1, -1);
-    ofTranslate(0, 0, -750); // center the points a bit
-    glEnable(GL_DEPTH_TEST);
-    mesh.drawVertices();
-    glDisable(GL_DEPTH_TEST);
-    mesh.clear();
-    ofPopMatrix();
-}
-
-//--------------------------------------------------------------
-string ofApp::generateFileName() {
-    
-    string _root = "";
-    
-    _timestamp = ofToString(ofGetDay()) +
-    ofToString(ofGetMonth()) +
-    ofToString(ofGetYear()) +
-    ofToString(ofGetHours()) +
-    ofToString(ofGetMinutes()) +
-    ofToString(ofGetSeconds());
-    
-    string _filename = (_root + _timestamp + "/");
-    
-    dirHelper.createDirectory(_filename);
-    ofFile file(ofToDataPath(_filename));
-    //cout << file.getAbsolutePath();
-    return file.getAbsolutePath() + "/";
-}
-
-//-----------------------------------------
-void ofApp::drawPointCloud() {
-	int w = 640;
-	int h = 480;
-	ofMesh mesh;
-    //OF_PRIMITIVE_TRIANGLES, OF_PRIMITIVE_TRIANGLE_STRIP, OF_PRIMITIVE_TRIANGLE_FAN, OF_PRIMITIVE_LINES, OF_PRIMITIVE_LINE_STRIP, OF_PRIMITIVE_LINE_LOOP, OF_PRIMITIVE_POINTS
-    
-	mesh.setMode(OF_PRIMITIVE_POINTS);
-	int step = gridSize;
-	for(int y = 0; y < h; y += step) {
-		for(int x = 0; x < w; x += step) {
-			if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) {
-				if (paintMesh)mesh.addColor(kinect.getColorAt(x,y));
-				mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
-               // mesh.addTriangle(kinect.getWorldCoordinateAt(x, y) , (kinect.getDistanceAt(x, y)));
-            }
-		}
-	}
-	glPointSize(blobSize);
-	ofPushMatrix();
-	// the projected points are 'upside down' and 'backwards' 
-	ofScale(1, -1, -1);
-	ofTranslate(0, 0, -1000); // center the points a bit
-	ofEnableDepthTest();
-    mesh.draw();
-	//mesh.drawFaces();
-    //mesh.drawVertices();
-    //mesh.drawWireframe();
-	ofDisableDepthTest();
-	ofPopMatrix();
-
-    
-}
-
-//--------------------------------------------------------------
 void ofApp::exit() {
     
-    // recorder hack
-    
-    // Todo: Esto dentro de la clase!!
-    // No sabemos si funciona muy bien lo de detener el Thread :(
     meshRecorder.unlock();
-    //  meshRecorder.stopThread(false); //DB
+    //  meshRecorder.stopThread(false); //DB - depracated call
     meshRecorder.stopThread();
-
-    //-------
-    
 	kinect.setCameraTiltAngle(0); // zero the tilt on exit
 	kinect.close();
 	
@@ -502,7 +442,6 @@ void ofApp::keyPressed (int key) {
             if(recording) return;
             if(!playing) {
                 
-                
                 ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded data", true, ofToDataPath(""));
                 if (result.getPath() != "") {
                     // filePath =(result.getPath());
@@ -514,7 +453,6 @@ void ofApp::keyPressed (int key) {
                 playing = false;
             }
             break;
-
             
         case 'r':
             if(!meshRecorder.readyToPlay) return;
@@ -533,12 +471,7 @@ void ofApp::keyPressed (int key) {
             recording = false;
             break;
             
-        case 'k':
-            colorMode = !colorMode;
-            break;
-
 	}
-    
     
 }
 
