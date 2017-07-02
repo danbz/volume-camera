@@ -6,6 +6,6 @@ portions based upon openframeworks ofxKinect examples and meshRecorder example f
 
 designed around a vision on a volumetric stills camera/apparatus for street photography.
 
-see mroe at http://www.buzzo.com
+see more at http://www.buzzo.com
 
 Dan Buzzo 2017
