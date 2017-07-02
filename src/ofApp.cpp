@@ -7,6 +7,8 @@
 string _timestamp = "default"; //default value for filepath opening on playback
 int step = 4; // default point cloud step size for recorded mesh playback
 int recordingStep =1; // default point cloud step size for recorded mesh quality
+bool paused;
+
 
 //----------------------------------------------------------------
 void ofApp::setup() {
@@ -57,6 +59,7 @@ void ofApp::setup() {
     frame = 0; //plat back frame initialisation
     distanciaMinima = 200;
     distanciaMaxima = 5000;
+    paused = false;
     
     //////////////////////////////////////////////////////
     // Gui Configuration
@@ -95,8 +98,10 @@ void ofApp::update() {
     // Playback
     //////////////////////////////////////////////////////
     if(playing) {
+        if(!paused){
         frameToPlay += 1;
         if(frameToPlay >= meshRecorder.TotalFrames) frameToPlay = 0;
+        }
     }
     
     if(kinect.isFrameNew()) { 	// there is a new frame and we are connected
@@ -347,7 +352,8 @@ void ofApp::exit() {
 void ofApp::keyPressed (int key) {
 	switch (key) {
 		case ' ':
-			bThreshWithOpenCV = !bThreshWithOpenCV;
+			//bThreshWithOpenCV = !bThreshWithOpenCV;
+            paused=!paused;
 			break;
 			
 		case'p':

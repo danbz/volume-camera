@@ -50,7 +50,6 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
         // Habria que volcar con fscanf o algoa si el txt en la estrutura framedata directamente.
         
         /*
-         
          vector<frameData> data;
          char line[200];
          FILE* fp = fopen(ofToDataPath(fileToload).c_str(),"rt");
@@ -62,7 +61,7 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
          // do something
          }
          fclose(fp);
-         
+        
          */
         
         ifstream fin;
@@ -93,7 +92,7 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
         recordedMeshData[i] = data;
         
         FramesLoaded = i;
-        cout << fileToload << endl;
+       //cout << fileToload << endl;
         
         if(i == TotalFrames) {
             unlock();
