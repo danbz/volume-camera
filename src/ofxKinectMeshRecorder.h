@@ -9,8 +9,6 @@
 //  ofxKinectMeshRecorder
 //
 //  Created by welovecode on 15/07/12.
-//
-
 
 #ifndef ofxKinectMeshRecorder_ofxKinectMeshRecorder_h
 #define ofxKinectMeshRecorder_ofxKinectMeshRecorder_h
@@ -56,4 +54,3 @@ public:
 
 
 #endif /* ofxKinectMeshRecorder_h */
-

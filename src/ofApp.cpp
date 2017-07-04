@@ -56,10 +56,11 @@ void ofApp::setup() {
     paintMesh = true;
     bDrawPointCloud = true;   // start from the camera view
     kinect.setDepthClipping( 500,  10000); //set depth clipping range
-    frame = 0; //plat back frame initialisation
+    frame = 0; //play back frame initialisation
     distanciaMinima = 200;
     distanciaMaxima = 5000;
     paused = false;
+    drawTriangles = false;
     
     //////////////////////////////////////////////////////
     // Gui Configuration
@@ -72,7 +73,7 @@ void ofApp::setup() {
     gui.add( backPlane.setup( "backPlane", 3000, 0, 15000 ) );
     gui.add(backgroundColor.setup("background color",
                               ofColor::black,
-                              ofColor(80,80,80,0),
+                              ofColor(0,0,0,0),
                               ofColor::white));
     showGui = true;
     
@@ -189,11 +190,10 @@ void ofApp::draw() {
 	reportStream << "press p to switch between images and point cloud, rotate the point cloud with the mouse" << endl
 	<< "using opencv threshold = " << bThreshWithOpenCV <<" (press spacebar)" << endl
 	<< "set near threshold " << nearThreshold << " (press: + -)" << endl
-	<< "set far threshold " << farThreshold << " (press: < >) num blobs found " << contourFinder.nBlobs
+	<< "pause with space bar, press: < > to scrub frames " << contourFinder.nBlobs
 	<< ", fps: " << ofGetFrameRate() << endl
-      << "a: paint mesh" << endl
-    << "r: START RECORDING" << endl
-    << "s: STOP RECORDING" << endl
+    << "a: paint mesh   t: toggle triangles/pointcloud   g: show/hide gui"<< endl
+    << "r: START RECORDING   s: STOP RECORDING" << endl
     << "l: LAST RECORDING / LIVE MODE" << endl
 	<< "press c to close the connection and o to open it again, connection is: " << kinect.isConnected() << endl;
 
@@ -213,7 +213,12 @@ void ofApp::drawRecordedPointCloud() {
     int w = 640;
     int h = 480;
     ofMesh mesh;
-    mesh.setMode(OF_PRIMITIVE_POINTS);
+    //mesh.setMode(OF_PRIMITIVE_POINTS);
+    if (drawTriangles){
+        mesh.setMode(OF_PRIMITIVE_TRIANGLES);
+    }else{
+         mesh.setMode(OF_PRIMITIVE_POINTS);
+    }
     int pCount = 0;
     //int step = gridSize; //DB this crashes the mesh playback  .....
     for(int y = 0; y < h; y += step) {
@@ -229,6 +234,30 @@ void ofApp::drawRecordedPointCloud() {
             pCount ++;
         }
     }
+    
+//    //----- add triangles -- move this to the 'read mesh' function and execure once.
+    int numofVertices = mesh.getNumVertices();
+     pCount = 0;
+    ofVec3f v2;
+    v2.set(0,0,0);
+    for(int n = 0; n < numofVertices-1-w/step; n ++) {
+        //cout << "points:" << n  <<"," << n+1+w/step << "," << n+w/step <<endl;
+        //add in culling for zero location points from triangle mesh
+        //can optimise to check less of the dupliacte points
+        if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1))==v2 or (mesh.getVertex(pCount+1+w/step))==v2){
+            //cout << "culled point" << pCount << endl ;
+        }else{
+            mesh.addTriangle(n, n+1, n+1+w/step); //even triangles for each mesh square
+        }
+        if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1+w/step))==v2 or (mesh.getVertex(pCount+w/step))==v2){
+            //cout << "culled point" << pCount << endl ;
+        }else{
+            mesh.addTriangle(n, n+1+w/step, n+w/step); //odd triangles for each mesh square
+        }
+         pCount ++;
+   }
+    //------ end add triangles
+    
     glPointSize(blobSize);
     //glEnable(GL_POINT_SMOOTH); // use circular points instead of square points
     ofPushMatrix();
@@ -236,9 +265,12 @@ void ofApp::drawRecordedPointCloud() {
     ofScale(1, -1, -1);
     ofTranslate(0, 0, -750); // center the points a bit
     glEnable(GL_DEPTH_TEST);
-    mesh.drawVertices();
+    //mesh.drawVertices();
+    //mesh.drawFaces();
+    ofSetColor( 0, 128, 0 ); 
+    mesh.draw();
     glDisable(GL_DEPTH_TEST);
-    mesh.clear();
+    //mesh.clear();
     ofPopMatrix();
 }
 
@@ -249,7 +281,8 @@ void ofApp::drawPointCloud() {
 	ofMesh mesh;
     //OF_PRIMITIVE_TRIANGLES, OF_PRIMITIVE_TRIANGLE_STRIP, OF_PRIMITIVE_TRIANGLE_FAN, OF_PRIMITIVE_LINES, OF_PRIMITIVE_LINE_STRIP, OF_PRIMITIVE_LINE_LOOP, OF_PRIMITIVE_POINTS
     
-	mesh.setMode(OF_PRIMITIVE_POINTS);
+	
+    mesh.setMode(OF_PRIMITIVE_POINTS);
 	int step = gridSize;
 	for(int y = 0; y < h; y += step) {
 		for(int x = 0; x < w; x += step) {
@@ -360,17 +393,17 @@ void ofApp::keyPressed (int key) {
 			bDrawPointCloud = !bDrawPointCloud;
 			break;
 			
-		case '>':
-		case '.':
-			farThreshold ++;
-			if (farThreshold > 255) farThreshold = 255;
-			break;
+//		case '>':
+//		case '.':
+//			farThreshold ++;
+//			if (farThreshold > 255) farThreshold = 255;
+//			break;
 			
-		case '<':
-		case ',':
-			farThreshold --;
-			if (farThreshold < 0) farThreshold = 0;
-			break;
+//		case '<':
+//		case ',':
+//			farThreshold --;
+//			if (farThreshold < 0) farThreshold = 0;
+//			break;
 			
 		case '+':
 		case '=':
@@ -477,7 +510,32 @@ void ofApp::keyPressed (int key) {
             recording = false;
             break;
             
-	}
+            case '<':
+            case ',':
+            if(playing) {
+                if(paused){
+                    if (frameToPlay>1){
+                        frameToPlay --;
+                    }
+                }
+            }
+            break;
+            
+        case '>':
+        case '.':
+            if(playing) {
+                if(paused){
+                    if(frameToPlay < meshRecorder.TotalFrames){
+                     frameToPlay ++;
+                    }
+                }
+            }
+            break;
+            
+        case 't':
+            drawTriangles = !drawTriangles;//swap between point cloud rendering and primitive triangle rendering 
+            break;
+    }
     
 }
 

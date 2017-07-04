@@ -26,6 +26,9 @@ void ofxKinectMeshRecorder::startLoading(const string _file) {
     fileToload = _file;
     startThread(true, true);
     
+    //loadMeshData(fileToload); //bypassing thread
+    //readyToPlay = true;
+    
 }
 
 void ofxKinectMeshRecorder::loadMeshData(const string _file) {
@@ -124,7 +127,6 @@ int ofxKinectMeshRecorder::countFrames(const string _file) {
     dir.allowExt("txt");
     dir.listDir();
     return dir.size();
-    
 }
 
 //------------------------------------
@@ -133,9 +135,7 @@ ofVec3f ofxKinectMeshRecorder::getVectorAt(int framenum, int coord) {
     ofVec3f v;
     v.set(recordedMeshData[framenum][coord].x,recordedMeshData[framenum][coord].y,recordedMeshData[framenum][coord].z);
     return v;
-    
 }
-
 
 //------------------------------------
 ofColor ofxKinectMeshRecorder::getColorAt(int framenum, int coord) {
@@ -143,7 +143,6 @@ ofColor ofxKinectMeshRecorder::getColorAt(int framenum, int coord) {
     ofColor c;
     c.setHex(recordedMeshData[framenum][coord].hexcolor);
     return c;
-    
 }
 
 

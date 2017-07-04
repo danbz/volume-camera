@@ -109,6 +109,7 @@ public:
     ofxColorSlider backgroundColor;
     bool showGui;
     bool paintMesh;
+    bool drawTriangles;
     
     ofTrueTypeFont myFont;
     
