@@ -32,8 +32,11 @@ public:
 	void draw();
 	void exit();
 	
-	void drawPointCloud();
-	
+	void drawPointCloud(); //deprecated
+    void drawAnyPointCloud();
+    void savePointCloud();
+    //void drawRecordedPointCloud(); //replaced by drawAnyPointCloud
+    
 	void keyPressed(int key);
 	void mouseDragged(int x, int y, int button);
 	void mousePressed(int x, int y, int button);
@@ -92,11 +95,10 @@ public:
     string generateFileName();
     int frame;
     string saveTo;
-    void savePointCloud();
-    void drawRecordedPointCloud();
+   
     
-    int distanciaMinima;
-    int distanciaMaxima;
+    int distanceMinima;
+    int distanceMaxima;
     
     //
     

@@ -57,8 +57,8 @@ void ofApp::setup() {
     bDrawPointCloud = true;   // start from the camera view
     kinect.setDepthClipping( 500,  10000); //set depth clipping range
     frame = 0; //play back frame initialisation
-    distanciaMinima = 200;
-    distanciaMaxima = 5000;
+    distanceMinima = 200;
+    distanceMaxima = 5000;
     paused = false;
     drawTriangles = false;
     renderStyle = 1;
@@ -105,7 +105,10 @@ void ofApp::update() {
         if(frameToPlay >= meshRecorder.TotalFrames) frameToPlay = 0; //or start at the beginning of the recorded loop
         }
     }
-
+    
+    //////////////////////////////////////////////////////
+    // Kinect Live Render updating
+    //////////////////////////////////////////////////////
     if(kinect.isFrameNew()) { 	// if there is a new frame and we are connected to a kinect device
 		grayImage.setFromPixels(kinect.getDepthPixels()); // load grayscale depth image from the kinect source
 		if(bThreshWithOpenCV) {
@@ -141,15 +144,20 @@ void ofApp::draw() {
 	
 	ofSetColor(255, 255, 255);
 	 
+    //////////////////////////////////////////////////////
+    // Draw Live rendering
+    //////////////////////////////////////////////////////
 	if(bDrawPointCloud) { //show pointcloud view or 3 camera view
 		easyCam.begin();
-        if(!playing) { // if we are not playing then draw  live pointcloud
-            drawPointCloud();
-        } else {
-            if(meshRecorder.readyToPlay) {
-                drawRecordedPointCloud(); //draw recorded point cloud
-            }
-        }
+        drawAnyPointCloud(); //call new generic point render function
+        
+//        if(!playing) { // if we are not playing then draw live pointcloud
+//            drawPointCloud();
+//        } else {
+//            if(meshRecorder.readyToPlay) {
+//                drawRecordedPointCloud(); //draw recorded point cloud
+//            }
+//        }
         easyCam.end();
 	} else { 		// draw from the live kinect as 3 windows
 		kinect.drawDepth(10, 10, 400, 300);
@@ -160,13 +168,19 @@ void ofApp::draw() {
 		kinect2.draw(420, 320, 400, 300);
 #endif
 	}
- 
+    
+    //////////////////////////////////////////////////////
+    // Do Recording
+    //////////////////////////////////////////////////////
     if(!meshRecorder.readyToPlay) {    //-- recorder  // Loadinf info:
         string l = ofToString(meshRecorder.FramesLoaded);
         string t = ofToString(meshRecorder.TotalFrames);
         ofDrawBitmapString("loading... " + l + "/" + t,20, 20);
     }
 		
+    //////////////////////////////////////////////////////
+    // Reporting and help text
+    //////////////////////////////////////////////////////
 	ofSetColor(255, 255, 255);
 	stringstream reportStream; // draw instructions
     
@@ -193,11 +207,13 @@ void ofApp::draw() {
 }
 
 //--------------------------------------------------------------
-void ofApp::drawRecordedPointCloud() {
+void ofApp::drawAnyPointCloud() {
     int w = 640;
     int h = 480;
+    int pCount =0;
     ofMesh mesh;
-    switch (renderStyle) {
+    
+    switch (renderStyle) { //set render style
         case 1:
              mesh.setMode(OF_PRIMITIVE_POINTS);
             break;
@@ -210,30 +226,48 @@ void ofApp::drawRecordedPointCloud() {
             mesh.setMode(OF_PRIMITIVE_LINE_STRIP);
             break;
     }
-    int pCount = 0;
-    //int step = gridSize; //DB this crashes the mesh playback  .....
-    for(int y = 0; y < h; y += step) {
-        for(int x = 0; x < w; x += step) {
-            ofVec3f v2;
-            v2.set(0,0,0);
-            v2 = meshRecorder.getVectorAt(frameToPlay, pCount);
-            mesh.addVertex(v2);
-            ofColor c;
-            c = meshRecorder.getColorAt(frameToPlay, pCount);
-            if(paintMesh) mesh.addColor(c);
-            //}
-            pCount ++;
+    
+    if(playing) { // if we are playing then render data from file ---------------
+        if(meshRecorder.readyToPlay) {
+            pCount = 0;
+            //int step = gridSize; //DB this crashes the mesh playback  .....
+            for(int y = 0; y < h; y += step) { //load data from recording into mesh as pointcloud
+                for(int x = 0; x < w; x += step) {
+                    ofVec3f v2;
+                    v2.set(0,0,0);
+                    v2 = meshRecorder.getVectorAt(frameToPlay, pCount);
+                    mesh.addVertex(v2);
+                    ofColor c;
+                    c = meshRecorder.getColorAt(frameToPlay, pCount);
+                    if(paintMesh) mesh.addColor(c); // add colour from map into mesh at each point
+                    pCount ++;
+                }
+            }
+        }
+    } else {
+        //draw  pointcloud mesh from live source --------
+        int step = gridSize;
+        for(int y = 0; y < h; y += step) {
+            for(int x = 0; x < w; x += step) {
+                if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) {
+                    if (paintMesh)mesh.addColor(kinect.getColorAt(x,y));
+                    mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
+                    // mesh.addTriangle(kinect.getWorldCoordinateAt(x, y) , (kinect.getDistanceAt(x, y)));
+                }
+            }
         }
     }
-       //----- add triangles -- move this to the 'read mesh' function and execute once?
+ 
+    //----- then generate triangles for mesh --
     int numofVertices = mesh.getNumVertices();
-     pCount = 0;
+    pCount = 0;
     ofVec3f v2;
-    v2.set(0,0,0); //add triangles to mesh from vertices
+    v2.set(0,0,0); //add triangles to mesh from vertices - move this to the 'read mesh' ?
     for(int n = 0; n < numofVertices-1-w/step; n ++) {
-        //cout << "points:" << n  <<"," << n+1+w/step << "," << n+w/step <<endl;
-        //add in culling for zero location points from triangle mesh
-        //can optimise to check less of the dupliacte points
+        // cout << "points:" << n  <<"," << n+1+w/step << "," << n+w/step <<endl;
+        // add in culling for zero location points from triangle mesh
+        // optimise to check less of the dupliacte points
+        //  if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane)  // use backplane value to cull deeper points from cloud // to be added
         if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1))==v2 or (mesh.getVertex(pCount+1+w/step))==v2){
             //cout << "culled point" << pCount << endl ;
         }else{
@@ -245,19 +279,17 @@ void ofApp::drawRecordedPointCloud() {
             mesh.addTriangle(n, n+1+w/step, n+w/step); //odd triangles for each mesh square
         }
          pCount ++;
-   }
-    //------ end add triangles
+   } //------ end add triangles
     
     glPointSize(blobSize);
     //glEnable(GL_POINT_SMOOTH); // use circular points instead of square points
     ofPushMatrix();
-    // the projected points are 'upside down' and 'backwards'
-    ofScale(1, -1, -1);
+    ofScale(1, -1, -1);  // the projected points are 'upside down' and 'backwards'
     ofTranslate(0, 0, -750); // center the points a bit
     glEnable(GL_DEPTH_TEST);
     //mesh.drawVertices();
     //mesh.drawFaces();
-    ofSetColor( 0, 128, 0 ); 
+    ofSetColor( 0, 128, 0 );  //set render colour for unpainted points, faces and lines
     mesh.draw();
     glDisable(GL_DEPTH_TEST);
     //mesh.clear();
@@ -265,13 +297,13 @@ void ofApp::drawRecordedPointCloud() {
 }
 
 //-----------------------------------------
-void ofApp::drawPointCloud() {
+void ofApp::drawPointCloud() { //deprecated function - now run by drawAnyPointCloud
 	int w = 640;
 	int h = 480;
 	ofMesh mesh;
     //OF_PRIMITIVE_TRIANGLES, OF_PRIMITIVE_TRIANGLE_STRIP, OF_PRIMITIVE_TRIANGLE_FAN, OF_PRIMITIVE_LINES, OF_PRIMITIVE_LINE_STRIP, OF_PRIMITIVE_LINE_LOOP, OF_PRIMITIVE_POINTS
     
-    switch (renderStyle) {
+    switch (renderStyle) { //set render style
         case 1:
             mesh.setMode(OF_PRIMITIVE_POINTS);
             break;
@@ -337,10 +369,10 @@ void ofApp::savePointCloud() {
         for(int x = 0; x < w; x += recordingStep) {
             ofVec3f v2;
             v2.set(0,0,0);
-            float distancia;
-            distancia = kinect.getDistanceAt(x, y);
+            float distance;
+            distance = kinect.getDistanceAt(x, y);
             
-            if(distancia > distanciaMinima && distancia < distanciaMaxima) {
+            if(distance> distanceMinima && distance < distanceMaxima) {
                 v2 = kinect.getWorldCoordinateAt(x, y);
             }
             ofColor pColor;
