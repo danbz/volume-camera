@@ -118,12 +118,12 @@ public:
     bool colorMode;
     
     //////////////////////////////////////////////////////
-    // Point cloud reproduction
+    // Rendering Reproduction
     //////////////////////////////////////////////////////
     
     int frameToPlay;
     ofxKinectMeshRecorder meshRecorder;
+    int renderStyle;
 
-    
     
 };

@@ -61,6 +61,7 @@ void ofApp::setup() {
     distanciaMaxima = 5000;
     paused = false;
     drawTriangles = false;
+    renderStyle = 1;
     
     //////////////////////////////////////////////////////
     // Gui Configuration
@@ -98,28 +99,23 @@ void ofApp::update() {
     //////////////////////////////////////////////////////
     // Playback
     //////////////////////////////////////////////////////
-    if(playing) {
-        if(!paused){
-        frameToPlay += 1;
-        if(frameToPlay >= meshRecorder.TotalFrames) frameToPlay = 0;
+    if(playing) { // if we are in playback mode
+        if(!paused){ // and have not paused the playback
+        frameToPlay += 1; // increment the frame we are playing
+        if(frameToPlay >= meshRecorder.TotalFrames) frameToPlay = 0; //or start at the beginning of the recorded loop
         }
     }
-    
-    if(kinect.isFrameNew()) { 	// there is a new frame and we are connected
+
+    if(kinect.isFrameNew()) { 	// if there is a new frame and we are connected to a kinect device
 		grayImage.setFromPixels(kinect.getDepthPixels()); // load grayscale depth image from the kinect source
-		
-		// we do two thresholds - one for the far plane and one for the near plane
-		// we then do a cvAnd to get the pixels which are a union of the two thresholds
 		if(bThreshWithOpenCV) {
-			grayThreshNear = grayImage;
-			grayThreshFar = grayImage;
+			grayThreshNear = grayImage; 	// we do two thresholds - one for the far plane and one for the near plane
+            grayThreshFar = grayImage;   		// we then do a cvAnd to get the pixels which are a union of the two thresholds
 			grayThreshNear.threshold(nearThreshold, true);
 			grayThreshFar.threshold(farThreshold);
 			cvAnd(grayThreshNear.getCvImage(), grayThreshFar.getCvImage(), grayImage.getCvImage(), NULL);
 		} else {
-			
-			// or we do it ourselves - show people how they can work with the pixels
-			ofPixels & pix = grayImage.getPixels();
+			ofPixels & pix = grayImage.getPixels(); // or we do it ourselves - show people how they can work with the pixels
 			int numPixels = pix.size();
 			for(int i = 0; i < numPixels; i++) {
 				if(pix[i] < nearThreshold && pix[i] > farThreshold) {
@@ -129,9 +125,7 @@ void ofApp::update() {
 				}
 			}
 		}
-			
 		grayImage.flagImageChanged(); // update the cv images
-		
 		// find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
 		// also, find holes is set to true so we will get interior contours as well....
 		contourFinder.findContours(grayImage, 10, (kinect.width*kinect.height)/2, 20, false);
@@ -166,26 +160,15 @@ void ofApp::draw() {
 		kinect2.draw(420, 320, 400, 300);
 #endif
 	}
-    
-    //-- recorder  // Loadinf info:
-    if(!meshRecorder.readyToPlay) {
+ 
+    if(!meshRecorder.readyToPlay) {    //-- recorder  // Loadinf info:
         string l = ofToString(meshRecorder.FramesLoaded);
         string t = ofToString(meshRecorder.TotalFrames);
         ofDrawBitmapString("loading... " + l + "/" + t,20, 20);
     }
-	
-	// draw instructions
+		
 	ofSetColor(255, 255, 255);
-	stringstream reportStream;
-        
-//    if(kinect.hasAccelControl()) {
-//        reportStream << "accel is: " << ofToString(kinect.getMksAccel().x, 2) << " / "
-//        << ofToString(kinect.getMksAccel().y, 2) << " / "
-//        << ofToString(kinect.getMksAccel().z, 2) << endl;
-//    } else {
-//        reportStream << "Note: this is a newer Xbox Kinect or Kinect For Windows device," << endl
-//		<< "motor / led / accel controls are not currently supported" << endl << endl;
-//    }
+	stringstream reportStream; // draw instructions
     
 	reportStream << "press p to switch between images and point cloud, rotate the point cloud with the mouse" << endl
 	<< "using opencv threshold = " << bThreshWithOpenCV <<" (press spacebar)" << endl
@@ -193,13 +176,14 @@ void ofApp::draw() {
 	<< "pause with space bar, press: < > to scrub frames " << contourFinder.nBlobs
 	<< ", fps: " << ofGetFrameRate() << endl
     << "a: paint mesh   t: toggle triangles/pointcloud   g: show/hide gui"<< endl
+     << "1, 2 or 3: to change rendering styles"<< endl
     << "r: START RECORDING   s: STOP RECORDING" << endl
     << "l: LAST RECORDING / LIVE MODE" << endl
 	<< "press c to close the connection and o to open it again, connection is: " << kinect.isConnected() << endl;
 
     if(kinect.hasCamTiltControl()) {
-    	reportStream << "press UP and DOWN to change the tilt angle: " << angle << " degrees" << endl
-        << "press 1-5 & 0 to change the led mode" << endl;
+        reportStream << "press UP and DOWN to change the tilt angle: " << angle << " degrees" << endl;
+        //<< "press 1-5 & 0 to change the led mode" << endl;
     }
     
     if (showGui) { // show or hide the gui and instruction texts
@@ -213,11 +197,18 @@ void ofApp::drawRecordedPointCloud() {
     int w = 640;
     int h = 480;
     ofMesh mesh;
-    //mesh.setMode(OF_PRIMITIVE_POINTS);
-    if (drawTriangles){
-        mesh.setMode(OF_PRIMITIVE_TRIANGLES);
-    }else{
-         mesh.setMode(OF_PRIMITIVE_POINTS);
+    switch (renderStyle) {
+        case 1:
+             mesh.setMode(OF_PRIMITIVE_POINTS);
+            break;
+            
+        case 2:
+            mesh.setMode(OF_PRIMITIVE_TRIANGLES);
+            break;
+            
+        case 3:
+            mesh.setMode(OF_PRIMITIVE_LINE_STRIP);
+            break;
     }
     int pCount = 0;
     //int step = gridSize; //DB this crashes the mesh playback  .....
@@ -234,12 +225,11 @@ void ofApp::drawRecordedPointCloud() {
             pCount ++;
         }
     }
-    
-//    //----- add triangles -- move this to the 'read mesh' function and execure once.
+       //----- add triangles -- move this to the 'read mesh' function and execute once?
     int numofVertices = mesh.getNumVertices();
      pCount = 0;
     ofVec3f v2;
-    v2.set(0,0,0);
+    v2.set(0,0,0); //add triangles to mesh from vertices
     for(int n = 0; n < numofVertices-1-w/step; n ++) {
         //cout << "points:" << n  <<"," << n+1+w/step << "," << n+w/step <<endl;
         //add in culling for zero location points from triangle mesh
@@ -281,8 +271,20 @@ void ofApp::drawPointCloud() {
 	ofMesh mesh;
     //OF_PRIMITIVE_TRIANGLES, OF_PRIMITIVE_TRIANGLE_STRIP, OF_PRIMITIVE_TRIANGLE_FAN, OF_PRIMITIVE_LINES, OF_PRIMITIVE_LINE_STRIP, OF_PRIMITIVE_LINE_LOOP, OF_PRIMITIVE_POINTS
     
-	
-    mesh.setMode(OF_PRIMITIVE_POINTS);
+    switch (renderStyle) {
+        case 1:
+            mesh.setMode(OF_PRIMITIVE_POINTS);
+            break;
+            
+        case 2:
+            mesh.setMode(OF_PRIMITIVE_TRIANGLES);
+            break;
+            
+        case 3:
+            mesh.setMode(OF_PRIMITIVE_LINES);
+            break;
+    }
+
 	int step = gridSize;
 	for(int y = 0; y < h; y += step) {
 		for(int x = 0; x < w; x += step) {
@@ -431,15 +433,15 @@ void ofApp::keyPressed (int key) {
 			break;
 			
 		case '1':
-			kinect.setLed(ofxKinect::LED_GREEN);
+			renderStyle=1;
 			break;
 			
 		case '2':
-			kinect.setLed(ofxKinect::LED_YELLOW);
+			renderStyle=2;
 			break;
 			
 		case '3':
-			kinect.setLed(ofxKinect::LED_RED);
+			renderStyle=3;
 			break;
 			
 		case '4':
