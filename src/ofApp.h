@@ -35,7 +35,10 @@ public:
 	void drawPointCloud(); //deprecated
     void drawAnyPointCloud();
     void savePointCloud();
+    void writeMetaData();
     //void drawRecordedPointCloud(); //replaced by drawAnyPointCloud
+    
+ 
     
 	void keyPressed(int key);
 	void mouseDragged(int x, int y, int button);
@@ -44,7 +47,7 @@ public:
 	void mouseEntered(int x, int y);
 	void mouseExited(int x, int y);
 	void windowResized(int w, int h);
-	
+    
 	ofxKinect kinect;
 	
 #ifdef USE_TWO_KINECTS
@@ -88,24 +91,24 @@ public:
         int z;
     } colorData;
     
-    // Guardar Datos:
-    
+    //////////////////////////////////////////////////////
+    // recorder  Configuration
+    //////////////////////////////////////////////////////
     
     ofDirectory dirHelper;
     string generateFileName();
     int frame;
     string saveTo;
-   
-    
     int distanceMinima;
     int distanceMaxima;
     
-    //
-    
+    int recordWidth;
+    int recordHeight;
     
     //////////////////////////////////////////////////////
     // GUI  Configuration
     //////////////////////////////////////////////////////
+    
     ofxPanel gui;
     ofxIntSlider blobSize, gridSize, backPlane, frontPlane;
     ofxColorSlider backgroundColor;
@@ -123,9 +126,19 @@ public:
     // Rendering Reproduction
     //////////////////////////////////////////////////////
     
+    ofMesh mesh;
+    
+    //Universal function which sets normals for the triangle mesh
+    void setNormals( ofMesh &mesh );
+    
+    
     int frameToPlay;
     ofxKinectMeshRecorder meshRecorder;
     int renderStyle;
+    bool showNormals;
+    bool illuminateScene;
+    
+    ofLight light;
 
     
 };

@@ -62,6 +62,16 @@ void ofApp::setup() {
     paused = false;
     drawTriangles = false;
     renderStyle = 1;
+    recordWidth =640;
+    recordHeight=480;
+    
+    //////////////////////////////////////////////////////
+    // Rendering Configuration
+    //////////////////////////////////////////////////////
+    //light.enable(); //enable world light
+    illuminateScene = true;
+    showNormals = true;
+    
     
     //////////////////////////////////////////////////////
     // Gui Configuration
@@ -175,7 +185,7 @@ void ofApp::draw() {
     if(!meshRecorder.readyToPlay) {    //-- recorder  // Loadinf info:
         string l = ofToString(meshRecorder.FramesLoaded);
         string t = ofToString(meshRecorder.TotalFrames);
-        ofDrawBitmapString("loading... " + l + "/" + t,20, 20);
+        ofDrawBitmapString("loading... " + l + "/" + t,700, 20);
     }
 		
     //////////////////////////////////////////////////////
@@ -190,7 +200,7 @@ void ofApp::draw() {
 	<< "pause with space bar, press: < > to scrub frames " << contourFinder.nBlobs
 	<< ", fps: " << ofGetFrameRate() << endl
     << "a: paint mesh   t: toggle triangles/pointcloud   g: show/hide gui"<< endl
-     << "1, 2 or 3: to change rendering styles"<< endl
+     << "1, 2 or 3: rendering styles, n:  normals" <<showNormals<< " i:  world light" << illuminateScene<< endl
     << "r: START RECORDING   s: STOP RECORDING" << endl
     << "l: LAST RECORDING / LIVE MODE" << endl
 	<< "press c to close the connection and o to open it again, connection is: " << kinect.isConnected() << endl;
@@ -201,6 +211,7 @@ void ofApp::draw() {
     }
     
     if (showGui) { // show or hide the gui and instruction texts
+        ofSetColor(255, 255, 255);
         ofDrawBitmapString(reportStream.str(), 20, 600);
         gui.draw();
     }
@@ -208,8 +219,8 @@ void ofApp::draw() {
 
 //--------------------------------------------------------------
 void ofApp::drawAnyPointCloud() {
-    int w = 640;
-    int h = 480;
+    int w = recordWidth;
+    int h = recordHeight;
     int pCount =0;
     ofMesh mesh;
     
@@ -241,6 +252,8 @@ void ofApp::drawAnyPointCloud() {
                     c = meshRecorder.getColorAt(frameToPlay, pCount);
                     if(paintMesh) mesh.addColor(c); // add colour from map into mesh at each point
                     pCount ++;
+                    
+
                 }
             }
         }
@@ -281,6 +294,9 @@ void ofApp::drawAnyPointCloud() {
          pCount ++;
    } //------ end add triangles
     
+    if (showNormals) {//set normals for faces
+        setNormals( mesh );
+    }
     glPointSize(blobSize);
     //glEnable(GL_POINT_SMOOTH); // use circular points instead of square points
     ofPushMatrix();
@@ -289,7 +305,7 @@ void ofApp::drawAnyPointCloud() {
     glEnable(GL_DEPTH_TEST);
     //mesh.drawVertices();
     //mesh.drawFaces();
-    ofSetColor( 0, 128, 0 );  //set render colour for unpainted points, faces and lines
+    ofSetColor( 255, 255, 255);  //set render colour for unpainted points, faces and lines
     mesh.draw();
     glDisable(GL_DEPTH_TEST);
     //mesh.clear();
@@ -340,6 +356,43 @@ void ofApp::drawPointCloud() { //deprecated function - now run by drawAnyPointCl
 }
 
 //--------------------------------------------------------------
+
+//Universal function which sets normals for the triangle mesh
+void ofApp::setNormals( ofMesh &mesh ){
+    //The number of the vertices
+    int nV = mesh.getNumVertices();
+    //The number of the triangles
+    int nT = mesh.getNumIndices() / 3;
+    vector<ofPoint> norm( nV ); //Array for the normals
+    //Scan all the triangles. For each triangle add its
+    //normal to norm's vectors of triangle's vertices
+    for (int t=0; t<nT; t++) {
+        //Get indices of the triangle t
+        int i1 = mesh.getIndex( 3 * t );
+        int i2 = mesh.getIndex( 3 * t + 1 );
+        int i3 = mesh.getIndex( 3 * t + 2 );
+        //Get vertices of the triangle
+        const ofPoint &v1 = mesh.getVertex( i1 );
+        const ofPoint &v2 = mesh.getVertex( i2 );
+        const ofPoint &v3 = mesh.getVertex( i3 );
+        //Compute the triangle's normal
+        ofPoint dir = ( (v2 - v1).crossed( v3 - v1 ) ).normalized();
+        //Accumulate it to norm array for i1, i2, i3
+        norm[ i1 ] += dir;
+        norm[ i2 ] += dir;
+        norm[ i3 ] += dir;
+    }
+    //Normalize the normal's length
+    for (int i=0; i<nV; i++) {
+        norm[i].normalize();
+    }
+    //Set the normals to mesh
+    mesh.clearNormals();
+    mesh.addNormals( norm );
+}
+
+
+//--------------------------------------------------------------
 string ofApp::generateFileName() {
     string _root = "";
     _timestamp = ofToString(ofGetDay()) +
@@ -361,8 +414,7 @@ string ofApp::generateFileName() {
 void ofApp::savePointCloud() {
     int w = 640;
     int h = 480;
-    //char buff[200];
-    //stringstream stringToSave;
+
     FILE* fout = fopen((saveTo + "frame" + ofToString(frame) + ".txt").c_str(), "w");
     int pIndex = 0;
     for(int y = 0; y < h; y += recordingStep) {
@@ -372,36 +424,66 @@ void ofApp::savePointCloud() {
             float distance;
             distance = kinect.getDistanceAt(x, y);
             
-            if(distance> distanceMinima && distance < distanceMaxima) {
+            if(distance> distanceMinima && distance < distanceMaxima) {//only record points into v2 if within min & max distance
                 v2 = kinect.getWorldCoordinateAt(x, y);
             }
             ofColor pColor;
             pColor = kinect.getColorAt(x, y);
-            /*
-             stringToSave << pIndex << ","
-             << v2.x << ","
-             << v2.y << ","
-             << v2.z << ","
-             << pColor.getHex()
-             << "\n";
-             */
-            //sprintf(buff, "%i%s%f%s%f%s%f%s%i%s", pIndex, ",", v2.x, ",",  v2.y, ",",  v2.z, ",",  pColor.getHex(), "\n");
+           
             fprintf(fout, "%i%s%f%s%f%s%f%s%i%s", pIndex, ",", v2.x, ",",  v2.y, ",",  v2.z, ",",  pColor.getHex(), "\n");
-            //stringToSave << buff;
             pIndex++;
         }
     }
     fclose(fout);
-    /*
-     ofstream framesFile ((saveTo + "frame" + ofToString(frame) + ".txt").c_str());
-     framesFile << stringToSave.str();
-     //framesFile << buff;
-     framesFile.close();
-     */
+    
     frame++;
 }
 
 //--------------------------------------------------------------
+
+void ofApp::writeMetaData() {
+    //generate xml metadata file and save into recording directory
+    
+    string exifData; // exif meta data
+    // get date, number of files, mesh resolution, RGB colour resolution (or data to separate file), GPS loc, recording apparatus, version number, author data, semantic data, free text descriptor.
+    
+    exifData = "press p to switch between images and point cloud, rotate the point cloud with the mouse"
+    && "using opencv threshold = " && bThreshWithOpenCV  && " (press spacebar)";
+  
+    
+    // write XML data to file
+    string path = saveTo;
+    FILE* fout = fopen((saveTo + "meta.xml").c_str(), "w");
+     // create XML data
+    
+    string today =  _timestamp = ofToString(ofGetDay()) + //generate date
+    ofToString(ofGetMonth()) +
+    ofToString(ofGetYear()) +
+    ofToString(ofGetHours()) +
+    ofToString(ofGetMinutes()) +
+    ofToString(ofGetSeconds());
+    
+    fprintf(fout, "exifData" , "<exif: IFD rdf:ID = 'primary image'>" ,
+            "<extf:make>Buzzo</exif:make>" ,
+            "<extf:model>experimental voumetric camera v0.1</exif:model>",
+            "<extf:orientation>top left</exif:orientation>",
+             "<extf:xresolution>", recordWidth, "</exif:xresolution>",
+             "<extf:yresolution>",recordHeight,"</exif:yresolution>",
+             "<extf:datetime>", "today" , "</exif:datetime>",
+            "<extf:IFD>",
+            
+            "various exif data",
+            
+            "</exif:IFD>",
+            
+            "</exif:IFD" );
+    fclose(fout);
+    
+    
+}
+
+//--------------------------------------------------------------
+
 void ofApp::exit() {
     
     meshRecorder.unlock();
@@ -510,8 +592,6 @@ void ofApp::keyPressed (int key) {
             
         case 'l':
             if(!meshRecorder.readyToPlay) return;
-            // Todo: Cuando sepamos detener el Thread que pueda hacerse en cualquier
-            // momento durante la carga.
             if(recording) return;
             if(!playing) {
                 
@@ -540,8 +620,10 @@ void ofApp::keyPressed (int key) {
             if(!meshRecorder.readyToPlay) return;
             if(!recording) return;
             if(playing) return;
+            writeMetaData();
             saveTo = "";
             recording = false;
+            
             break;
             
             case '<':
@@ -569,6 +651,19 @@ void ofApp::keyPressed (int key) {
         case 't':
             drawTriangles = !drawTriangles;//swap between point cloud rendering and primitive triangle rendering 
             break;
+            
+        case 'n':
+            showNormals = !showNormals;//swap between normals on mesh on and off
+            break;
+        
+        case 'i':
+            if (!illuminateScene) { //swap on and off world light
+                light.enable();
+                illuminateScene=!illuminateScene;
+            } else {
+                light.disable();
+                illuminateScene=!illuminateScene;
+            }
     }
     
 }
