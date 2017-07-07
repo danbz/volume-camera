@@ -100,7 +100,7 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
         recordedMeshData[i] = data;
         
         FramesLoaded = i;
-        cout << "total line: " << lineCounter << endl;
+        cout << "total line: " << lineCounter << endl; //ouput lines per frame
 
        cout << fileToload << endl;
         
