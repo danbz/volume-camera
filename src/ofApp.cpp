@@ -465,8 +465,8 @@ void ofApp::writeMetaData() {
     ofToString(ofGetMinutes()) +
     ofToString(ofGetSeconds());
     
-    fprintf(fout, "%s, %i, %s, %i, %s ",
-            "exifData \n"
+    fprintf(fout, "%s, %i, %s, %i, %s ", //generate xml strings and insert mostly placeholder data
+            "exifData \n "
             "<exif: IFD rdf:ID = 'primary image'> \n"
             "<extf:make>Buzzo</exif:make> \n"
             "<extf:model>experimental voumetric camera v0.1</exif:model> \n"
