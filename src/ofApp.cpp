@@ -5,8 +5,8 @@
 // kinect.setDepthClipping(float nearClip=500, float farClip=10000); //set depth clipping range
 
 string _timestamp = "default"; //default value for filepath opening on playback
-int step = 4; // default point cloud step size for recorded mesh playback
-int recordingStep =1; // default point cloud step size for recorded mesh quality
+int step = 1; // default point cloud step size for recorded mesh playback
+int recordingStep =1l; // default point cloud step size for recorded mesh quality
 bool paused;
 
 
@@ -159,6 +159,7 @@ void ofApp::draw() {
     //////////////////////////////////////////////////////
 	if(bDrawPointCloud) { //show pointcloud view or 3 camera view
 		easyCam.begin();
+        light.enable(); //enable world light
         drawAnyPointCloud(); //call new generic point render function
         
 //        if(!playing) { // if we are not playing then draw live pointcloud
@@ -168,6 +169,7 @@ void ofApp::draw() {
 //                drawRecordedPointCloud(); //draw recorded point cloud
 //            }
 //        }
+        light.disable(); //enable world light
         easyCam.end();
 	} else { 		// draw from the live kinect as 3 windows
 		kinect.drawDepth(10, 10, 400, 300);
@@ -463,20 +465,19 @@ void ofApp::writeMetaData() {
     ofToString(ofGetMinutes()) +
     ofToString(ofGetSeconds());
     
-    fprintf(fout, "exifData" , "<exif: IFD rdf:ID = 'primary image'>" ,
-            "<extf:make>Buzzo</exif:make>" ,
-            "<extf:model>experimental voumetric camera v0.1</exif:model>",
-            "<extf:orientation>top left</exif:orientation>",
-             "<extf:xresolution>", recordWidth, "</exif:xresolution>",
-             "<extf:yresolution>",recordHeight,"</exif:yresolution>",
-             "<extf:datetime>", "today" , "</exif:datetime>",
-            "<extf:IFD>",
-            
-            "various exif data",
-            
-            "</exif:IFD>",
-            
-            "</exif:IFD" );
+    fprintf(fout, "%s, %i, %s, %i, %s ",
+            "exifData \n"
+            "<exif: IFD rdf:ID = 'primary image'> \n"
+            "<extf:make>Buzzo</exif:make> \n"
+            "<extf:model>experimental voumetric camera v0.1</exif:model> \n"
+            "<extf:orientation>top left</exif:orientation> \n"
+             "<extf:xresolution>" , recordWidth, "</exif:xresolution> \n"
+             "<extf:yresolution>", recordHeight, "</exif:yresolution> \n"
+             "<extf:datetime>" "today" "</exif:datetime> \n"
+            "<extf:IFD>\n"
+            "<various exif data> freetext etc </various exif data> \n"
+            "</exif:IFD> \n"
+            "</exif:IFD \n" );
     fclose(fout);
     
     
