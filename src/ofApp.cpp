@@ -5,7 +5,7 @@
 // kinect.setDepthClipping(float nearClip=500, float farClip=10000); //set depth clipping range
 
 string _timestamp = "default"; //default value for filepath opening on playback
-int step = 4; // default point cloud step size for recorded mesh playback
+int step = 1; // default point cloud step size for recorded mesh playback
 int recordingStep =1; // default point cloud step size for recorded mesh quality
 bool paused;
 
@@ -27,6 +27,9 @@ void ofApp::setup() {
 		ofLogNotice() << "sensor-camera dist:  " << kinect.getSensorCameraDistance() << "cm";
 		ofLogNotice() << "zero plane pixel size: " << kinect.getZeroPlanePixelSize() << "mm";
 		ofLogNotice() << "zero plane dist: " << kinect.getZeroPlaneDistance() << "mm";
+        
+        kinect.setLed(ofxKinect::LED_BLINK_GREEN);
+
 	}
 	
 #ifdef USE_TWO_KINECTS
@@ -614,6 +617,7 @@ void ofApp::keyPressed (int key) {
             saveTo = generateFileName();
             frame = 0;
             recording = true;
+            kinect.setLed(ofxKinect::LED_BLINK_YELLOW_RED);
             break;
             
         case 's':
@@ -623,7 +627,7 @@ void ofApp::keyPressed (int key) {
             writeMetaData();
             saveTo = "";
             recording = false;
-            
+         kinect.setLed(ofxKinect::LED_BLINK_GREEN);
             break;
             
             case '<':

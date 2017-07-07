@@ -45,7 +45,7 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
     
     FramesLoaded = 0;
     
-    for(int i = 0; i <= TotalFrames; i += 1) {
+    for(int i = 0; i <= TotalFrames-1; i += 1) {
         
         string fileToload = path + "/frame" + ofToString(i) + ".txt";
         
@@ -72,7 +72,7 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
         
         vector<frameData> data;
         
-        //while(fin!=NULL)
+       // while(fin!=NULL)
         while(fin)
         {
             string str;
@@ -95,7 +95,7 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
         recordedMeshData[i] = data;
         
         FramesLoaded = i;
-       //cout << fileToload << endl;
+       cout << fileToload << endl;
         
         if(i == TotalFrames) {
             unlock();
