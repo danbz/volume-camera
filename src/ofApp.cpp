@@ -6,7 +6,7 @@
 
 string _timestamp = "default"; //default value for filepath opening on playback
 int step = 1; // default point cloud step size for recorded mesh playback
-int recordingStep =1l; // default point cloud step size for recorded mesh quality
+int recordingStep =1; // default point cloud step size for recorded mesh quality
 bool paused;
 
 
@@ -64,6 +64,10 @@ void ofApp::setup() {
     renderStyle = 1;
     recordWidth =640;
     recordHeight=480;
+    
+    
+    //added in new thread class etc 8/july/17    
+    ofxKinectMeshRecorder thread;
     
     //////////////////////////////////////////////////////
     // Rendering Configuration
@@ -159,7 +163,7 @@ void ofApp::draw() {
     //////////////////////////////////////////////////////
 	if(bDrawPointCloud) { //show pointcloud view or 3 camera view
 		easyCam.begin();
-        light.enable(); //enable world light
+       if (illuminateScene) light.enable(); //enable world light
         drawAnyPointCloud(); //call new generic point render function
         
 //        if(!playing) { // if we are not playing then draw live pointcloud
@@ -169,7 +173,7 @@ void ofApp::draw() {
 //                drawRecordedPointCloud(); //draw recorded point cloud
 //            }
 //        }
-        light.disable(); //enable world light
+        ofDisableLighting(); //disable world light
         easyCam.end();
 	} else { 		// draw from the live kinect as 3 windows
 		kinect.drawDepth(10, 10, 400, 300);
@@ -242,6 +246,7 @@ void ofApp::drawAnyPointCloud() {
     
     if(playing) { // if we are playing then render data from file ---------------
         if(meshRecorder.readyToPlay) {
+           
             pCount = 0;
             //int step = gridSize; //DB this crashes the mesh playback  .....
             for(int y = 0; y < h; y += step) { //load data from recording into mesh as pointcloud
@@ -255,9 +260,11 @@ void ofApp::drawAnyPointCloud() {
                     if(paintMesh) mesh.addColor(c); // add colour from map into mesh at each point
                     pCount ++;
                     
+                    //cout << "pointcount from drawAnyCloud fctn: " << pCount << endl;
 
                 }
             }
+             cout << "end pointcount from drawAnyCloud fctn: " << pCount << endl;
         }
     } else {
         //draw  pointcloud mesh from live source --------
@@ -662,7 +669,7 @@ void ofApp::keyPressed (int key) {
                 light.enable();
                 illuminateScene=!illuminateScene;
             } else {
-                light.disable();
+                ofDisableLighting();
                 illuminateScene=!illuminateScene;
             }
     }

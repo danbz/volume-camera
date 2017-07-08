@@ -829,10 +829,10 @@
 			isa = PBXGroup;
 			children = (
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
-				E4B69E1E0A3A1BDC003C02F2 /* ofApp.cpp */,
-				3774D3C21EC8E2E800490AFB /* ofxKinectMeshRecorder.cpp */,
-				3774D3C31EC8E2E800490AFB /* ofxKinectMeshRecorder.h */,
 				E4B69E1F0A3A1BDC003C02F2 /* ofApp.h */,
+				E4B69E1E0A3A1BDC003C02F2 /* ofApp.cpp */,
+				3774D3C31EC8E2E800490AFB /* ofxKinectMeshRecorder.h */,
+				3774D3C21EC8E2E800490AFB /* ofxKinectMeshRecorder.cpp */,
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;

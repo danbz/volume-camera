@@ -6,15 +6,15 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            shouldBeEnabled = "No"
+            shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "src/ofxKinectMeshRecorder.cpp"
-            timestampString = "521037687.534457"
+            timestampString = "521201427.086938"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "106"
-            endingLineNumber = "106"
+            startingLineNumber = "81"
+            endingLineNumber = "81"
             landmarkName = "ofxKinectMeshRecorder::loadMeshData(const string _file)"
             landmarkType = "7">
          </BreakpointContent>
