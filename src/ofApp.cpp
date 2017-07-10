@@ -7,9 +7,9 @@
 string _timestamp = "default"; //default value for filepath opening on playback
 string filePath ="";
 int step = 1; // default point cloud step size for recorded mesh playback
-int recordingStep =4; // default point cloud step size for recorded mesh quality
+//int recordingStep =1; // default point cloud step size for recorded mesh quality
 bool paused;
-
+UInt64 timeNow =ofGetSystemTime(); // for timing elapsed time since past frame for playbackFPS control
 
 //----------------------------------------------------------------
 void ofApp::setup() {
@@ -45,7 +45,7 @@ void ofApp::setup() {
     nearThreshold = 230;
 	farThreshold = 70;
 	bThreshWithOpenCV = true;
-	ofSetFrameRate(60);
+	ofSetFrameRate(120); //make this into a separate variable for playback speed framerate alteration
 	angle = 0; // zero the tilt on startup
 	kinect.setCameraTiltAngle(angle);
     
@@ -63,9 +63,8 @@ void ofApp::setup() {
     paused = false;
     drawTriangles = false;
     renderStyle = 1;
-    recordWidth =640;
+    recordWidth =640; //default width for recording and playback of meshes, overridden by Exifmedta data when recorded files are loaded.
     recordHeight=480;
-    
     
     //added in new thread class etc 8/july/17    
     ofxKinectMeshRecorder thread;
@@ -77,7 +76,6 @@ void ofApp::setup() {
     illuminateScene = true;
     showNormals = true;
     
-    
     //////////////////////////////////////////////////////
     // Gui Configuration
     //////////////////////////////////////////////////////
@@ -87,11 +85,17 @@ void ofApp::setup() {
     gui.add( gridSize.setup( "gridSize", 2, 1, 50 ) );
     gui.add( frontPlane.setup( "frontPlane", 0, 0, 2550 ) );
     gui.add( backPlane.setup( "backPlane", 3000, 0, 15000 ) );
+    gui.add(playbackFPS.setup("playback FPS", 30, 0, 120));
+    gui.add(recordingStep.setup("recordingStep", 4, 1, 10));
     gui.add(backgroundColor.setup("background color",
                               ofColor::black,
                               ofColor(0,0,0,0),
                               ofColor::white));
+   
     showGui = true;
+    
+//    recordWidth =640/recordingStep; //default width for recording and playback of meshes, overridden by Exifmedta data when recorded files are loaded.
+//    recordHeight =480/recordingStep;
     
     if( !kinect.hasAccelControl()) {
         ofSystemAlertDialog("Note: this is a newer Xbox Kinect or Kinect For Windows device, motor / led / accel controls are not currently supported" );
@@ -116,7 +120,11 @@ void ofApp::update() {
     //////////////////////////////////////////////////////
     if(playing) { // if we are in playback mode
         if(!paused){ // and have not paused the playback
-        frameToPlay += 1; // increment the frame we are playing
+            if (timeNow < (ofGetSystemTime() - (1000/playbackFPS))) {
+                frameToPlay += 1; // increment the frame we are playing
+                timeNow = ofGetSystemTime();
+                //cout << timeNow/1000 << " : " << ofGetSystemTime() << endl;
+            }
         if(frameToPlay >= meshRecorder.TotalFrames) frameToPlay = 0; //or start at the beginning of the recorded loop
         }
     }
@@ -162,18 +170,12 @@ void ofApp::draw() {
     //////////////////////////////////////////////////////
     // Draw Live rendering
     //////////////////////////////////////////////////////
-	if(bDrawPointCloud) { //show pointcloud view or 3 camera view
-		easyCam.begin();
-       if (illuminateScene) light.enable(); //enable world light
-        drawAnyPointCloud(); //call new generic point render function
+	if(bDrawPointCloud) { //show pointcloud view
+        // add in routine to control playback speed based on playingFPS
         
-//        if(!playing) { // if we are not playing then draw live pointcloud
-//            drawPointCloud();
-//        } else {
-//            if(meshRecorder.readyToPlay) {
-//                drawRecordedPointCloud(); //draw recorded point cloud
-//            }
-//        }
+		easyCam.begin();
+        if (illuminateScene) light.enable(); //enable world light
+        drawAnyPointCloud(); //call new generic point render function
         ofDisableLighting(); //disable world light
         easyCam.end();
 	} else { 		// draw from the live kinect as 3 windows
@@ -198,19 +200,19 @@ void ofApp::draw() {
     //////////////////////////////////////////////////////
     // Reporting and help text
     //////////////////////////////////////////////////////
-	ofSetColor(255, 255, 255);
+	//ofSetColor(255, 255, 255);
 	stringstream reportStream; // draw instructions
     
 	reportStream << "press p to switch between images and point cloud, rotate the point cloud with the mouse" << endl
 	<< "using opencv threshold = " << bThreshWithOpenCV <<" (press spacebar)" << endl
 	<< "set near threshold " << nearThreshold << " (press: + -)" << endl
 	<< "pause with space bar, press: < > to scrub frames " << contourFinder.nBlobs
-    << "recordWidth: " << recordWidth << " recordHeight: " << recordHeight
-	<< ", fps: " << ofGetFrameRate() << endl
+    << " recordWidth: " << recordWidth/recordingStep << " recordHeight: " << recordHeight/recordingStep
+	<< ", fps: " << ofGetFrameRate() << " / " << playbackFPS << endl
     << "a: paint mesh   t: toggle triangles/pointcloud   g: show/hide gui"<< endl
      << "1, 2 or 3: rendering styles, n:  normals" <<showNormals<< " i:  world light" << illuminateScene<< endl
-    << "r: START RECORDING   s: STOP RECORDING" << endl
-    << "l: LAST RECORDING / LIVE MODE" << endl
+    << "r: START RECORDING   s: STOP RECORDING"
+    << "l: LAST RECORDING / LIVE MODE  h: reset 3d cam view"<< endl
 	<< "press c to close the connection and o to open it again, connection is: " << kinect.isConnected() << endl;
 
     if(kinect.hasCamTiltControl()) {
@@ -219,7 +221,7 @@ void ofApp::draw() {
     }
     
     if (showGui) { // show or hide the gui and instruction texts
-        ofSetColor(255, 255, 255);
+        //ofSetColor(255, 255, 255);
         ofDrawBitmapString(reportStream.str(), 20, 600);
         gui.draw();
     }
@@ -248,8 +250,6 @@ void ofApp::drawAnyPointCloud() {
     
     if(playing) { // if we are playing then render data from file ---------------
         if(meshRecorder.readyToPlay) {
-           
-            pCount = 0;
             //int step = gridSize; //DB this crashes the mesh playback  .....
             for(int y = 0; y < h; y += step) { //load data from recording into mesh as pointcloud
                 for(int x = 0; x < w; x += step) {
@@ -449,21 +449,8 @@ void ofApp::savePointCloud() {
 
 //////////////////////////////////////////////////////
 // XML exif data save and load
+// ImageDescription , ExposureTime , DateTimeOriginal , DateTimeDigitized, ShutterSpeedValue , ApertureValue, FocalLength, MakerNote, RelatedSoundFile, SensingMethod, WhiteBalance, DeviceSettingDescription, etc
 //////////////////////////////////////////////////////
-
-//generate xml strings and insert mostly placeholder data
-//        "exifData \n "
-//        "<exif: IFD rdf:ID = 'primary image'> \n"
-//        "<extf:make>Buzzo</exif:make> \n"
-//        "<extf:model>experimental voumetric camera v0.1</exif:model> \n"
-//        "<extf:orientation>top left</exif:orientation> \n"
-//        "<extf:xresolution>" , recordWidth, "</exif:xresolution> \n"
-//        "<extf:yresolution>", recordHeight, "</exif:yresolution> \n"
-//        "<extf:datetime>" "today" "</exif:datetime> \n"
-//        "<extf:IFD>\n"
-//        "<various exif data> freetext etc </various exif data> \n"
-//        "</exif:IFD> \n"
-//        "</exif:IFD \n" );
 
 void ofApp::saveExifData() { //put some some settings into a file
     
@@ -479,10 +466,12 @@ void ofApp::saveExifData() { //put some some settings into a file
     exifSettings.setValue("exif:make", "buzzo");
     exifSettings.setValue("exif:model", "experimental voumetric camera v0.1");
     exifSettings.setValue("exif:orientation", "top left");
-    exifSettings.setValue("exif:xresolution", recordWidth);
-    exifSettings.setValue("exif:yresolution", recordHeight);
-    exifSettings.setValue("exif:datetime", today);
-    exifSettings.saveFile(path + "exifSettings.xml"); //puts exifSettings.xml file in the current recorded frame folder folder
+    exifSettings.setValue("exif:ImageWidth", recordWidth/recordingStep);
+    exifSettings.setValue("exif:ImageLength", recordHeight/recordingStep);
+    exifSettings.setValue("exif:DateTimeDigitized", today);
+    exifSettings.setValue("exifLSensingMethod", "kinect depth sensor");
+   
+    exifSettings.saveFile(path + "exifSettings.xml"); //puts exifSettings.xml file in the current recordedframe folder
     
     string myXml;
     exifSettings.copyXmlToString(myXml);
@@ -491,13 +480,13 @@ void ofApp::saveExifData() { //put some some settings into a file
 
 //-------------------------------------------------------------------
 
-void ofApp::loadExifData(string filePath) { //now load that same file and get the values out
+void ofApp::loadExifData(string filePath) { // load exifXML file from the sele ted folder and get the values out
     
     exifSettings.loadFile(filePath + "/exifSettings.xml");
     //cout << filePath << "/exifSettings.xml" << endl;
-    recordWidth = exifSettings.getValue("exif:xresolution", 0);
-    recordHeight = exifSettings.getValue("exif:yresolution", 0);
-    string recordingDate = exifSettings.getValue("exif:datetime", "");
+    recordWidth = exifSettings.getValue("exif:ImageWidth", 0);
+    recordHeight = exifSettings.getValue("exif:ImageLength", 0);
+    string recordingDate = exifSettings.getValue("exif:DateTimeDigitized", "");
     string myXml;
     exifSettings.copyXmlToString(myXml);
     cout << "loaded exif data: " << myXml <<endl ;
@@ -620,11 +609,11 @@ void ofApp::keyPressed (int key) {
                 ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded data", true, ofToDataPath(""));
                 if (result.getPath() != "") {
                     filePath =result.getPath();
+                    playing = true;
+                    frameToPlay = 0;
+                    loadExifData(filePath);
+                    meshRecorder.startLoading(filePath);
                 }
-                playing = true;
-                frameToPlay = 0;
-                loadExifData(filePath);
-                meshRecorder.startLoading(filePath);
                
             } else {
                 playing = false;
@@ -688,6 +677,12 @@ void ofApp::keyPressed (int key) {
                 ofDisableLighting();
                 illuminateScene=!illuminateScene;
             }
+            break;
+            
+        case 'h':
+            easyCam.reset();//reset easycam settings to re-centre 3d view
+            break;
+            
     }
     
 }

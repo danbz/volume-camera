@@ -72,9 +72,7 @@ public:
 	// used for viewing the point cloud
 	ofEasyCam easyCam;
     
-    
     // with elements of kinect recorder hack from code by Pelayo MŽndez   https://github.com/pelayomendez
-    //
     // data structure
     
     typedef struct {
@@ -105,9 +103,8 @@ public:
     //////////////////////////////////////////////////////
     // GUI  Configuration
     //////////////////////////////////////////////////////
-    
     ofxPanel gui;
-    ofxIntSlider blobSize, gridSize, backPlane, frontPlane;
+    ofxIntSlider blobSize, gridSize, backPlane, frontPlane, playbackFPS, recordingStep;
     ofxColorSlider backgroundColor;
     bool showGui;
     bool paintMesh;
@@ -122,7 +119,6 @@ public:
     //////////////////////////////////////////////////////
     // Rendering Reproduction
     //////////////////////////////////////////////////////
-    
     ofMesh mesh;
     
     //Universal function which sets normals for the triangle mesh
@@ -141,7 +137,6 @@ public:
     //////////////////////////////////////////////////////
     // XML exif data save and load
     //////////////////////////////////////////////////////
-    
     ofxXmlSettings exifSettings;
      
     void saveExifData();
