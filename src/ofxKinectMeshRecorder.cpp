@@ -77,8 +77,7 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
         recordedMeshData[i] = data;
         
         FramesLoaded = i;
-        cout << "frame: " << fileToload << "  total lines per frame: " << lineCounter << endl; //ouput lines per frame
-       //cout << fileToload << endl;
+       // cout << "frame: " << fileToload << "  total lines per frame: " << lineCounter << endl; //ouput lines per frame
         if(i == TotalFrames-1) {
             unlock();
             stopThread();

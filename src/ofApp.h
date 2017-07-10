@@ -5,6 +5,8 @@
 #include "ofxKinect.h"
 #include "ofxGui.h"
 #include "ofxKinectMeshRecorder.h"
+#include "metaData.h"
+#include "ofxXmlSettings.h"
 
 // Windows users:
 // You MUST install the libfreenect kinect drivers in order to be able to use
@@ -38,8 +40,6 @@ public:
     void writeMetaData();
     //void drawRecordedPointCloud(); //replaced by drawAnyPointCloud
     
- 
-    
 	void keyPressed(int key);
 	void mouseDragged(int x, int y, int button);
 	void mousePressed(int x, int y, int button);
@@ -59,7 +59,6 @@ public:
 	ofxCvGrayscaleImage grayImage; // grayscale depth image
 	ofxCvGrayscaleImage grayThreshNear; // the near thresholded image
 	ofxCvGrayscaleImage grayThreshFar; // the far thresholded image
-	
 	ofxCvContourFinder contourFinder;
 	
 	bool bThreshWithOpenCV;
@@ -91,9 +90,7 @@ public:
         int z;
     } colorData;
     
-    //////////////////////////////////////////////////////
-    // recorder  Configuration  
-    //////////////////////////////////////////////////////
+
     
     ofDirectory dirHelper;
     string generateFileName();
@@ -139,6 +136,16 @@ public:
     bool illuminateScene;
     
     ofLight light;
+    
+    
+    //////////////////////////////////////////////////////
+    // XML exif data save and load
+    //////////////////////////////////////////////////////
+    
+    ofxXmlSettings exifSettings;
+     
+    void saveExifData();
+    void loadExifData( string filePath);
 
     
 };

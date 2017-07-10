@@ -5,8 +5,9 @@
 // kinect.setDepthClipping(float nearClip=500, float farClip=10000); //set depth clipping range
 
 string _timestamp = "default"; //default value for filepath opening on playback
+string filePath ="";
 int step = 1; // default point cloud step size for recorded mesh playback
-int recordingStep =1; // default point cloud step size for recorded mesh quality
+int recordingStep =4; // default point cloud step size for recorded mesh quality
 bool paused;
 
 
@@ -204,6 +205,7 @@ void ofApp::draw() {
 	<< "using opencv threshold = " << bThreshWithOpenCV <<" (press spacebar)" << endl
 	<< "set near threshold " << nearThreshold << " (press: + -)" << endl
 	<< "pause with space bar, press: < > to scrub frames " << contourFinder.nBlobs
+    << "recordWidth: " << recordWidth << " recordHeight: " << recordHeight
 	<< ", fps: " << ofGetFrameRate() << endl
     << "a: paint mesh   t: toggle triangles/pointcloud   g: show/hide gui"<< endl
      << "1, 2 or 3: rendering styles, n:  normals" <<showNormals<< " i:  world light" << illuminateScene<< endl
@@ -259,12 +261,10 @@ void ofApp::drawAnyPointCloud() {
                     c = meshRecorder.getColorAt(frameToPlay, pCount);
                     if(paintMesh) mesh.addColor(c); // add colour from map into mesh at each point
                     pCount ++;
-                    
                     //cout << "pointcount from drawAnyCloud fctn: " << pCount << endl;
-
                 }
             }
-             cout << "end pointcount from drawAnyCloud fctn: " << pCount << endl;
+             //cout << "end pointcount from drawAnyCloud fctn: " << pCount << endl;
         }
     } else {
         //draw  pointcloud mesh from live source --------
@@ -280,8 +280,7 @@ void ofApp::drawAnyPointCloud() {
         }
     }
  
-    //----- then generate triangles for mesh --
-    int numofVertices = mesh.getNumVertices();
+    int numofVertices = mesh.getNumVertices();   //----- then generate triangles for mesh --
     pCount = 0;
     ofVec3f v2;
     v2.set(0,0,0); //add triangles to mesh from vertices - move this to the 'read mesh' ?
@@ -400,7 +399,6 @@ void ofApp::setNormals( ofMesh &mesh ){
     mesh.addNormals( norm );
 }
 
-
 //--------------------------------------------------------------
 string ofApp::generateFileName() {
     string _root = "";
@@ -421,8 +419,8 @@ string ofApp::generateFileName() {
 
 //--------------------------------------------------------------
 void ofApp::savePointCloud() {
-    int w = 640;
-    int h = 480;
+    int w = recordWidth;
+    int h = recordHeight;
 
     FILE* fout = fopen((saveTo + "frame" + ofToString(frame) + ".txt").c_str(), "w");
     int pIndex = 0;
@@ -444,27 +442,32 @@ void ofApp::savePointCloud() {
         }
     }
     fclose(fout);
-    
     frame++;
 }
 
 //--------------------------------------------------------------
 
-void ofApp::writeMetaData() {
-    //generate xml metadata file and save into recording directory
+//////////////////////////////////////////////////////
+// XML exif data save and load
+//////////////////////////////////////////////////////
+
+//generate xml strings and insert mostly placeholder data
+//        "exifData \n "
+//        "<exif: IFD rdf:ID = 'primary image'> \n"
+//        "<extf:make>Buzzo</exif:make> \n"
+//        "<extf:model>experimental voumetric camera v0.1</exif:model> \n"
+//        "<extf:orientation>top left</exif:orientation> \n"
+//        "<extf:xresolution>" , recordWidth, "</exif:xresolution> \n"
+//        "<extf:yresolution>", recordHeight, "</exif:yresolution> \n"
+//        "<extf:datetime>" "today" "</exif:datetime> \n"
+//        "<extf:IFD>\n"
+//        "<various exif data> freetext etc </various exif data> \n"
+//        "</exif:IFD> \n"
+//        "</exif:IFD \n" );
+
+void ofApp::saveExifData() { //put some some settings into a file
     
-    string exifData; // exif meta data
-    // get date, number of files, mesh resolution, RGB colour resolution (or data to separate file), GPS loc, recording apparatus, version number, author data, semantic data, free text descriptor.
-    
-    exifData = "press p to switch between images and point cloud, rotate the point cloud with the mouse"
-    && "using opencv threshold = " && bThreshWithOpenCV  && " (press spacebar)";
-  
-    
-    // write XML data to file
     string path = saveTo;
-    FILE* fout = fopen((saveTo + "meta.xml").c_str(), "w");
-     // create XML data
-    
     string today =  _timestamp = ofToString(ofGetDay()) + //generate date
     ofToString(ofGetMonth()) +
     ofToString(ofGetYear()) +
@@ -472,22 +475,32 @@ void ofApp::writeMetaData() {
     ofToString(ofGetMinutes()) +
     ofToString(ofGetSeconds());
     
-    fprintf(fout, "%s, %i, %s, %i, %s ", //generate xml strings and insert mostly placeholder data
-            "exifData \n "
-            "<exif: IFD rdf:ID = 'primary image'> \n"
-            "<extf:make>Buzzo</exif:make> \n"
-            "<extf:model>experimental voumetric camera v0.1</exif:model> \n"
-            "<extf:orientation>top left</exif:orientation> \n"
-             "<extf:xresolution>" , recordWidth, "</exif:xresolution> \n"
-             "<extf:yresolution>", recordHeight, "</exif:yresolution> \n"
-             "<extf:datetime>" "today" "</exif:datetime> \n"
-            "<extf:IFD>\n"
-            "<various exif data> freetext etc </various exif data> \n"
-            "</exif:IFD> \n"
-            "</exif:IFD \n" );
-    fclose(fout);
+    //exifSettings.addTag("exifData");
+    exifSettings.setValue("exif:make", "buzzo");
+    exifSettings.setValue("exif:model", "experimental voumetric camera v0.1");
+    exifSettings.setValue("exif:orientation", "top left");
+    exifSettings.setValue("exif:xresolution", recordWidth);
+    exifSettings.setValue("exif:yresolution", recordHeight);
+    exifSettings.setValue("exif:datetime", today);
+    exifSettings.saveFile(path + "exifSettings.xml"); //puts exifSettings.xml file in the current recorded frame folder folder
     
+    string myXml;
+    exifSettings.copyXmlToString(myXml);
+    cout << myXml <<endl ;
+}
+
+//-------------------------------------------------------------------
+
+void ofApp::loadExifData(string filePath) { //now load that same file and get the values out
     
+    exifSettings.loadFile(filePath + "/exifSettings.xml");
+    //cout << filePath << "/exifSettings.xml" << endl;
+    recordWidth = exifSettings.getValue("exif:xresolution", 0);
+    recordHeight = exifSettings.getValue("exif:yresolution", 0);
+    string recordingDate = exifSettings.getValue("exif:datetime", "");
+    string myXml;
+    exifSettings.copyXmlToString(myXml);
+    cout << "loaded exif data: " << myXml <<endl ;
 }
 
 //--------------------------------------------------------------
@@ -599,17 +612,20 @@ void ofApp::keyPressed (int key) {
             break;
             
         case 'l':
+            
             if(!meshRecorder.readyToPlay) return;
             if(recording) return;
             if(!playing) {
                 
                 ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded data", true, ofToDataPath(""));
                 if (result.getPath() != "") {
-                    // filePath =(result.getPath());
+                    filePath =result.getPath();
                 }
                 playing = true;
                 frameToPlay = 0;
-                meshRecorder.startLoading(result.getPath());
+                loadExifData(filePath);
+                meshRecorder.startLoading(filePath);
+               
             } else {
                 playing = false;
             }
@@ -628,7 +644,7 @@ void ofApp::keyPressed (int key) {
             if(!meshRecorder.readyToPlay) return;
             if(!recording) return;
             if(playing) return;
-            writeMetaData();
+            saveExifData();
             saveTo = "";
             recording = false;
             
