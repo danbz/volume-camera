@@ -11,6 +11,10 @@ int step = 1; // default point cloud step size for recorded mesh playback
 bool paused;
 UInt64 timeNow =ofGetSystemTime(); // for timing elapsed time since past frame for playbackFPS control
 
+
+bool doThemeColorsWindow = false;
+
+
 //----------------------------------------------------------------
 void ofApp::setup() {
 	ofSetLogLevel(OF_LOG_VERBOSE);
@@ -73,24 +77,25 @@ void ofApp::setup() {
     // Rendering Configuration
     //////////////////////////////////////////////////////
     //light.enable(); //enable world light
-    illuminateScene = true;
-    showNormals = true;
+    illuminateScene = false;
+    showNormals = false;
+    renderFlatQuads = false;
     
     //////////////////////////////////////////////////////
     // Gui Configuration
     //////////////////////////////////////////////////////
     myFont.load("fonts/profaisal-elitetahreerv1-0/ProfaisalEliteTahreer.ttf",9);
-    gui.setup( "Parameters", "settings.xml" );
-    gui.add( blobSize.setup( "blobSize", 3, 1, 100 ) );
-    gui.add( gridSize.setup( "gridSize", 2, 1, 50 ) );
-    gui.add( frontPlane.setup( "frontPlane", 0, 0, 2550 ) );
-    gui.add( backPlane.setup( "backPlane", 3000, 0, 15000 ) );
-    gui.add(playbackFPS.setup("playback FPS", 30, 0, 120));
-    gui.add(recordingStep.setup("recordingStep", 4, 1, 10));
-    gui.add(backgroundColor.setup("background color",
-                              ofColor::black,
-                              ofColor(0,0,0,0),
-                              ofColor::white));
+//    gui.setup( "Parameters", "settings.xml" );
+//    gui.add( blobSize.setup( "blobSize", 3, 1, 100 ) );
+//    gui.add( gridSize.setup( "gridSize", 2, 1, 50 ) );
+//    gui.add( frontPlane.setup( "frontPlane", 0, 0, 2550 ) );
+//    gui.add( backPlane.setup( "backPlane", 3000, 0, 15000 ) );
+//    //gui.add(playbackFPS.setup("playback FPS", 30, 0, 120));
+//    gui.add(recordingStep.setup("recordingStep", 4, 1, 10));
+//    gui.add(backgroundColor.setup("background color",
+//                              ofColor::black,
+//                              ofColor(0,0,0,0),
+//                              ofColor::white));
    
     showGui = true;
     
@@ -100,12 +105,52 @@ void ofApp::setup() {
     if( !kinect.hasAccelControl()) {
         ofSystemAlertDialog("Note: this is a newer Xbox Kinect or Kinect For Windows device, motor / led / accel controls are not currently supported" );
     }
+    
+    
+    //ofxImGui example setup
+    
+    //required call
+    imGui.setup();
+    
+    ImGui::GetIO().MouseDrawCursor = false;
+    //backgroundColor is stored as an ImVec4 type but can handle ofColor
+    imBackgroundColor = ofColor(114, 144, 154);
+    show_test_window = false;
+    floatValue = 0.0f;
+    playbackFPS=15;
+    blobSize =4;
+    gridSize =1;
+    backPlane =15000;
+    frontPlane=0;
+    recordingStep =4;
+    
+    //load your own ofImage
+    imageButtonSource.load("of.png");
+    imageButtonID = imGui.loadImage(imageButtonSource);
+    
+    //or have the loading done for you if you don't need the ofImage reference
+    //imageButtonID = gui.loadImage("of.png");
+    
+    //can also use ofPixels in same manner
+    ofLoadImage(pixelsButtonSource, "of_upside_down.png");
+    pixelsButtonID = imGui.loadPixels(pixelsButtonSource);
+    
+    //and alt method
+    //pixelsButtonID = gui.loadPixels("of_upside_down.png");
+    
+    //pass in your own texture reference if you want to keep it
+    textureSourceID = imGui.loadTexture(textureSource, "of_upside_down.png");
+    
+    //or just pass a path
+    //textureSourceID = gui.loadTexture("of_upside_down.png");
+    
+    ofLogVerbose() << "textureSourceID: " << textureSourceID;
 }
 
 //--------------------------------------------------------------
 void ofApp::update() {
 	
-	ofBackground(backgroundColor); // background color
+	ofBackground(imBackgroundColor); // background color
 	kinect.update();
     
     //////////////////////////////////////////////////////
@@ -208,7 +253,7 @@ void ofApp::draw() {
 	<< "set near threshold " << nearThreshold << " (press: + -)" << endl
 	<< "pause with space bar, press: < > to scrub frames " << contourFinder.nBlobs
     << " recordWidth: " << recordWidth/recordingStep << " recordHeight: " << recordHeight/recordingStep
-	<< ", fps: " << ofGetFrameRate() << " / " << playbackFPS << endl
+	//<< ", fps: " << ofGetFrameRate() << " / " << playbackFPS << endl
     << "a: paint mesh   t: toggle triangles/pointcloud   g: show/hide gui"<< endl
      << "1, 2 or 3: rendering styles, n:  normals" <<showNormals<< " i:  world light" << illuminateScene<< endl
     << "r: START RECORDING   s: STOP RECORDING"
@@ -221,9 +266,78 @@ void ofApp::draw() {
     }
     
     if (showGui) { // show or hide the gui and instruction texts
-        //ofSetColor(255, 255, 255);
         ofDrawBitmapString(reportStream.str(), 20, 600);
-        gui.draw();
+        //gui.draw();
+    
+    
+    //ofxImGui example draw required to call this at beginning
+    imGui.begin();
+    { // 1. Show a simple window
+        //ImGui::Text("Volume camera");
+        //ImGui::SliderFloat("Float", &floatValue, 0.0f, 1.0f);
+        ImGui::SliderInt("Frontplane", &frontPlane, 0, 10000);
+        ImGui::SliderInt("Backplane", &backPlane, 100, 15000);
+        ImGui::SliderInt("Pointsize", &blobSize, 1, 15);
+        ImGui::SliderInt("Mesh spacing", &gridSize, 1, 20);
+        ImGui::SliderInt("RecordingMesh Step",&recordingStep, 1, 10);
+        ImGui::SliderInt("FPS", &playbackFPS, 1, 120);
+        
+        //this will change the app background color
+        ImGui::ColorEdit3("Background Color", (float*)&imBackgroundColor);
+       
+        if (ImGui::CollapsingHeader("Render options")) {
+            ImGui::Text("Render style");
+            ImGui::RadioButton("cloud", &renderStyle, 1); ImGui::SameLine();
+            ImGui::RadioButton("faces", &renderStyle, 2); ImGui::SameLine();
+            ImGui::RadioButton("mesh", &renderStyle, 3);
+            
+            ImGui::Text("Surface style");
+            ImGui::Checkbox("paint mesh", &paintMesh); ImGui::SameLine();
+            ImGui::Checkbox("world light", &illuminateScene); ImGui::SameLine();
+            ImGui::Checkbox("normals", &showNormals); ImGui::SameLine();
+            ImGui::Checkbox("flatQuads", &renderFlatQuads);
+        }
+        if(ImGui::Button("Test Window"))
+        {
+            show_test_window = !show_test_window;
+        }
+        ImGui::SameLine();
+        
+        if (ImGui::Button("reset camera"))
+        {
+            easyCam.reset();//reset easycam settings to re-centre 3d view
+        }
+        ImGui::SameLine();
+        
+        if (ImGui::Button("load recording"))
+        {
+            loadRecording();   ImGui::SameLine();
+        }
+        ImGui::Checkbox("show live mesh", &bDrawPointCloud);
+       
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    }
+    
+    // 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
+    if (show_test_window)
+    {
+        ImGui::SetNextWindowPos(ofVec2f(650, 20), ImGuiSetCond_FirstUseEver);
+        ImGui::ShowTestWindow(&show_test_window);
+    }
+    
+//    bool pressed = ImGui::ImageButton((ImTextureID)(uintptr_t)imageButtonID, ImVec2(200, 200));
+//    pressed = ImGui::ImageButton((ImTextureID)(uintptr_t)pixelsButtonID, ImVec2(200, 200));
+//    pressed = ImGui::ImageButton((ImTextureID)(uintptr_t)textureSourceID, ImVec2(200, 200));
+    
+    
+    if(doThemeColorsWindow)
+    {
+        imGui.openThemeColorWindow();
+        
+    }
+    
+    //required to call this at end
+    imGui.end();
     }
 }
 
@@ -311,6 +425,9 @@ void ofApp::drawAnyPointCloud() {
     ofScale(1, -1, -1);  // the projected points are 'upside down' and 'backwards'
     ofTranslate(0, 0, -750); // center the points a bit
     glEnable(GL_DEPTH_TEST);
+    if (renderFlatQuads){
+        glShadeModel(GL_FLAT);
+    }// render as flat quads
     //mesh.drawVertices();
     //mesh.drawFaces();
     ofSetColor( 255, 255, 255);  //set render colour for unpainted points, faces and lines
@@ -399,6 +516,26 @@ void ofApp::setNormals( ofMesh &mesh ){
     mesh.addNormals( norm );
 }
 
+//------------------------------------------------------------
+void ofApp::loadRecording() {
+    
+    if(!meshRecorder.readyToPlay) return;
+    if(recording) return;
+    if(!playing) {
+        
+        ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded data", true, ofToDataPath(""));
+        if (result.getPath() != "") {
+            filePath =result.getPath();
+            playing = true;
+            frameToPlay = 0;
+            loadExifData(filePath);
+            meshRecorder.startLoading(filePath);
+        }
+        
+    } else {
+        playing = false;
+    }
+}
 //--------------------------------------------------------------
 string ofApp::generateFileName() {
     string _root = "";
@@ -602,22 +739,23 @@ void ofApp::keyPressed (int key) {
             
         case 'l':
             
-            if(!meshRecorder.readyToPlay) return;
-            if(recording) return;
-            if(!playing) {
-                
-                ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded data", true, ofToDataPath(""));
-                if (result.getPath() != "") {
-                    filePath =result.getPath();
-                    playing = true;
-                    frameToPlay = 0;
-                    loadExifData(filePath);
-                    meshRecorder.startLoading(filePath);
-                }
-               
-            } else {
-                playing = false;
-            }
+//            if(!meshRecorder.readyToPlay) return;
+//            if(recording) return;
+//            if(!playing) {
+//                
+//                ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded data", true, ofToDataPath(""));
+//                if (result.getPath() != "") {
+//                    filePath =result.getPath();
+//                    playing = true;
+//                    frameToPlay = 0;
+//                    loadExifData(filePath);
+//                    meshRecorder.startLoading(filePath);
+//                }
+//               
+//            } else {
+//                playing = false;
+//            }
+            loadRecording();
             break;
             
         case 'r':

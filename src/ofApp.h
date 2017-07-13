@@ -7,6 +7,7 @@
 #include "ofxKinectMeshRecorder.h"
 #include "metaData.h"
 #include "ofxXmlSettings.h"
+#include "ofxImGui.h"
 
 // Windows users:
 // You MUST install the libfreenect kinect drivers in order to be able to use
@@ -38,6 +39,7 @@ public:
     void drawAnyPointCloud();
     void savePointCloud();
     void writeMetaData();
+    void loadRecording();
     //void drawRecordedPointCloud(); //replaced by drawAnyPointCloud
     
 	void keyPressed(int key);
@@ -103,9 +105,9 @@ public:
     //////////////////////////////////////////////////////
     // GUI  Configuration
     //////////////////////////////////////////////////////
-    ofxPanel gui;
-    ofxIntSlider blobSize, gridSize, backPlane, frontPlane, playbackFPS, recordingStep;
-    ofxColorSlider backgroundColor;
+//    ofxPanel gui;
+//    ofxIntSlider blobSize, gridSize, backPlane, frontPlane, recordingStep;
+//    ofxColorSlider backgroundColor;
     bool showGui;
     bool paintMesh;
     bool drawTriangles;
@@ -132,7 +134,7 @@ public:
     bool illuminateScene;
     
     ofLight light;
-    
+    bool renderFlatQuads;
     
     //////////////////////////////////////////////////////
     // XML exif data save and load
@@ -142,5 +144,23 @@ public:
     void saveExifData();
     void loadExifData( string filePath);
 
+    //ofxImGui example
     
+    ofxImGui::Gui imGui;
+    ImVec4 imBackgroundColor;
+    bool show_test_window;
+    
+    float floatValue;
+    ofImage imageButtonSource;
+    GLuint imageButtonID;
+    
+    ofPixels pixelsButtonSource;
+    GLuint pixelsButtonID;
+    
+    ofTexture textureSource;
+    GLuint textureSourceID;
+    
+    //tranferring variables from ofxGui
+    int playbackFPS, blobSize, gridSize, backPlane, frontPlane, recordingStep;
+
 };
