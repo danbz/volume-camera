@@ -262,16 +262,15 @@ void ofApp::draw() {
 
     if(kinect.hasCamTiltControl()) {
         reportStream << "press UP and DOWN to change the tilt angle: " << angle << " degrees" << endl;
-        //<< "press 1-5 & 0 to change the led mode" << endl;
     }
     
     if (showGui) { // show or hide the gui and instruction texts
-        ofDrawBitmapString(reportStream.str(), 20, 600);
+       // ofDrawBitmapString(reportStream.str(), 20, 600);
         //gui.draw();
-    
     
     //ofxImGui example draw required to call this at beginning
     imGui.begin();
+        
     { // 1. Show a simple window
         //ImGui::Text("Volume camera");
         //ImGui::SliderFloat("Float", &floatValue, 0.0f, 1.0f);
@@ -316,6 +315,7 @@ void ofApp::draw() {
         ImGui::Checkbox("show live mesh", &bDrawPointCloud);
        
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        ImGui::Text("Recording mesh size", recordWidth/step, recordHeight,step);
     }
     
     // 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
@@ -385,10 +385,10 @@ void ofApp::drawAnyPointCloud() {
         int step = gridSize;
         for(int y = 0; y < h; y += step) {
             for(int x = 0; x < w; x += step) {
-                if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) {
-                    if (paintMesh)mesh.addColor(kinect.getColorAt(x,y));
+                if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) { //exclude out of range data
                     mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
-                    // mesh.addTriangle(kinect.getWorldCoordinateAt(x, y) , (kinect.getDistanceAt(x, y)));
+                    if (paintMesh)mesh.addColor(kinect.getColorAt(x,y));
+                    
                 }
             }
         }
@@ -401,7 +401,7 @@ void ofApp::drawAnyPointCloud() {
     for(int n = 0; n < numofVertices-1-w/step; n ++) {
         // cout << "points:" << n  <<"," << n+1+w/step << "," << n+w/step <<endl;
         // add in culling for zero location points from triangle mesh
-        // optimise to check less of the dupliacte points
+        // optimise to check less of the duplicate points
         //  if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane)  // use backplane value to cull deeper points from cloud // to be added
         if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1))==v2 or (mesh.getVertex(pCount+1+w/step))==v2){
             //cout << "culled point" << pCount << endl ;
@@ -427,7 +427,13 @@ void ofApp::drawAnyPointCloud() {
     glEnable(GL_DEPTH_TEST);
     if (renderFlatQuads){
         glShadeModel(GL_FLAT);
-    }// render as flat quads
+        //cout <<"flat quads" << endl;
+    }else {
+        glShadeModel(GL_TRIANGLES);
+        //cout <<"triangles" << endl;
+    }
+        
+    // render as flat quads
     //mesh.drawVertices();
     //mesh.drawFaces();
     ofSetColor( 255, 255, 255);  //set render colour for unpainted points, faces and lines
@@ -738,23 +744,6 @@ void ofApp::keyPressed (int key) {
             break;
             
         case 'l':
-            
-//            if(!meshRecorder.readyToPlay) return;
-//            if(recording) return;
-//            if(!playing) {
-//                
-//                ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded data", true, ofToDataPath(""));
-//                if (result.getPath() != "") {
-//                    filePath =result.getPath();
-//                    playing = true;
-//                    frameToPlay = 0;
-//                    loadExifData(filePath);
-//                    meshRecorder.startLoading(filePath);
-//                }
-//               
-//            } else {
-//                playing = false;
-//            }
             loadRecording();
             break;
             
@@ -774,7 +763,6 @@ void ofApp::keyPressed (int key) {
             saveExifData();
             saveTo = "";
             recording = false;
-            
             break;
             
             case '<':
