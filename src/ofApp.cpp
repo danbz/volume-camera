@@ -11,7 +11,6 @@ int step = 1; // default point cloud step size for recorded mesh playback
 bool paused;
 UInt64 timeNow =ofGetSystemTime(); // for timing elapsed time since past frame for playbackFPS control
 
-
 bool doThemeColorsWindow = false;
 
 
@@ -84,39 +83,14 @@ void ofApp::setup() {
     //////////////////////////////////////////////////////
     // Gui Configuration
     //////////////////////////////////////////////////////
-    myFont.load("fonts/profaisal-elitetahreerv1-0/ProfaisalEliteTahreer.ttf",9);
-//    gui.setup( "Parameters", "settings.xml" );
-//    gui.add( blobSize.setup( "blobSize", 3, 1, 100 ) );
-//    gui.add( gridSize.setup( "gridSize", 2, 1, 50 ) );
-//    gui.add( frontPlane.setup( "frontPlane", 0, 0, 2550 ) );
-//    gui.add( backPlane.setup( "backPlane", 3000, 0, 15000 ) );
-//    //gui.add(playbackFPS.setup("playback FPS", 30, 0, 120));
-//    gui.add(recordingStep.setup("recordingStep", 4, 1, 10));
-//    gui.add(backgroundColor.setup("background color",
-//                              ofColor::black,
-//                              ofColor(0,0,0,0),
-//                              ofColor::white));
-   
     showGui = true;
     
-//    recordWidth =640/recordingStep; //default width for recording and playback of meshes, overridden by Exifmedta data when recorded files are loaded.
-//    recordHeight =480/recordingStep;
-    
-    if( !kinect.hasAccelControl()) {
-        ofSystemAlertDialog("Note: this is a newer Xbox Kinect or Kinect For Windows device, motor / led / accel controls are not currently supported" );
-    }
-    
-    
-    //ofxImGui example setup
-    
-    //required call
-    imGui.setup();
+    imGui.setup(); //ofxImGui set up
     ImGui::CaptureMouseFromApp();
     ImGui::GetIO().MouseDrawCursor = false;
     //backgroundColor is stored as an ImVec4 type but can handle ofColor
     imBackgroundColor = ofColor(114, 144, 154);
     show_test_window = false;
-    floatValue = 0.0f;
     playbackFPS=15;
     blobSize =4;
     gridSize =1;
@@ -124,27 +98,12 @@ void ofApp::setup() {
     frontPlane=0;
     recordingStep =4;
     
-    //load your own ofImage
-    imageButtonSource.load("of.png");
-    imageButtonID = imGui.loadImage(imageButtonSource);
+    //    recordWidth =640/recordingStep; //default width for recording and playback of meshes, overridden by Exifmedta data when recorded files are loaded.
+    //    recordHeight =480/recordingStep;
     
-    //or have the loading done for you if you don't need the ofImage reference
-    //imageButtonID = gui.loadImage("of.png");
-    
-    //can also use ofPixels in same manner
-    ofLoadImage(pixelsButtonSource, "of_upside_down.png");
-    pixelsButtonID = imGui.loadPixels(pixelsButtonSource);
-    
-    //and alt method
-    //pixelsButtonID = gui.loadPixels("of_upside_down.png");
-    
-    //pass in your own texture reference if you want to keep it
-    textureSourceID = imGui.loadTexture(textureSource, "of_upside_down.png");
-    
-    //or just pass a path
-    //textureSourceID = gui.loadTexture("of_upside_down.png");
-    
-    ofLogVerbose() << "textureSourceID: " << textureSourceID;
+    if( !kinect.hasAccelControl()) {
+        ofSystemAlertDialog("Note: this is a newer Xbox Kinect or Kinect For Windows device, motor / led / accel controls are not currently supported" );
+    }
 }
 
 //--------------------------------------------------------------
@@ -245,37 +204,27 @@ void ofApp::draw() {
     //////////////////////////////////////////////////////
     // Reporting and help text
     //////////////////////////////////////////////////////
-	//ofSetColor(255, 255, 255);
-	stringstream reportStream; // draw instructions
+	// stringstream reportStream; // draw instructions
     
-	reportStream << "press p to switch between images and point cloud, rotate the point cloud with the mouse" << endl
-	<< "using opencv threshold = " << bThreshWithOpenCV <<" (press spacebar)" << endl
-	<< "set near threshold " << nearThreshold << " (press: + -)" << endl
-	<< "pause with space bar, press: < > to scrub frames " << contourFinder.nBlobs
-    << " recordWidth: " << recordWidth/recordingStep << " recordHeight: " << recordHeight/recordingStep
-	//<< ", fps: " << ofGetFrameRate() << " / " << playbackFPS << endl
-    << "a: paint mesh   t: toggle triangles/pointcloud   g: show/hide gui"<< endl
-     << "1, 2 or 3: rendering styles, n:  normals" <<showNormals<< " i:  world light" << illuminateScene<< endl
-    << "r: START RECORDING   s: STOP RECORDING"
-    << "l: LAST RECORDING / LIVE MODE  h: reset 3d cam view"<< endl
-	<< "press c to close the connection and o to open it again, connection is: " << kinect.isConnected() << endl;
-
-    if(kinect.hasCamTiltControl()) {
-        reportStream << "press UP and DOWN to change the tilt angle: " << angle << " degrees" << endl;
-    }
+//	reportStream << "press p to switch between images and point cloud, rotate the point cloud with the mouse" << endl
+//	<< "using opencv threshold = " << bThreshWithOpenCV <<" (press spacebar)" << endl
+//	<< "set near threshold " << nearThreshold << " (press: + -)" << endl
+//	<< "pause with space bar, press: < > to scrub frames " << contourFinder.nBlobs
+//    << " recordWidth: " << recordWidth/recordingStep << " recordHeight: " << recordHeight/recordingStep
+//	//<< ", fps: " << ofGetFrameRate() << " / " << playbackFPS << endl
+//    << "a: paint mesh   t: toggle triangles/pointcloud   g: show/hide gui"<< endl
+//     << "1, 2 or 3: rendering styles, n:  normals" <<showNormals<< " i:  world light" << illuminateScene<< endl
+//    << "r: START RECORDING   s: STOP RECORDING"
+//    << "l: LAST RECORDING / LIVE MODE  h: reset 3d cam view"<< endl
+//	<< "press c to close the connection and o to open it again, connection is: " << kinect.isConnected() << endl;
     
     if (showGui) { // show or hide the gui and instruction texts
-       // ofDrawBitmapString(reportStream.str(), 20, 600);
-        //gui.draw();
-    
-    //ofxImGui example draw required to call this at beginning
-    imGui.begin();
-
-        ImGuiIO& io = ImGui::GetIO();         // hide mouse iinput from rest of app
-
-        if (io.WantCaptureMouse){
-            cout << "imgui wants mouse" << endl;
-            //prevent mousemessages going to app while using imGui
+        // ofDrawBitmapString(reportStream.str(), 20, 600);
+        //ofxImGui example draw required to call this at beginning
+        imGui.begin();
+        
+        ImGuiIO& io = ImGui::GetIO(); // hide mouse input from rest of app
+        if (io.WantCaptureMouse){ //prevent mousemessages going to app while using imGui
             easyCam.disableMouseInput();
         }else {
             easyCam.enableMouseInput();
@@ -290,8 +239,6 @@ void ofApp::draw() {
         ImGui::SliderInt("Mesh spacing", &gridSize, 1, 20);
         ImGui::SliderInt("RecordingMesh Step",&recordingStep, 1, 10);
         ImGui::SliderInt("FPS", &playbackFPS, 1, 120);
-        
-        //this will change the app background color
         ImGui::ColorEdit3("Background Color", (float*)&imBackgroundColor);
        
         if (ImGui::CollapsingHeader("Render options")) {
@@ -335,19 +282,11 @@ void ofApp::draw() {
         ImGui::ShowTestWindow(&show_test_window);
     }
     
-//    bool pressed = ImGui::ImageButton((ImTextureID)(uintptr_t)imageButtonID, ImVec2(200, 200));
-//    pressed = ImGui::ImageButton((ImTextureID)(uintptr_t)pixelsButtonID, ImVec2(200, 200));
-//    pressed = ImGui::ImageButton((ImTextureID)(uintptr_t)textureSourceID, ImVec2(200, 200));
-    
-    
     if(doThemeColorsWindow)
     {
         imGui.openThemeColorWindow();
-        
     }
-    
-    //required to call this at end
-    imGui.end();
+    imGui.end(); //required to call this at end
     }
 }
 
@@ -453,49 +392,6 @@ void ofApp::drawAnyPointCloud() {
     ofPopMatrix();
 }
 
-//-----------------------------------------
-void ofApp::drawPointCloud() { //deprecated function - now run by drawAnyPointCloud
-	int w = 640;
-	int h = 480;
-	ofMesh mesh;
-    //OF_PRIMITIVE_TRIANGLES, OF_PRIMITIVE_TRIANGLE_STRIP, OF_PRIMITIVE_TRIANGLE_FAN, OF_PRIMITIVE_LINES, OF_PRIMITIVE_LINE_STRIP, OF_PRIMITIVE_LINE_LOOP, OF_PRIMITIVE_POINTS
-    
-    switch (renderStyle) { //set render style
-        case 1:
-            mesh.setMode(OF_PRIMITIVE_POINTS);
-            break;
-            
-        case 2:
-            mesh.setMode(OF_PRIMITIVE_TRIANGLES);
-            break;
-            
-        case 3:
-            mesh.setMode(OF_PRIMITIVE_LINES);
-            break;
-    }
-
-	int step = gridSize;
-	for(int y = 0; y < h; y += step) {
-		for(int x = 0; x < w; x += step) {
-			if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) {
-				if (paintMesh)mesh.addColor(kinect.getColorAt(x,y));
-				mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
-               // mesh.addTriangle(kinect.getWorldCoordinateAt(x, y) , (kinect.getDistanceAt(x, y)));
-            }
-		}
-	}
-	glPointSize(blobSize);
-	ofPushMatrix();
-	// the projected points are 'upside down' and 'backwards' 
-	ofScale(1, -1, -1);
-	ofTranslate(0, 0, -1000); // center the points a bit
-	ofEnableDepthTest();
-    mesh.draw();
-	//mesh.drawFaces(); //alternative draw modes //mesh.drawVertices(); //mesh.drawWireframe();
-	ofDisableDepthTest();
-	ofPopMatrix();
-}
-
 //--------------------------------------------------------------
 
 //Universal function which sets normals for the triangle mesh
@@ -538,7 +434,6 @@ void ofApp::loadRecording() {
     if(!meshRecorder.readyToPlay) return;
     if(recording) return;
     if(!playing) {
-        
         ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded data", true, ofToDataPath(""));
         if (result.getPath() != "") {
             filePath =result.getPath();
@@ -547,7 +442,6 @@ void ofApp::loadRecording() {
             loadExifData(filePath);
             meshRecorder.startLoading(filePath);
         }
-        
     } else {
         playing = false;
     }
@@ -561,9 +455,7 @@ string ofApp::generateFileName() {
     ofToString(ofGetHours()) +
     ofToString(ofGetMinutes()) +
     ofToString(ofGetSeconds());
-    
     string _filename = (_root + _timestamp + "/");
-    
     dirHelper.createDirectory(_filename);
     ofFile file(ofToDataPath(_filename));
     //cout << file.getAbsolutePath();
@@ -625,7 +517,6 @@ void ofApp::saveExifData() { //put some some settings into a file
     exifSettings.setValue("exifLSensingMethod", "kinect depth sensor");
    
     exifSettings.saveFile(path + "exifSettings.xml"); //puts exifSettings.xml file in the current recordedframe folder
-    
     string myXml;
     exifSettings.copyXmlToString(myXml);
     cout << myXml <<endl ;
@@ -818,9 +709,7 @@ void ofApp::keyPressed (int key) {
         case 'h':
             easyCam.reset();//reset easycam settings to re-centre 3d view
             break;
-            
-    }
-    
+    }    
 }
 
 //--------------------------------------------------------------
