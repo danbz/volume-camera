@@ -111,7 +111,7 @@ void ofApp::setup() {
     
     //required call
     imGui.setup();
-    
+    ImGui::CaptureMouseFromApp();
     ImGui::GetIO().MouseDrawCursor = false;
     //backgroundColor is stored as an ImVec4 type but can handle ofColor
     imBackgroundColor = ofColor(114, 144, 154);
@@ -270,6 +270,16 @@ void ofApp::draw() {
     
     //ofxImGui example draw required to call this at beginning
     imGui.begin();
+
+        ImGuiIO& io = ImGui::GetIO();         // hide mouse iinput from rest of app
+
+        if (io.WantCaptureMouse){
+            cout << "imgui wants mouse" << endl;
+            //prevent mousemessages going to app while using imGui
+            easyCam.disableMouseInput();
+        }else {
+            easyCam.enableMouseInput();
+        };
         
     { // 1. Show a simple window
         //ImGui::Text("Volume camera");
