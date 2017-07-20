@@ -41,10 +41,10 @@ void ofApp::setup() {
     //////////////////////////////////////////////////////
     // application / depth sensing configuration
     //////////////////////////////////////////////////////
-    colorImg.allocate(kinect.width, kinect.height);
-	grayImage.allocate(kinect.width, kinect.height);
-	grayThreshNear.allocate(kinect.width, kinect.height);
-	grayThreshFar.allocate(kinect.width, kinect.height);
+//    colorImg.allocate(kinect.width, kinect.height);
+//	grayImage.allocate(kinect.width, kinect.height);
+//	grayThreshNear.allocate(kinect.width, kinect.height);
+//	grayThreshFar.allocate(kinect.width, kinect.height);
     nearThreshold = 230;
 	farThreshold = 70;
 	bThreshWithOpenCV = true;
@@ -136,30 +136,30 @@ void ofApp::update() {
     //////////////////////////////////////////////////////
     // Kinect Live Render updating
     //////////////////////////////////////////////////////
-    if(kinect.isFrameNew()) { 	// if there is a new frame and we are connected to a kinect device
-		grayImage.setFromPixels(kinect.getDepthPixels()); // load grayscale depth image from the kinect source
-		if(bThreshWithOpenCV) {
-			grayThreshNear = grayImage; 	// we do two thresholds - one for the far plane and one for the near plane
-            grayThreshFar = grayImage;   		// we then do a cvAnd to get the pixels which are a union of the two thresholds
-			grayThreshNear.threshold(nearThreshold, true);
-			grayThreshFar.threshold(farThreshold);
-			cvAnd(grayThreshNear.getCvImage(), grayThreshFar.getCvImage(), grayImage.getCvImage(), NULL);
-		} else {
-			ofPixels & pix = grayImage.getPixels(); // or we do it ourselves - show people how they can work with the pixels
-			int numPixels = pix.size();
-			for(int i = 0; i < numPixels; i++) {
-				if(pix[i] < nearThreshold && pix[i] > farThreshold) {
-					pix[i] = 255;
-				} else {
-					pix[i] = 0;
-				}
-			}
-		}
-		grayImage.flagImageChanged(); // update the cv images
+//    if(kinect.isFrameNew()) { 	// if there is a new frame and we are connected to a kinect device
+//		grayImage.setFromPixels(kinect.getDepthPixels()); // load grayscale depth image from the kinect source
+//		if(bThreshWithOpenCV) {
+//			grayThreshNear = grayImage; 	// we do two thresholds - one for the far plane and one for the near plane
+  //          grayThreshFar = grayImage;   		// we then do a cvAnd to get the pixels which are a union of the two thresholds
+//			grayThreshNear.threshold(nearThreshold, true);
+//			grayThreshFar.threshold(farThreshold);
+//			cvAnd(grayThreshNear.getCvImage(), grayThreshFar.getCvImage(), grayImage.getCvImage(), NULL);
+//		} else {
+//			ofPixels & pix = grayImage.getPixels(); // or we do it ourselves - show people how they can work with the pixels
+//			int numPixels = pix.size();
+//			for(int i = 0; i < numPixels; i++) {
+//				if(pix[i] < nearThreshold && pix[i] > farThreshold) {
+//					pix[i] = 255;
+//				} else {
+//					pix[i] = 0;
+//				}
+//			}
+//		}
+//		grayImage.flagImageChanged(); // update the cv images
 		// find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
 		// also, find holes is set to true so we will get interior contours as well....
-		contourFinder.findContours(grayImage, 10, (kinect.width*kinect.height)/2, 20, false);
-	}
+//		contourFinder.findContours(grayImage, 10, (kinect.width*kinect.height)/2, 20, false);
+//	}
 
 #ifdef USE_TWO_KINECTS
 	kinect2.update();
@@ -185,8 +185,8 @@ void ofApp::draw() {
 	} else { 		// draw from the live kinect as 3 windows
 		kinect.drawDepth(10, 10, 400, 300);
 		kinect.draw(420, 10, 400, 300);
-		grayImage.draw(10, 320, 400, 300);
-		contourFinder.draw(10, 320, 400, 300);
+//		grayImage.draw(10, 320, 400, 300);
+//		contourFinder.draw(10, 320, 400, 300);
 #ifdef USE_TWO_KINECTS
 		kinect2.draw(420, 320, 400, 300);
 #endif

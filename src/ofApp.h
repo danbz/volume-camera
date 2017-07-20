@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
-#include "ofxOpenCv.h"
+//#include "ofxOpenCv.h"
 #include "ofxKinect.h"
 //#include "ofxGui.h"
 #include "ofxKinectMeshRecorder.h"
@@ -45,12 +45,12 @@ public:
 	ofxKinect kinect2;
 #endif
 
-	ofxCvColorImage colorImg;
+//	ofxCvColorImage colorImg;
 
-	ofxCvGrayscaleImage grayImage; // grayscale depth image
-	ofxCvGrayscaleImage grayThreshNear; // the near thresholded image
-	ofxCvGrayscaleImage grayThreshFar; // the far thresholded image
-	ofxCvContourFinder contourFinder;
+//	ofxCvGrayscaleImage grayImage; // grayscale depth image
+//	ofxCvGrayscaleImage grayThreshNear; // the near thresholded image
+//	ofxCvGrayscaleImage grayThreshFar; // the far thresholded image
+//	ofxCvContourFinder contourFinder;
 
 	bool bThreshWithOpenCV;
 	bool bDrawPointCloud;
