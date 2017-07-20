@@ -204,22 +204,22 @@ void ofApp::draw() {
     //////////////////////////////////////////////////////
     // Reporting and help text
     //////////////////////////////////////////////////////
-	// stringstream reportStream; // draw instructions
+//	 stringstream reportStream; // draw instructions
 
 //	reportStream << "press p to switch between images and point cloud, rotate the point cloud with the mouse" << endl
 //	<< "using opencv threshold = " << bThreshWithOpenCV <<" (press spacebar)" << endl
 //	<< "set near threshold " << nearThreshold << " (press: + -)" << endl
 //	<< "pause with space bar, press: < > to scrub frames " << contourFinder.nBlobs
-//    << " recordWidth: " << recordWidth/recordingStep << " recordHeight: " << recordHeight/recordingStep
-//	//<< ", fps: " << ofGetFrameRate() << " / " << playbackFPS << endl
-//    << "a: paint mesh   t: toggle triangles/pointcloud   g: show/hide gui"<< endl
-//     << "1, 2 or 3: rendering styles, n:  normals" <<showNormals<< " i:  world light" << illuminateScene<< endl
+  //  << " recordWidth: " << recordWidth/recordingStep << " recordHeight: " << recordHeight/recordingStep
+//	<< ", fps: " << ofGetFrameRate() << " / " << playbackFPS << endl
+  //  << "a: paint mesh   t: toggle triangles/pointcloud   g: show/hide gui"<< endl
+    // << "1, 2 or 3: rendering styles, n:  normals" <<showNormals<< " i:  world light" << illuminateScene<< endl
 //    << "r: START RECORDING   s: STOP RECORDING"
 //    << "l: LAST RECORDING / LIVE MODE  h: reset 3d cam view"<< endl
 //	<< "press c to close the connection and o to open it again, connection is: " << kinect.isConnected() << endl;
 
     if (showGui) { // show or hide the gui and instruction texts
-        // ofDrawBitmapString(reportStream.str(), 20, 600);
+//         ofDrawBitmapString(reportStream.str(), 20, 600);
         //ofxImGui example draw required to call this at beginning
         imGui.begin();
 
@@ -434,9 +434,12 @@ void ofApp::loadRecording() {
     if(!meshRecorder.readyToPlay) return;
     if(recording) return;
     if(!playing) {
-        ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded data", true, ofToDataPath(""));
+        ofSystemAlertDialog("Note: attempting load files" );
+      ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded data", true, ofToDataPath(""));
         if (result.getPath() != "") {
-            filePath =result.getPath();
+        ofSystemAlertDialog("Note: attempting load file agains" );
+
+           filePath =result.getPath();
             playing = true;
             frameToPlay = 0;
             loadExifData(filePath);
