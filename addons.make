@@ -1,4 +1,3 @@
-ofxGui
 ofxImGui
 ofxKinect
 ofxOpenCv
