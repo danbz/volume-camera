@@ -3,7 +3,7 @@
 #include "ofMain.h"
 #include "ofxOpenCv.h"
 #include "ofxKinect.h"
-#include "ofxGui.h"
+//#include "ofxGui.h"
 #include "ofxKinectMeshRecorder.h"
 #include "metaData.h"
 #include "ofxXmlSettings.h"
