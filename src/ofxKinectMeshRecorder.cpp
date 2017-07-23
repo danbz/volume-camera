@@ -47,7 +47,9 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
     
     for(int i = 0; i <= TotalFrames-1; i += 1) {
         
-        string fileToload = path + "/frame" + ofToString(i) + ".txt";
+        //string fileToload = path + "/frame" + ofToString(i) + ".txt";
+        string fileToload = path + "frame" + ofToString(i) + ".txt";
+
         
         // TODO: Este metodo de parseo es muy lento.
         // Habria que volcar con fscanf o algoa si el txt en la estrutura framedata directamente.
@@ -71,9 +73,15 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
         fin.open( ofToDataPath(fileToload).c_str() );
         
         vector<frameData> data;
+<<<<<<< HEAD
         
        // while(fin!=NULL)
+=======
+        int lineCounter = 0;
+        //while(fin!=NULL)
+>>>>>>> d6b8c8f0687aeac034200a955c22d3973baa11a9
         while(fin)
+            
         {
             string str;
             getline(fin, str);
@@ -87,14 +95,21 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
                 pc.z = ofToFloat(pointcoords[3]);
                 pc.hexcolor = ofToInt(pointcoords[4]);
                 data.push_back(pc); //push the string onto a vector of strings
+                //cout << "loading line: " << lineCounter << endl;
+                lineCounter ++;
             }
-        }
+                    }
         fin.close();
         
         recordedMeshData[i].resize(data.size());
         recordedMeshData[i] = data;
         
         FramesLoaded = i;
+<<<<<<< HEAD
+=======
+        cout << "total line: " << lineCounter << endl;
+
+>>>>>>> d6b8c8f0687aeac034200a955c22d3973baa11a9
        cout << fileToload << endl;
         
         if(i == TotalFrames) {

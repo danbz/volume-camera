@@ -8,7 +8,7 @@
 //  ofxKinectMeshRecorder.h
 //  ofxKinectMeshRecorder
 //
-//  Created by welovecode on 15/07/12.
+//  Created by welovecode on 15/07/12 .
 
 #ifndef ofxKinectMeshRecorder_ofxKinectMeshRecorder_h
 #define ofxKinectMeshRecorder_ofxKinectMeshRecorder_h
