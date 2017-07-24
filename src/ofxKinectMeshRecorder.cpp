@@ -24,7 +24,7 @@ ofxKinectMeshRecorder::ofxKinectMeshRecorder() {
 void ofxKinectMeshRecorder::startLoading(const string _file) {
     
     fileToload = _file;
-   startThread(true, true);
+    startThread(true, true);
     //loadMeshData(fileToload); //bypassing thread
     //readyToPlay = true;
     
@@ -32,19 +32,21 @@ void ofxKinectMeshRecorder::startLoading(const string _file) {
 
 void ofxKinectMeshRecorder::loadMeshData(const string _file) {
     
-    cout << "ofxKinectMeshRecorder::loadMesh() | Loading..." << endl;
     
-    TotalFrames = countFrames(_file)-2; // - 2 to accomodate the xml meta data file in the source folders and other stuff....
+    totalFrames = countFrames(_file); // - 1 to accomodate the xml meta data file in the source folders....
     ofFile file(ofToDataPath(_file + "/"));
     string path = file.getAbsolutePath();
     file.close();
     recordedMeshData.clear();
-    recordedMeshData.resize(TotalFrames);
-    FramesLoaded = 0;
+    recordedMeshData.resize(totalFrames);
+    framesLoaded = 0;
     
-    for(int i = 0; i < TotalFrames; i += 1) {
+    //cout << "ofxKinectMeshRecorder::loadMesh() | Loading frame x "  " of " << totalFrames << endl;
+
+    for(int i = 0; i < totalFrames; i += 1) {
         
-        //string fileToload = path + "/frame" + ofToString(i) + ".txt";
+        cout << "ofxKinectMeshRecorder::loadMesh() | Loading frame " << i << " of " << totalFrames << endl;
+
         string fileToload = path + "frame" + ofToString(i) + ".txt";
         ifstream fin;
         fin.open( ofToDataPath(fileToload).c_str() );
@@ -76,9 +78,9 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
         recordedMeshData[i].resize(data.size()); //appears to crash here occasionally....
         recordedMeshData[i] = data;
         
-        FramesLoaded = i;
+        framesLoaded = i;
        // cout << "frame: " << fileToload << "  total lines per frame: " << lineCounter << endl; //ouput lines per frame
-        if(i == TotalFrames-1) {
+        if(i == totalFrames-1) {
             unlock();
             stopThread();
             cout << "stopped thread" << endl ;

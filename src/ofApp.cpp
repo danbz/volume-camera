@@ -61,13 +61,18 @@ void ofApp::setup() {
     bDrawPointCloud = true;   // start from the camera view
     kinect.setDepthClipping( 500,  10000); //set depth clipping range
     frame = 0; //play back frame initialisation
-    distanceMinima = 200;
-    distanceMaxima = 5000;
+    distanceMinima = 10;
+    distanceMaxima = 25000;
     paused = false;
     drawTriangles = false;
     renderStyle = 1;
     recordWidth =640; //default width for recording and playback of meshes, overridden by Exifmedta data when recorded files are loaded.
     recordHeight=480;
+    // shot length, exposure variables and recording FPS timing
+    singleShot = true;
+    exposureLength = 0.01; // length of exposure capture in seconds
+    recordFPS = 25;
+    lastRecordedFrame = 0;
     
     //added in new thread class etc 8/july/17    
     ofxKinectMeshRecorder thread;
@@ -79,6 +84,8 @@ void ofApp::setup() {
     illuminateScene = false;
     showNormals = false;
     renderFlatQuads = false;
+    
+    // easyCam setup
     
     //////////////////////////////////////////////////////
     // Gui Configuration
@@ -94,7 +101,7 @@ void ofApp::setup() {
     playbackFPS=15;
     blobSize =4;
     gridSize =1;
-    backPlane =15000;
+    backPlane =25000;
     frontPlane=0;
     recordingStep =4;
     
@@ -129,7 +136,7 @@ void ofApp::update() {
                 timeNow = ofGetSystemTime();
                 //cout << timeNow/1000 << " : " << ofGetSystemTime() << endl;
             }
-        if(frameToPlay >= meshRecorder.TotalFrames) frameToPlay = 0; //or start at the beginning of the recorded loop
+        if(frameToPlay >= meshRecorder.totalFrames) frameToPlay = 0; //or start at the beginning of the recorded loop
         }
     }
     
@@ -193,12 +200,12 @@ void ofApp::draw() {
 	}
     
     //////////////////////////////////////////////////////
-    // Do Recording
+    // Load Recording
     //////////////////////////////////////////////////////
     if(!meshRecorder.readyToPlay) {    //-- recorder  // Loadinf info:
-        string l = ofToString(meshRecorder.FramesLoaded);
-        string t = ofToString(meshRecorder.TotalFrames);
-        ofDrawBitmapString("loading... " + l + "/" + t,700, 20);
+        string l = ofToString(meshRecorder.framesLoaded);
+        string t = ofToString(meshRecorder.totalFrames);
+        ofDrawBitmapString("loading... " + l + "/" + t,700, 20); // if loading then draw progress to screen
     }
 		
     //////////////////////////////////////////////////////
@@ -218,10 +225,9 @@ void ofApp::draw() {
 //    << "l: LAST RECORDING / LIVE MODE  h: reset 3d cam view"<< endl
 //	<< "press c to close the connection and o to open it again, connection is: " << kinect.isConnected() << endl;
     
-    if (showGui) { // show or hide the gui and instruction texts
+    if (showGui) { // show or hide the gui
         // ofDrawBitmapString(reportStream.str(), 20, 600);
-        //ofxImGui example draw required to call this at beginning
-        imGui.begin();
+        imGui.begin(); //beging GUI
         
         ImGuiIO& io = ImGui::GetIO(); // hide mouse input from rest of app
         if (io.WantCaptureMouse){ //prevent mousemessages going to app while using imGui
@@ -230,17 +236,26 @@ void ofApp::draw() {
             easyCam.enableMouseInput();
         };
         
-    { // 1. Show a simple window
-        //ImGui::Text("Volume camera");
+    { // 1. Show window
+        ImGui::Text("Welcome to Volca v0.0");
         //ImGui::SliderFloat("Float", &floatValue, 0.0f, 1.0f);
-        ImGui::SliderInt("Frontplane", &frontPlane, 0, 10000);
-        ImGui::SliderInt("Backplane", &backPlane, 100, 15000);
-        ImGui::SliderInt("Pointsize", &blobSize, 1, 15);
-        ImGui::SliderInt("Mesh spacing", &gridSize, 1, 20);
-        ImGui::SliderInt("RecordingMesh Step",&recordingStep, 1, 10);
-        ImGui::SliderInt("FPS", &playbackFPS, 1, 120);
-        ImGui::ColorEdit3("Background Color", (float*)&imBackgroundColor);
-       
+        //if (ImGui::CollapsingHeader("Capture options")) {
+            ImGui::Text("Capture parameters");
+            ImGui::Checkbox("Single shot capture", &singleShot);
+            //ImGui::SliderFloat("Exposure length", &exposureLength, 0.01, 5.0);
+            ImGui::SliderInt("Recording FPS", &recordFPS, 1, 60);
+            ImGui::SliderInt("RecordingMesh Step",&recordingStep, 1, 10);
+       // }
+        
+        if (ImGui::CollapsingHeader("Depth options")){
+            ImGui::SliderInt("Frontplane", &frontPlane, 0, 10000);
+            ImGui::SliderInt("Backplane", &backPlane, 100, 20000);
+        }
+        if (ImGui::CollapsingHeader("RGB options")){
+           // ImGui::SliderInt("Frontplane", &frontPlane, 0, 10000);
+           // ImGui::SliderInt("Backplane", &backPlane, 100, 15000);
+        }
+        
         if (ImGui::CollapsingHeader("Render options")) {
             ImGui::Text("Render style");
             ImGui::RadioButton("cloud", &renderStyle, 1); ImGui::SameLine();
@@ -252,41 +267,49 @@ void ofApp::draw() {
             ImGui::Checkbox("world light", &illuminateScene); ImGui::SameLine();
             ImGui::Checkbox("normals", &showNormals); ImGui::SameLine();
             ImGui::Checkbox("flatQuads", &renderFlatQuads);
+            ImGui::SliderInt("Cloud pointsize", &blobSize, 1, 15);
+            ImGui::SliderInt("Mesh spacing", &gridSize, 1, 20);
+            ImGui::ColorEdit3("Background Color", (float*)&imBackgroundColor);
         }
-        if(ImGui::Button("Test Window"))
-        {
+        if (ImGui::CollapsingHeader("Playback options")) {
+            ImGui::Text("Playback style");
+            ImGui::SliderInt("Playback FPS", &playbackFPS, 1, 120);
+        }
+        
+        if(ImGui::Button("Test Window")) {
             show_test_window = !show_test_window;
         }
+        
         ImGui::SameLine();
         
-        if (ImGui::Button("reset camera"))
-        {
+        if (ImGui::Button("reset camera")) {
             easyCam.reset();//reset easycam settings to re-centre 3d view
         }
         ImGui::SameLine();
         
-        if (ImGui::Button("load recording"))
-        {
+        if (ImGui::Button("load recording")) {
             loadRecording();   ImGui::SameLine();
         }
         ImGui::Checkbox("show live mesh", &bDrawPointCloud);
        
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-        ImGui::Text("Recording mesh size", recordWidth/step, recordHeight,step);
+        ImGui::Text("Recording mesh size %.1d , %1d", recordWidth/step , recordHeight/step);
     }
     
-    // 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
-    if (show_test_window)
-    {
+        if (show_test_window) {     // 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
         ImGui::SetNextWindowPos(ofVec2f(650, 20), ImGuiSetCond_FirstUseEver);
         ImGui::ShowTestWindow(&show_test_window);
     }
     
-    if(doThemeColorsWindow)
-    {
+    if(doThemeColorsWindow) {
         imGui.openThemeColorWindow();
     }
-    imGui.end(); //required to call this at end
+    imGui.end(); //end GUI
+    }
+    
+    if (recording) {
+        string f = to_string(frame);
+        ofDrawBitmapString("recording frame: " + f, 700,20);
     }
 }
 
@@ -374,15 +397,14 @@ void ofApp::drawAnyPointCloud() {
     ofScale(1, -1, -1);  // the projected points are 'upside down' and 'backwards'
     ofTranslate(0, 0, -750); // center the points a bit
     glEnable(GL_DEPTH_TEST);
-    if (renderFlatQuads){
+    if (renderFlatQuads){ // render as flat quads
         glShadeModel(GL_FLAT);
         //cout <<"flat quads" << endl;
     }else {
         glShadeModel(GL_TRIANGLES);
         //cout <<"triangles" << endl;
     }
-        
-    // render as flat quads
+    
     //mesh.drawVertices();
     //mesh.drawFaces();
     ofSetColor( 255, 255, 255);  //set render colour for unpainted points, faces and lines
@@ -466,29 +488,40 @@ string ofApp::generateFileName() {
 void ofApp::savePointCloud() {
     int w = recordWidth;
     int h = recordHeight;
-
-    FILE* fout = fopen((saveTo + "frame" + ofToString(frame) + ".txt").c_str(), "w");
-    int pIndex = 0;
-    for(int y = 0; y < h; y += recordingStep) {
-        for(int x = 0; x < w; x += recordingStep) {
-            ofVec3f v2;
-            v2.set(0,0,0);
-            float distance;
-            distance = kinect.getDistanceAt(x, y);
-            
-            if(distance> distanceMinima && distance < distanceMaxima) {//only record points into v2 if within min & max distance
-                v2 = kinect.getWorldCoordinateAt(x, y);
+    
+    if (timeNow < (ofGetSystemTime() - (1000/recordFPS))) {     // add in timing element for recordFPS setting
+        FILE* fout = fopen((saveTo + "frame" + ofToString(frame) + ".txt").c_str(), "w");
+        int pIndex = 0;
+        for(int y = 0; y < h; y += recordingStep) {
+            for(int x = 0; x < w; x += recordingStep) {
+                ofVec3f v2;
+                v2.set(0,0,0);
+                float distance;
+                distance = kinect.getDistanceAt(x, y);
+                
+                if(distance> frontPlane && distance < backPlane) {//only record points into v2 if within min & max distance
+                    v2 = kinect.getWorldCoordinateAt(x, y);
+                }
+                ofColor pColor;
+                pColor = kinect.getColorAt(x, y);
+                
+                fprintf(fout, "%i%s%f%s%f%s%f%s%i%s", pIndex, ",", v2.x, ",",  v2.y, ",",  v2.z, ",",  pColor.getHex(), "\n");
+                pIndex++;
             }
-            ofColor pColor;
-            pColor = kinect.getColorAt(x, y);
-           
-            fprintf(fout, "%i%s%f%s%f%s%f%s%i%s", pIndex, ",", v2.x, ",",  v2.y, ",",  v2.z, ",",  pColor.getHex(), "\n");
-            pIndex++;
         }
+        fclose(fout);
+        frame++; // increment the frame we are recording
+        cout << "Recording frame: " << frame << endl;
+        timeNow = ofGetSystemTime();
+        //cout << timeNow/1000 << " : " << ofGetSystemTime() << endl;
+        
     }
-    fclose(fout);
-    frame++;
+    if (singleShot) {
+        recording=false; //if in singleShot mode then stop after this frame is recorded
+        cout << "Single Shot mode, frame" << frame << endl;
+    }
 }
+
 
 //--------------------------------------------------------------
 
@@ -556,6 +589,7 @@ void ofApp::keyPressed (int key) {
 	switch (key) {
 		case ' ':
 			//bThreshWithOpenCV = !bThreshWithOpenCV;
+            //paused=!paused;
             paused=!paused;
 			break;
 			
@@ -649,25 +683,28 @@ void ofApp::keyPressed (int key) {
             break;
             
         case 'r':
+        case 'R':
             if(!meshRecorder.readyToPlay) return;
             if(recording) return;
             if(playing) return;
             saveTo = generateFileName();
             frame = 0;
+           // timeNow = ofGetSystemTime();
+
             recording = true;
+            saveExifData();
             break;
             
         case 's':
             if(!meshRecorder.readyToPlay) return;
             if(!recording) return;
             if(playing) return;
-            saveExifData();
             saveTo = "";
             recording = false;
             break;
             
-            case '<':
-            case ',':
+        case '<':
+        case ',':
             if(playing) {
                 if(paused){
                     if (frameToPlay>1){
@@ -681,7 +718,7 @@ void ofApp::keyPressed (int key) {
         case '.':
             if(playing) {
                 if(paused){
-                    if(frameToPlay < meshRecorder.TotalFrames){
+                    if(frameToPlay < meshRecorder.totalFrames){
                      frameToPlay ++;
                     }
                 }
@@ -710,6 +747,30 @@ void ofApp::keyPressed (int key) {
             easyCam.reset();//reset easycam settings to re-centre 3d view
             break;
     }    
+}
+
+//-------------------------
+
+void ofApp::keyReleased(int key){
+    
+
+    switch (key) {
+            
+//        case ' ':
+//            paused=false;
+//            break;
+//            
+//        case 'r':
+//        case 'R':
+//            if(!meshRecorder.readyToPlay) return;
+//            if(!recording) return;
+//            if(playing) return;
+//            saveExifData();
+//            saveTo = "";
+//            recording = false;
+//            break;
+
+    }
 }
 
 //--------------------------------------------------------------
