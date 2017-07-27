@@ -41,7 +41,7 @@ void ofApp::setup() {
     //////////////////////////////////////////////////////
     // application / depth sensing configuration
     //////////////////////////////////////////////////////
-    colorImg.allocate(kinect.width, kinect.height);
+    colorImage.allocate(kinect.width, kinect.height);
 	grayImage.allocate(kinect.width, kinect.height);
 	grayThreshNear.allocate(kinect.width, kinect.height);
 	grayThreshFar.allocate(kinect.width, kinect.height);
@@ -92,7 +92,6 @@ void ofApp::setup() {
     // Gui Configuration
     //////////////////////////////////////////////////////
     showGui = true;
-    
     imGui.setup(); //ofxImGui set up
     ImGui::CaptureMouseFromApp();
     ImGui::GetIO().MouseDrawCursor = false;
@@ -117,16 +116,12 @@ void ofApp::update() {
 	ofBackground(imBackgroundColor); // background color
 	kinect.update();
     
-    //////////////////////////////////////////////////////
     // mesh capture
-    //////////////////////////////////////////////////////
     if(recording) {
         savePointCloud();
     }
     
-    //////////////////////////////////////////////////////
     // Playback
-    //////////////////////////////////////////////////////
     if(playing) { // if we are in playback mode
         if(!paused){ // and have not paused the playback
             if (timeNow < (ofGetSystemTime() - (1000/playbackFPS))) { // check playback FPS
@@ -138,11 +133,10 @@ void ofApp::update() {
         }
     }
     
-    //////////////////////////////////////////////////////
-    // Kinect Live Render updating
-    //////////////////////////////////////////////////////
+    // Kinect Live Render CV updating
     if(kinect.isFrameNew()) { 	// if there is a new frame and we are connected to a kinect device
 		grayImage.setFromPixels(kinect.getDepthPixels()); // load grayscale depth image from the kinect source
+        colorImage.setFromPixels(kinect.getPixels()); // load RGB image from the kinect source
 		if(bThreshWithOpenCV) {
 			grayThreshNear = grayImage; 	// we do two thresholds - one for the far plane and one for the near plane
             grayThreshFar = grayImage;   		// we then do a cvAnd to get the pixels which are a union of the two thresholds
@@ -180,12 +174,9 @@ void ofApp::draw() {
     // Draw Live rendering
     //////////////////////////////////////////////////////
 	if(bDrawPointCloud) { //show pointcloud view
-        // add in routine to control playback speed based on playingFPS
 		easyCam.begin();
         if (illuminateScene) light.enable(); //enable world light
-        
-        ///
-        //if (exposureStart < (ofGetSystemTime() - (1000*exposureTime))) {
+            //if (exposureStart < (ofGetSystemTime() - (1000*exposureTime))) {
             drawAnyPointCloud(); //call new generic point render function
          //   exposureStart = ofGetSystemTime();
         //}
@@ -196,6 +187,8 @@ void ofApp::draw() {
 		kinect.draw(420, 10, 400, 300);
 		grayImage.draw(10, 320, 400, 300);
 		contourFinder.draw(10, 320, 400, 300);
+        colorImage.draw(420, 320, 400, 300);
+
 #ifdef USE_TWO_KINECTS
 		kinect2.draw(420, 320, 400, 300);
 #endif
@@ -210,86 +203,8 @@ void ofApp::draw() {
         ofDrawBitmapString("loading... " + l + "/" + t,700, 20); // if loading then draw progress to screen
     }
     
-    if (showGui) { // show or hide the gui
-        // ofDrawBitmapString(reportStream.str(), 20, 600);
-        imGui.begin(); //beging GUI
-        
-        ImGuiIO& io = ImGui::GetIO(); // hide mouse input from rest of app
-        if (io.WantCaptureMouse){ //prevent mousemessages going to app while using imGui
-            easyCam.disableMouseInput();
-        }else {
-            easyCam.enableMouseInput();
-        };
-        
-    { // 1. Show window
-        ImGui::Text("Welcome to Volca v0.0");
-        //ImGui::SliderFloat("Float", &floatValue, 0.0f, 1.0f);
-        //if (ImGui::CollapsingHeader("Capture options")) {
-            ImGui::Text("Capture parameters");
-            ImGui::Checkbox("Single shot capture", &singleShot);
-            ImGui::SliderFloat("Exposure time (s)", &exposureTime, 0.01, 5.0);
-            ImGui::SliderInt("Recording FPS", &recordFPS, 1, 60);
-            ImGui::SliderInt("RecordingMesh Step",&recordingStep, 1, 10);
-       // }
-        
-        if (ImGui::CollapsingHeader("Depth options")){
-            ImGui::SliderInt("Frontplane", &frontPlane, 0, 10000);
-            ImGui::SliderInt("Backplane", &backPlane, 100, 20000);
-        }
-        if (ImGui::CollapsingHeader("RGB options")){
-           // ImGui::SliderInt("Frontplane", &frontPlane, 0, 10000);
-           // ImGui::SliderInt("Backplane", &backPlane, 100, 15000);
-        }
-        
-        if (ImGui::CollapsingHeader("Render options")) {
-            ImGui::Text("Render style");
-            ImGui::RadioButton("cloud", &renderStyle, 1); ImGui::SameLine();
-            ImGui::RadioButton("faces", &renderStyle, 2); ImGui::SameLine();
-            ImGui::RadioButton("mesh", &renderStyle, 3);
-            
-            ImGui::Text("Surface style");
-            ImGui::Checkbox("paint mesh", &paintMesh); ImGui::SameLine();
-            ImGui::Checkbox("world light", &illuminateScene); ImGui::SameLine();
-            ImGui::Checkbox("normals", &showNormals); ImGui::SameLine();
-            ImGui::Checkbox("flatQuads", &renderFlatQuads);
-            ImGui::SliderInt("Cloud pointsize", &blobSize, 1, 15);
-            ImGui::SliderInt("Mesh spacing", &gridSize, 1, 20);
-            ImGui::ColorEdit3("Background Color", (float*)&imBackgroundColor);
-        }
-        if (ImGui::CollapsingHeader("Playback options")) {
-            ImGui::Text("Playback style");
-            ImGui::SliderInt("Playback FPS", &playbackFPS, 1, 120);
-        }
-        
-        if(ImGui::Button("Test Window")) {
-            show_test_window = !show_test_window;
-        }
-        
-        ImGui::SameLine();
-        
-        if (ImGui::Button("reset camera")) {
-            easyCam.reset();//reset easycam settings to re-centre 3d view
-        }
-        ImGui::SameLine();
-        
-        if (ImGui::Button("load recording")) {
-            loadRecording();   ImGui::SameLine();
-        }
-        ImGui::Checkbox("show live mesh", &bDrawPointCloud);
-       
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-        ImGui::Text("Recording mesh size %.1d , %1d", recordWidth/step , recordHeight/step);
-    }
-    
-        if (show_test_window) {     // 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
-        ImGui::SetNextWindowPos(ofVec2f(650, 20), ImGuiSetCond_FirstUseEver);
-        ImGui::ShowTestWindow(&show_test_window);
-    }
-    
-    if(doThemeColorsWindow) {
-        imGui.openThemeColorWindow();
-    }
-    imGui.end(); //end GUI
+    if (showGui) {
+        drawGui();
     }
     
     if (recording) {
@@ -299,7 +214,7 @@ void ofApp::draw() {
 }
 
 //--------------------------------------------------------------
-void ofApp::drawAnyPointCloud() {
+void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages rather than direct from kinect  - 28-7-17
     int w = recordWidth;
     int h = recordHeight;
     unsigned char *exposureBuffer = new unsigned char [recordWidth * recordHeight * 4];
@@ -331,7 +246,6 @@ void ofApp::drawAnyPointCloud() {
                     v2.set(0,0,0);
                     v2 = meshRecorder.getVectorAt(frameToPlay, pCount);
                     mesh.addVertex(v2);
-                    ofColor c;
                     c = meshRecorder.getColorAt(frameToPlay, pCount);
                     if(paintMesh) mesh.addColor(c); // add colour from map into mesh at each point
                     pCount ++;
@@ -420,10 +334,9 @@ void ofApp::drawAnyPointCloud() {
 
 //Universal function which sets normals for the triangle mesh
 void ofApp::setNormals( ofMesh &mesh ){
-    //The number of the vertices
-    int nV = mesh.getNumVertices();
-    //The number of the triangles
-    int nT = mesh.getNumIndices() / 3;
+    int nV = mesh.getNumVertices();     //The number of the vertices
+    int nT = mesh.getNumIndices() / 3;     //The number of the triangles
+
     vector<ofPoint> norm( nV ); //Array for the normals
     //Scan all the triangles. For each triangle add its
     //normal to norm's vectors of triangle's vertices
@@ -438,17 +351,14 @@ void ofApp::setNormals( ofMesh &mesh ){
         const ofPoint &v3 = mesh.getVertex( i3 );
         //Compute the triangle's normal
         ofPoint dir = ( (v2 - v1).crossed( v3 - v1 ) ).normalized();
-        //Accumulate it to norm array for i1, i2, i3
-        norm[ i1 ] += dir;
+        norm[ i1 ] += dir;  //Accumulate it to norm array for i1, i2, i3
         norm[ i2 ] += dir;
         norm[ i3 ] += dir;
     }
-    //Normalize the normal's length
-    for (int i=0; i<nV; i++) {
+    for (int i=0; i<nV; i++) {     //Normalize the normal's length
         norm[i].normalize();
     }
-    //Set the normals to mesh
-    mesh.clearNormals();
+    mesh.clearNormals();     //Set the normals to mesh
     mesh.addNormals( norm );
 }
 
@@ -585,6 +495,89 @@ void ofApp::exit() {
 #ifdef USE_TWO_KINECTS
 	kinect2.close();
 #endif
+}
+
+//--------------------------------------------------------------
+
+void ofApp::drawGui() {
+    imGui.begin(); //beging GUI
+    
+    ImGuiIO& io = ImGui::GetIO(); // hide mouse input from rest of app
+    if (io.WantCaptureMouse){ //prevent mousemessages going to app while using imGui
+        easyCam.disableMouseInput();
+    }else {
+        easyCam.enableMouseInput();
+    };
+    
+    { // 1. Show window
+        ImGui::Text("Welcome to Volca v0.0");
+        //ImGui::SliderFloat("Float", &floatValue, 0.0f, 1.0f);
+        //if (ImGui::CollapsingHeader("Capture options")) {
+        ImGui::Text("Capture parameters");
+        ImGui::Checkbox("Single shot capture", &singleShot);
+        ImGui::SliderFloat("Exposure time (s)", &exposureTime, 0.01, 5.0);
+        ImGui::SliderInt("Recording FPS", &recordFPS, 1, 60);
+        ImGui::SliderInt("RecordingMesh Step",&recordingStep, 1, 10);
+        // }
+        
+        if (ImGui::CollapsingHeader("Depth options")){
+            ImGui::SliderInt("Frontplane", &frontPlane, 0, 10000);
+            ImGui::SliderInt("Backplane", &backPlane, 100, 20000);
+        }
+        if (ImGui::CollapsingHeader("RGB options")){
+            // ImGui::SliderInt("Frontplane", &frontPlane, 0, 10000);
+            // ImGui::SliderInt("Backplane", &backPlane, 100, 15000);
+        }
+        
+        if (ImGui::CollapsingHeader("Render options")) {
+            ImGui::Text("Render style");
+            ImGui::RadioButton("cloud", &renderStyle, 1); ImGui::SameLine();
+            ImGui::RadioButton("faces", &renderStyle, 2); ImGui::SameLine();
+            ImGui::RadioButton("mesh", &renderStyle, 3);
+            
+            ImGui::Text("Surface style");
+            ImGui::Checkbox("paint mesh", &paintMesh); ImGui::SameLine();
+            ImGui::Checkbox("world light", &illuminateScene); ImGui::SameLine();
+            ImGui::Checkbox("normals", &showNormals); ImGui::SameLine();
+            ImGui::Checkbox("flatQuads", &renderFlatQuads);
+            ImGui::SliderInt("Cloud pointsize", &blobSize, 1, 15);
+            ImGui::SliderInt("Mesh spacing", &gridSize, 1, 20);
+            ImGui::ColorEdit3("Background Color", (float*)&imBackgroundColor);
+        }
+        if (ImGui::CollapsingHeader("Playback options")) {
+            ImGui::Text("Playback style");
+            ImGui::SliderInt("Playback FPS", &playbackFPS, 1, 120);
+        }
+        
+        if(ImGui::Button("Test Window")) {
+            show_test_window = !show_test_window;
+        }
+        
+        ImGui::SameLine();
+        
+        if (ImGui::Button("reset camera")) {
+            easyCam.reset();//reset easycam settings to re-centre 3d view
+        }
+        ImGui::SameLine();
+        
+        if (ImGui::Button("load recording")) {
+            loadRecording();   ImGui::SameLine();
+        }
+        ImGui::Checkbox("show live mesh", &bDrawPointCloud);
+        
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        ImGui::Text("Recording mesh size %.1d , %1d", recordWidth/step , recordHeight/step);
+    }
+    
+    if (show_test_window) {     // 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
+        ImGui::SetNextWindowPos(ofVec2f(650, 20), ImGuiSetCond_FirstUseEver);
+        ImGui::ShowTestWindow(&show_test_window);
+    }
+    
+    if(doThemeColorsWindow) {
+        imGui.openThemeColorWindow();
+    }
+    imGui.end(); //end GUI
 }
 
 //--------------------------------------------------------------

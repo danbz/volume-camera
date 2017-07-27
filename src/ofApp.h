@@ -39,6 +39,7 @@ public:
 	void mouseEntered(int x, int y);
 	void mouseExited(int x, int y);
 	void windowResized(int w, int h);
+    void drawGui();
     
 	ofxKinect kinect;
 	
@@ -46,8 +47,8 @@ public:
 	ofxKinect kinect2;
 #endif
 	
-	ofxCvColorImage colorImg;
-	ofxCvGrayscaleImage grayImage; // grayscale depth image
+	ofxCvColorImage colorImage; // RGB image from Kinect
+	ofxCvGrayscaleImage grayImage; // grayscale depth image from Kinect
 	ofxCvGrayscaleImage grayThreshNear; // the near thresholded image
 	ofxCvGrayscaleImage grayThreshFar; // the far thresholded image
 	ofxCvContourFinder contourFinder;
