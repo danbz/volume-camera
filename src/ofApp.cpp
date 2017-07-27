@@ -4,15 +4,13 @@
 // © 2017 Daniel Buzzo. Dan@buzzo.com http://www.buzzo.com
 // all rights reserved
 
-
 // kinect.setDepthClipping(float nearClip=500, float farClip=10000); //set depth clipping range
 
 string _timestamp = "default"; //default value for filepath opening on playback
 string filePath ="";
-int step = 1; // default point cloud step size for recorded mesh playback
-//int recordingStep =1; // default point cloud step size for recorded mesh quality
+int step = 1; // default point cloud step size for mesh file playback
 bool paused;
-UInt64 timeNow =ofGetSystemTime(); // for timing elapsed time since past frame for playbackFPS control
+uint64 timeNow =ofGetSystemTime(); // for timing elapsed time since past frame for playbackFPS control
 
 bool doThemeColorsWindow = false;
 
@@ -131,7 +129,7 @@ void ofApp::update() {
     //////////////////////////////////////////////////////
     if(playing) { // if we are in playback mode
         if(!paused){ // and have not paused the playback
-            if (timeNow < (ofGetSystemTime() - (1000/playbackFPS))) {
+            if (timeNow < (ofGetSystemTime() - (1000/playbackFPS))) { // check playback FPS
                 frameToPlay += 1; // increment the frame we are playing
                 timeNow = ofGetSystemTime();
                 //cout << timeNow/1000 << " : " << ofGetSystemTime() << endl;
