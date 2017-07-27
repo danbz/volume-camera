@@ -1,7 +1,10 @@
 #include "ofApp.h"
 
-// If you are struggling to get the device to connect ( especially Windows Users )
-// please look at the ReadMe: in addons/ofxKinect/README.md
+// VOLCA: experimental volumetric camera/apparatus v0.1
+// © 2017 Daniel Buzzo. Dan@buzzo.com http://www.buzzo.com
+// all rights reserved
+
+
 // kinect.setDepthClipping(float nearClip=500, float farClip=10000); //set depth clipping range
 
 string _timestamp = "default"; //default value for filepath opening on playback
@@ -21,7 +24,6 @@ void ofApp::setup() {
 	kinect.setRegistration(true); // enable depth->video image calibration
 	kinect.init(); //kinect.init(true); // shows infrared instead of RGB video image
     //kinect.init(false, false); // disable video image (faster fps)
-	
 	kinect.open();		// opens first available kinect
 	//kinect.open(1);	// open a kinect by id, starting with 0 (sorted by serial # lexicographically))
 	//kinect.open("A00362A08602047A");	// open a kinect using it's unique serial #
@@ -59,7 +61,7 @@ void ofApp::setup() {
     playing = false;
     paintMesh = true;
     bDrawPointCloud = true;   // start from the camera view
-    kinect.setDepthClipping( 500,  10000); //set depth clipping range
+    kinect.setDepthClipping( 100,  20000); //set depth clipping range
     frame = 0; //play back frame initialisation
     distanceMinima = 10;
     distanceMaxima = 25000;
@@ -70,11 +72,12 @@ void ofApp::setup() {
     recordHeight=480;
     // shot length, exposure variables and recording FPS timing
     singleShot = true;
-    exposureLength = 0.01; // length of exposure capture in seconds
+    exposureTime = 0.5; // length of exposure capture in seconds
     recordFPS = 25;
     lastRecordedFrame = 0;
+   
     
-    //added in new thread class etc 8/july/17    
+    //added in new thread class etc 8/july/17
     ofxKinectMeshRecorder thread;
     
     //////////////////////////////////////////////////////
@@ -96,7 +99,7 @@ void ofApp::setup() {
     ImGui::CaptureMouseFromApp();
     ImGui::GetIO().MouseDrawCursor = false;
     //backgroundColor is stored as an ImVec4 type but can handle ofColor
-    imBackgroundColor = ofColor(114, 144, 154);
+    imBackgroundColor = ofColor(44, 44, 54);
     show_test_window = false;
     playbackFPS=15;
     blobSize =4;
@@ -104,9 +107,6 @@ void ofApp::setup() {
     backPlane =25000;
     frontPlane=0;
     recordingStep =4;
-    
-    //    recordWidth =640/recordingStep; //default width for recording and playback of meshes, overridden by Exifmedta data when recorded files are loaded.
-    //    recordHeight =480/recordingStep;
     
     if( !kinect.hasAccelControl()) {
         ofSystemAlertDialog("Note: this is a newer Xbox Kinect or Kinect For Windows device, motor / led / accel controls are not currently supported" );
@@ -183,10 +183,14 @@ void ofApp::draw() {
     //////////////////////////////////////////////////////
 	if(bDrawPointCloud) { //show pointcloud view
         // add in routine to control playback speed based on playingFPS
-        
 		easyCam.begin();
         if (illuminateScene) light.enable(); //enable world light
-        drawAnyPointCloud(); //call new generic point render function
+        
+        ///
+        //if (exposureStart < (ofGetSystemTime() - (1000*exposureTime))) {
+            drawAnyPointCloud(); //call new generic point render function
+         //   exposureStart = ofGetSystemTime();
+        //}
         ofDisableLighting(); //disable world light
         easyCam.end();
 	} else { 		// draw from the live kinect as 3 windows
@@ -207,23 +211,6 @@ void ofApp::draw() {
         string t = ofToString(meshRecorder.totalFrames);
         ofDrawBitmapString("loading... " + l + "/" + t,700, 20); // if loading then draw progress to screen
     }
-		
-    //////////////////////////////////////////////////////
-    // Reporting and help text
-    //////////////////////////////////////////////////////
-	// stringstream reportStream; // draw instructions
-    
-//	reportStream << "press p to switch between images and point cloud, rotate the point cloud with the mouse" << endl
-//	<< "using opencv threshold = " << bThreshWithOpenCV <<" (press spacebar)" << endl
-//	<< "set near threshold " << nearThreshold << " (press: + -)" << endl
-//	<< "pause with space bar, press: < > to scrub frames " << contourFinder.nBlobs
-//    << " recordWidth: " << recordWidth/recordingStep << " recordHeight: " << recordHeight/recordingStep
-//	//<< ", fps: " << ofGetFrameRate() << " / " << playbackFPS << endl
-//    << "a: paint mesh   t: toggle triangles/pointcloud   g: show/hide gui"<< endl
-//     << "1, 2 or 3: rendering styles, n:  normals" <<showNormals<< " i:  world light" << illuminateScene<< endl
-//    << "r: START RECORDING   s: STOP RECORDING"
-//    << "l: LAST RECORDING / LIVE MODE  h: reset 3d cam view"<< endl
-//	<< "press c to close the connection and o to open it again, connection is: " << kinect.isConnected() << endl;
     
     if (showGui) { // show or hide the gui
         // ofDrawBitmapString(reportStream.str(), 20, 600);
@@ -242,7 +229,7 @@ void ofApp::draw() {
         //if (ImGui::CollapsingHeader("Capture options")) {
             ImGui::Text("Capture parameters");
             ImGui::Checkbox("Single shot capture", &singleShot);
-            //ImGui::SliderFloat("Exposure length", &exposureLength, 0.01, 5.0);
+            ImGui::SliderFloat("Exposure time (s)", &exposureTime, 0.01, 5.0);
             ImGui::SliderInt("Recording FPS", &recordFPS, 1, 60);
             ImGui::SliderInt("RecordingMesh Step",&recordingStep, 1, 10);
        // }
@@ -317,6 +304,10 @@ void ofApp::draw() {
 void ofApp::drawAnyPointCloud() {
     int w = recordWidth;
     int h = recordHeight;
+    unsigned char *exposureBuffer = new unsigned char [recordWidth * recordHeight * 4];
+   // unsigned char *exposureBuffer = new unsigned char ;
+    numOfFramesInExposureBuffer = 0;
+    ofColor c;
     int pCount =0;
     ofMesh mesh;
     
@@ -336,7 +327,6 @@ void ofApp::drawAnyPointCloud() {
     
     if(playing) { // if we are playing then render data from file ---------------
         if(meshRecorder.readyToPlay) {
-            //int step = gridSize; //DB this crashes the mesh playback  .....
             for(int y = 0; y < h; y += step) { //load data from recording into mesh as pointcloud
                 for(int x = 0; x < w; x += step) {
                     ofVec3f v2;
@@ -347,26 +337,40 @@ void ofApp::drawAnyPointCloud() {
                     c = meshRecorder.getColorAt(frameToPlay, pCount);
                     if(paintMesh) mesh.addColor(c); // add colour from map into mesh at each point
                     pCount ++;
-                    //cout << "pointcount from drawAnyCloud fctn: " << pCount << endl;
                 }
             }
-             //cout << "end pointcount from drawAnyCloud fctn: " << pCount << endl;
         }
-    } else {
-        //draw  pointcloud mesh from live source --------
+    } else { // draw  pointcloud mesh from live source --------
         int step = gridSize;
+        int index =0;
         for(int y = 0; y < h; y += step) {
             for(int x = 0; x < w; x += step) {
-                if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) { //exclude out of range data
+                if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) { // exclude out of range data
                     mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
-                    if (paintMesh)mesh.addColor(kinect.getColorAt(x,y));
-                    
+                    if (paintMesh) {
+//                        numOfFramesInExposureBuffer ++; // increment number of frames read into
+                        // add relevant data into array
+                         // index= y+(x*w);
+                        c = (kinect.getColorAt(x,y));
+//                        exposureBuffer[index] += c.r;
+//                        exposureBuffer[index + 1] += c.g;
+//                        exposureBuffer[index + 2] += c.g;
+//                        exposureBuffer[index + 3] += 255;
+//                        cout << exposureBuffer[index] << endl;
+                       //if (exposureStart + (1000*exposureTime) > ofGetSystemTime()){ //exposure time reached so write the color to the pixel
+//                            c = (exposureBuffer[x,y] /numOfFramesInExposureBuffer);
+                       //    cout << numOfFramesInExposureBuffer << endl;
+                            mesh.addColor(c);
+                       //numOfFramesInExposureBuffer = 0;
+                            
+                     //  }
+                    }
                 }
             }
         }
     }
  
-    int numofVertices = mesh.getNumVertices();   //----- then generate triangles for mesh --
+    int numofVertices = mesh.getNumVertices(); //----- then generate triangles for mesh --
     pCount = 0;
     ofVec3f v2;
     v2.set(0,0,0); //add triangles to mesh from vertices - move this to the 'read mesh' ?
@@ -376,7 +380,6 @@ void ofApp::drawAnyPointCloud() {
         // optimise to check less of the duplicate points
         //  if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane)  // use backplane value to cull deeper points from cloud // to be added
         if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1))==v2 or (mesh.getVertex(pCount+1+w/step))==v2){
-            //cout << "culled point" << pCount << endl ;
         }else{
             mesh.addTriangle(n, n+1, n+1+w/step); //even triangles for each mesh square
         }
@@ -385,8 +388,8 @@ void ofApp::drawAnyPointCloud() {
         }else{
             mesh.addTriangle(n, n+1+w/step, n+w/step); //odd triangles for each mesh square
         }
-         pCount ++;
-   } //------ end add triangles
+        pCount ++;
+    } //------ end add triangles
     
     if (showNormals) {//set normals for faces
         setNormals( mesh );
@@ -395,14 +398,15 @@ void ofApp::drawAnyPointCloud() {
     //glEnable(GL_POINT_SMOOTH); // use circular points instead of square points
     ofPushMatrix();
     ofScale(1, -1, -1);  // the projected points are 'upside down' and 'backwards'
-    ofTranslate(0, 0, -750); // center the points a bit
+    ofTranslate(0, 0, -1000); // center the points a bit
     glEnable(GL_DEPTH_TEST);
+    
+    glDepthRange(0, 2000);//expwriment with gldepth range
+    
     if (renderFlatQuads){ // render as flat quads
         glShadeModel(GL_FLAT);
-        //cout <<"flat quads" << endl;
     }else {
         glShadeModel(GL_TRIANGLES);
-        //cout <<"triangles" << endl;
     }
     
     //mesh.drawVertices();
@@ -527,7 +531,7 @@ void ofApp::savePointCloud() {
 
 //////////////////////////////////////////////////////
 // XML exif data save and load
-// ImageDescription , ExposureTime , DateTimeOriginal , DateTimeDigitized, ShutterSpeedValue , ApertureValue, FocalLength, MakerNote, RelatedSoundFile, SensingMethod, WhiteBalance, DeviceSettingDescription, etc
+// ImageDescription ,  , DateTimeOriginal , DateTimeDigitized, ShutterSpeedValue , ApertureValue, FocalLength, MakerNote, RelatedSoundFile, SensingMethod, WhiteBalance, DeviceSettingDescription, etc
 //////////////////////////////////////////////////////
 
 void ofApp::saveExifData() { //put some some settings into a file
@@ -541,13 +545,14 @@ void ofApp::saveExifData() { //put some some settings into a file
     ofToString(ofGetSeconds());
     
     //exifSettings.addTag("exifData");
-    exifSettings.setValue("exif:make", "buzzo");
-    exifSettings.setValue("exif:model", "experimental voumetric camera v0.1");
+    exifSettings.setValue("exif:make", "Buzzo");
+    exifSettings.setValue("exif:model", "Volca: Experimental volumetric camera/apparatus v0.1");
     exifSettings.setValue("exif:orientation", "top left");
     exifSettings.setValue("exif:ImageWidth", recordWidth/recordingStep);
     exifSettings.setValue("exif:ImageLength", recordHeight/recordingStep);
     exifSettings.setValue("exif:DateTimeDigitized", today);
-    exifSettings.setValue("exifLSensingMethod", "kinect depth sensor");
+    exifSettings.setValue("exif:ExposureTime", exposureTime);
+    exifSettings.setValue("exifSensingMethod", "Kinect depth sensor");
    
     exifSettings.saveFile(path + "exifSettings.xml"); //puts exifSettings.xml file in the current recordedframe folder
     string myXml;
@@ -689,8 +694,8 @@ void ofApp::keyPressed (int key) {
             if(playing) return;
             saveTo = generateFileName();
             frame = 0;
-           // timeNow = ofGetSystemTime();
-
+            exposureStart = ofGetSystemTime();
+            cout << "exposte start" << exposureStart << endl;
             recording = true;
             saveExifData();
             break;
@@ -746,6 +751,11 @@ void ofApp::keyPressed (int key) {
         case 'h':
             easyCam.reset();//reset easycam settings to re-centre 3d view
             break;
+            
+        case 'f':
+            ofToggleFullscreen();
+            break;
+            
     }    
 }
 

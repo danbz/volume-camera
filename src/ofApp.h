@@ -101,9 +101,12 @@ public:
     
     // shot timing GUI elements
     bool singleShot;
-    float exposureLength;
+    float exposureTime;
+    int exposureStart;
     int recordFPS;
     int lastRecordedFrame;
+    //unsigned char exposureBuffer; // array for racking frames from Kinext camera into for exposure timing
+    float numOfFramesInExposureBuffer; // number of frames read from kinect webcam into exposure buffer (actual exposure = buffer numbers/num of frames read in)
     
     //////////////////////////////////////////////////////
     // Rendering Reproduction
