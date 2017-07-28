@@ -41,7 +41,7 @@ void ofApp::setup() {
     //////////////////////////////////////////////////////
     // application / depth sensing configuration
     //////////////////////////////////////////////////////
-    colorImage.allocate(kinect.width, kinect.height);
+    colorCvImage.allocate(kinect.width, kinect.height);
 	grayImage.allocate(kinect.width, kinect.height);
 	grayThreshNear.allocate(kinect.width, kinect.height);
 	grayThreshFar.allocate(kinect.width, kinect.height);
@@ -136,7 +136,9 @@ void ofApp::update() {
     // Kinect Live Render CV updating
     if(kinect.isFrameNew()) { 	// if there is a new frame and we are connected to a kinect device
 		grayImage.setFromPixels(kinect.getDepthPixels()); // load grayscale depth image from the kinect source
-        colorImage.setFromPixels(kinect.getPixels()); // load RGB image from the kinect source
+        colorCvImage.setFromPixels(kinect.getPixels()); // load RGB image from the kinect source
+        colorImage.setFromPixels(kinect.getPixels());
+        depthImage.setFromPixels(kinect.getDepthPixels());
 		if(bThreshWithOpenCV) {
 			grayThreshNear = grayImage; 	// we do two thresholds - one for the far plane and one for the near plane
             grayThreshFar = grayImage;   		// we then do a cvAnd to get the pixels which are a union of the two thresholds
@@ -185,7 +187,7 @@ void ofApp::draw() {
 	} else { 		// draw from the live kinect as 3 windows
 		kinect.drawDepth(10, 10, 400, 300);
 		kinect.draw(420, 10, 400, 300);
-		grayImage.draw(10, 320, 400, 300);
+		depthImage.draw(10, 320, 400, 300);
 		contourFinder.draw(10, 320, 400, 300);
         colorImage.draw(420, 320, 400, 300);
 
@@ -255,29 +257,24 @@ void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages ra
     } else { // draw  pointcloud mesh from live source --------
         int step = gridSize;
         int index =0;
+        unsigned char *data = new unsigned char (w * h * 3);
+       // colorImage.getPixels()
         for(int y = 0; y < h; y += step) {
             for(int x = 0; x < w; x += step) {
-                if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) { // exclude out of range data
+            if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) { // exclude out of range data
+                    //ofColor zGrey = depthImage.getColor(x, y);
+                    //int z = zGrey.r;
+                //cout << z << endl;
+                    //ofVec3f v3;
+                    //v3.set(x,y,z);
+                   // mesh.addVertex(v3);
                     mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
                     if (paintMesh) {
-//                        numOfFramesInExposureBuffer ++; // increment number of frames read into
-                        // add relevant data into array
-                         // index= y+(x*w);
-                        c = (kinect.getColorAt(x,y));
-//                        exposureBuffer[index] += c.r;
-//                        exposureBuffer[index + 1] += c.g;
-//                        exposureBuffer[index + 2] += c.g;
-//                        exposureBuffer[index + 3] += 255;
-//                        cout << exposureBuffer[index] << endl;
-                       //if (exposureStart + (1000*exposureTime) > ofGetSystemTime()){ //exposure time reached so write the color to the pixel
-//                            c = (exposureBuffer[x,y] /numOfFramesInExposureBuffer);
-                       //    cout << numOfFramesInExposureBuffer << endl;
-                            mesh.addColor(c);
-                       //numOfFramesInExposureBuffer = 0;
-                            
-                     //  }
+                        //c = (kinect.getColorAt(x,y));
+                        c = (colorImage.getColor(x,y)); // getting RGB from ofImage rather than direct from kinect.
+                        mesh.addColor(c);
                     }
-                }
+            }
             }
         }
     }

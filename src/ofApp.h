@@ -47,11 +47,16 @@ public:
 	ofxKinect kinect2;
 #endif
 	
-	ofxCvColorImage colorImage; // RGB image from Kinect
+	ofxCvColorImage colorCvImage; // RGB image from Kinect
 	ofxCvGrayscaleImage grayImage; // grayscale depth image from Kinect
 	ofxCvGrayscaleImage grayThreshNear; // the near thresholded image
 	ofxCvGrayscaleImage grayThreshFar; // the far thresholded image
 	ofxCvContourFinder contourFinder;
+    
+    
+    ofImage colorImage;
+    ofImage depthImage;
+    
 	
 	bool bThreshWithOpenCV;
 	bool bDrawPointCloud;
