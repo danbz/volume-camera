@@ -3,11 +3,11 @@
 #include "ofMain.h"
 #include "ofxOpenCv.h"
 #include "ofxKinect.h"
-#include "ofxGui.h"
 #include "ofxKinectMeshRecorder.h"
 #include "metaData.h"
 #include "ofxXmlSettings.h"
 #include "ofxImGui.h"
+#include "ofxCv.h"
 
 // Windows users: You MUST install the libfreenect kinect drivers in order to be able to use
 // ofxKinect. Plug in the kinect and point your Windows Device Manager to the
@@ -56,6 +56,7 @@ public:
     
     ofImage colorImage;
     ofImage depthImage;
+    ofPixels depthPixels;
     
 	
 	bool bThreshWithOpenCV;

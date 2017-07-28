@@ -1,4 +1,4 @@
-ofxGui
+ofxCv
 ofxImGui
 ofxKinect
 ofxOpenCv

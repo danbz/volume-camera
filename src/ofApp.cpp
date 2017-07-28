@@ -41,10 +41,15 @@ void ofApp::setup() {
     //////////////////////////////////////////////////////
     // application / depth sensing configuration
     //////////////////////////////////////////////////////
+   int  kWidth=kinect.width;
+    int kHeight=kinect.height;
     colorCvImage.allocate(kinect.width, kinect.height);
 	grayImage.allocate(kinect.width, kinect.height);
 	grayThreshNear.allocate(kinect.width, kinect.height);
 	grayThreshFar.allocate(kinect.width, kinect.height);
+    colorImage.allocate(kWidth, kHeight, OF_IMAGE_COLOR);
+    depthImage.allocate(kWidth, kHeight, OF_IMAGE_GRAYSCALE);
+    
     nearThreshold = 230;
 	farThreshold = 70;
 	bThreshWithOpenCV = true;
@@ -61,8 +66,6 @@ void ofApp::setup() {
     bDrawPointCloud = true;   // start from the camera view
     kinect.setDepthClipping( 100,  20000); //set depth clipping range
     frame = 0; //play back frame initialisation
-    distanceMinima = 10;
-    distanceMaxima = 25000;
     paused = false;
     drawTriangles = false;
     renderStyle = 1;
@@ -73,7 +76,6 @@ void ofApp::setup() {
     exposureTime = 0.5; // length of exposure capture in seconds
     recordFPS = 25;
     lastRecordedFrame = 0;
-   
     
     //added in new thread class etc 8/july/17
     ofxKinectMeshRecorder thread;
@@ -100,7 +102,7 @@ void ofApp::setup() {
     show_test_window = false;
     playbackFPS=15;
     blobSize =4;
-    gridSize =1;
+    //gridSize =1;
     backPlane =25000;
     frontPlane=0;
     recordingStep =4;
@@ -116,12 +118,10 @@ void ofApp::update() {
 	ofBackground(imBackgroundColor); // background color
 	kinect.update();
     
-    // mesh capture
-    if(recording) {
+    if(recording) { // mesh capture
         savePointCloud();
     }
     
-    // Playback
     if(playing) { // if we are in playback mode
         if(!paused){ // and have not paused the playback
             if (timeNow < (ofGetSystemTime() - (1000/playbackFPS))) { // check playback FPS
@@ -133,12 +133,12 @@ void ofApp::update() {
         }
     }
     
-    // Kinect Live Render CV updating
-    if(kinect.isFrameNew()) { 	// if there is a new frame and we are connected to a kinect device
+    if(kinect.isFrameNew()) { 	// if there is a new frame and we are connected to a kinect device Kinect Live Render CV updating
 		grayImage.setFromPixels(kinect.getDepthPixels()); // load grayscale depth image from the kinect source
         colorCvImage.setFromPixels(kinect.getPixels()); // load RGB image from the kinect source
         colorImage.setFromPixels(kinect.getPixels());
         depthImage.setFromPixels(kinect.getDepthPixels());
+        depthPixels = grayImage.getPixels();
 		if(bThreshWithOpenCV) {
 			grayThreshNear = grayImage; 	// we do two thresholds - one for the far plane and one for the near plane
             grayThreshFar = grayImage;   		// we then do a cvAnd to get the pixels which are a union of the two thresholds
@@ -185,11 +185,17 @@ void ofApp::draw() {
         ofDisableLighting(); //disable world light
         easyCam.end();
 	} else { 		// draw from the live kinect as 3 windows
-		kinect.drawDepth(10, 10, 400, 300);
-		kinect.draw(420, 10, 400, 300);
-		depthImage.draw(10, 320, 400, 300);
-		contourFinder.draw(10, 320, 400, 300);
-        colorImage.draw(420, 320, 400, 300);
+        grayImage=(kinect.getDepthPixels());
+		kinect.drawDepth(10, 10, 480, 360);
+		kinect.draw(490, 10, 480, 360);
+       // grayImage.blurGaussian(11);
+        grayImage.dilate();
+        grayImage.dilate();
+        //grayImage.erode();
+
+		depthImage.draw(10, 370, 480, 360);
+		contourFinder.draw(10, 370, 480, 360);
+        grayImage.draw(490, 370, 480, 360);
 
 #ifdef USE_TWO_KINECTS
 		kinect2.draw(420, 320, 400, 300);
@@ -219,9 +225,9 @@ void ofApp::draw() {
 void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages rather than direct from kinect  - 28-7-17
     int w = recordWidth;
     int h = recordHeight;
-    unsigned char *exposureBuffer = new unsigned char [recordWidth * recordHeight * 4];
+   // unsigned char *exposureBuffer = new unsigned char [recordWidth * recordHeight * 4];
    // unsigned char *exposureBuffer = new unsigned char ;
-    numOfFramesInExposureBuffer = 0;
+   // numOfFramesInExposureBuffer = 0;
     ofColor c;
     int pCount =0;
     ofMesh mesh;
@@ -255,26 +261,28 @@ void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages ra
             }
         }
     } else { // draw  pointcloud mesh from live source --------
-        int step = gridSize;
+        //int step = recordingStep;
         int index =0;
-        unsigned char *data = new unsigned char (w * h * 3);
-       // colorImage.getPixels()
-        for(int y = 0; y < h; y += step) {
-            for(int x = 0; x < w; x += step) {
-            if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) { // exclude out of range data
-                    //ofColor zGrey = depthImage.getColor(x, y);
-                    //int z = zGrey.r;
-                //cout << z << endl;
+        int i=0;
+        for(int y = 0; y < h; y += recordingStep) {
+            for(int x = 0; x < w; x += recordingStep) {
+                if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) { // exclude out of range data
+                   // int zGrey = depthPixels[i];
+                    //ofColor  = depthImage.getColor(x, y);
+                     //float z = zGrey;
+                    cout << "dp: " << (grayImage.getPixels())[i] << endl;
                     //ofVec3f v3;
                     //v3.set(x,y,z);
-                   // mesh.addVertex(v3);
+                    // mesh.addVertex(v3);
                     mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
                     if (paintMesh) {
                         //c = (kinect.getColorAt(x,y));
                         c = (colorImage.getColor(x,y)); // getting RGB from ofImage rather than direct from kinect.
                         mesh.addColor(c);
                     }
-            }
+                    
+                }
+                i++;
             }
         }
     }
@@ -436,7 +444,7 @@ void ofApp::savePointCloud() {
 
 //////////////////////////////////////////////////////
 // XML exif data save and load
-// ImageDescription ,  , DateTimeOriginal , DateTimeDigitized, ShutterSpeedValue , ApertureValue, FocalLength, MakerNote, RelatedSoundFile, SensingMethod, WhiteBalance, DeviceSettingDescription, etc
+// to include; ImageDescription ,  , DateTimeOriginal , DateTimeDigitized, ShutterSpeedValue , ApertureValue, FocalLength, MakerNote, RelatedSoundFile, SensingMethod, WhiteBalance, DeviceSettingDescription, etc
 //////////////////////////////////////////////////////
 
 void ofApp::saveExifData() { //put some some settings into a file
@@ -497,7 +505,7 @@ void ofApp::exit() {
 //--------------------------------------------------------------
 
 void ofApp::drawGui() {
-    imGui.begin(); //beging GUI
+    imGui.begin(); //begin GUI
     
     ImGuiIO& io = ImGui::GetIO(); // hide mouse input from rest of app
     if (io.WantCaptureMouse){ //prevent mousemessages going to app while using imGui
@@ -538,7 +546,7 @@ void ofApp::drawGui() {
             ImGui::Checkbox("normals", &showNormals); ImGui::SameLine();
             ImGui::Checkbox("flatQuads", &renderFlatQuads);
             ImGui::SliderInt("Cloud pointsize", &blobSize, 1, 15);
-            ImGui::SliderInt("Mesh spacing", &gridSize, 1, 20);
+            //ImGui::SliderInt("Mesh spacing", &gridSize, 1, 20);
             ImGui::ColorEdit3("Background Color", (float*)&imBackgroundColor);
         }
         if (ImGui::CollapsingHeader("Playback options")) {
