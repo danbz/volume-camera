@@ -3453,281 +3453,6 @@
 				<key>sourceTree</key>
 				<string>SOURCE_ROOT</string>
 			</dict>
-			<key>2D78B1540FEAF31697F35F7B</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>version_nano.h</string>
-				<key>path</key>
-				<string>../../../addons/ofxKinect/libs/libusb/include/libusb/version_nano.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>02653F36B332292A42AA254B</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>version.h</string>
-				<key>path</key>
-				<string>../../../addons/ofxKinect/libs/libusb/include/libusb/version.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>B0464D139F81774EEC853158</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>windows_usb.h</string>
-				<key>path</key>
-				<string>../../../addons/ofxKinect/libs/libusb/include/libusb/os/windows_usb.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>E7FA090F793304817CD9346A</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>windows_common.h</string>
-				<key>path</key>
-				<string>../../../addons/ofxKinect/libs/libusb/include/libusb/os/windows_common.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>D41A92C779E22EE2C2F6BA97</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>wince_usb.h</string>
-				<key>path</key>
-				<string>../../../addons/ofxKinect/libs/libusb/include/libusb/os/wince_usb.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>CA78A85A36F7B6C99E46A652</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>threads_windows.h</string>
-				<key>path</key>
-				<string>../../../addons/ofxKinect/libs/libusb/include/libusb/os/threads_windows.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>7C871C20778A3CE5427768E7</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>threads_posix.h</string>
-				<key>path</key>
-				<string>../../../addons/ofxKinect/libs/libusb/include/libusb/os/threads_posix.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>2274A86B3FA70BCE3163BA5E</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>poll_windows.h</string>
-				<key>path</key>
-				<string>../../../addons/ofxKinect/libs/libusb/include/libusb/os/poll_windows.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>75F98C0369E211B37BA4AA8F</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>poll_posix.h</string>
-				<key>path</key>
-				<string>../../../addons/ofxKinect/libs/libusb/include/libusb/os/poll_posix.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>9FD297A8E9701111868FD56C</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>linux_usbfs.h</string>
-				<key>path</key>
-				<string>../../../addons/ofxKinect/libs/libusb/include/libusb/os/linux_usbfs.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>A7B9E4D9CD2C03AC885255A1</key>
-			<dict>
-				<key>children</key>
-				<array>
-					<string>652BCF97C2D6CD61DE4C87E9</string>
-					<string>9FD297A8E9701111868FD56C</string>
-					<string>75F98C0369E211B37BA4AA8F</string>
-					<string>2274A86B3FA70BCE3163BA5E</string>
-					<string>7C871C20778A3CE5427768E7</string>
-					<string>CA78A85A36F7B6C99E46A652</string>
-					<string>D41A92C779E22EE2C2F6BA97</string>
-					<string>E7FA090F793304817CD9346A</string>
-					<string>B0464D139F81774EEC853158</string>
-				</array>
-				<key>isa</key>
-				<string>PBXGroup</string>
-				<key>name</key>
-				<string>os</string>
-				<key>sourceTree</key>
-				<string>&lt;group&gt;</string>
-			</dict>
-			<key>652BCF97C2D6CD61DE4C87E9</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>darwin_usb.h</string>
-				<key>path</key>
-				<string>../../../addons/ofxKinect/libs/libusb/include/libusb/os/darwin_usb.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>2FEA5362DBABCA90F4736477</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>libusbi.h</string>
-				<key>path</key>
-				<string>../../../addons/ofxKinect/libs/libusb/include/libusb/libusbi.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>CDEE205E11692CE4E43C61F2</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>libusb.h</string>
-				<key>path</key>
-				<string>../../../addons/ofxKinect/libs/libusb/include/libusb/libusb.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>7399829F00C4C8A9DD9E6197</key>
-			<dict>
-				<key>children</key>
-				<array>
-					<string>94959A4EC4D200310E69441E</string>
-					<string>CDEE205E11692CE4E43C61F2</string>
-					<string>2FEA5362DBABCA90F4736477</string>
-					<string>A7B9E4D9CD2C03AC885255A1</string>
-					<string>02653F36B332292A42AA254B</string>
-					<string>2D78B1540FEAF31697F35F7B</string>
-				</array>
-				<key>isa</key>
-				<string>PBXGroup</string>
-				<key>name</key>
-				<string>libusb</string>
-				<key>sourceTree</key>
-				<string>&lt;group&gt;</string>
-			</dict>
-			<key>33F75E842570194352AF511E</key>
-			<dict>
-				<key>children</key>
-				<array>
-					<string>7399829F00C4C8A9DD9E6197</string>
-				</array>
-				<key>isa</key>
-				<string>PBXGroup</string>
-				<key>name</key>
-				<string>include</string>
-				<key>sourceTree</key>
-				<string>&lt;group&gt;</string>
-			</dict>
-			<key>F0C89F35964434FD6E335702</key>
-			<dict>
-				<key>children</key>
-				<array>
-					<string>33F75E842570194352AF511E</string>
-				</array>
-				<key>isa</key>
-				<string>PBXGroup</string>
-				<key>name</key>
-				<string>libusb</string>
-				<key>sourceTree</key>
-				<string>&lt;group&gt;</string>
-			</dict>
-			<key>94959A4EC4D200310E69441E</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>hotplug.h</string>
-				<key>path</key>
-				<string>../../../addons/ofxKinect/libs/libusb/include/libusb/hotplug.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
 			<key>B4A0A006318C06E07DDF19D6</key>
 			<dict>
 				<key>explicitFileType</key>
@@ -4123,7 +3848,6 @@
 				<key>children</key>
 				<array>
 					<string>32687044708CDA9EDA265387</string>
-					<string>F0C89F35964434FD6E335702</string>
 					<string>65726280742CD54BF368BDB8</string>
 				</array>
 				<key>isa</key>
@@ -4483,43 +4207,6 @@
 				<key>sourceTree</key>
 				<string>SOURCE_ROOT</string>
 			</dict>
-			<key>EF37E038E1DD79E1D9BA939D</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxImGuiLoggerChannel.h</string>
-				<key>path</key>
-				<string>../../../addons/ofxImGui/src/ofxImGuiLoggerChannel.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>A6F396BE5D1E24326E1F796A</key>
-			<dict>
-				<key>fileRef</key>
-				<string>64438C8902B287DA10BCD63B</string>
-				<key>isa</key>
-				<string>PBXBuildFile</string>
-			</dict>
-			<key>64438C8902B287DA10BCD63B</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.cpp.cpp</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxImGuiLoggerChannel.cpp</string>
-				<key>path</key>
-				<string>../../../addons/ofxImGui/src/ofxImGuiLoggerChannel.cpp</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
 			<key>D91100C1FBA245AD6CB55BD3</key>
 			<dict>
 				<key>explicitFileType</key>
@@ -4621,43 +4308,6 @@
 				<string>Gui.cpp</string>
 				<key>path</key>
 				<string>../../../addons/ofxImGui/src/Gui.cpp</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>99559F284344A867305900DB</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>EngineVk.h</string>
-				<key>path</key>
-				<string>../../../addons/ofxImGui/src/EngineVk.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>6B3BB6E115053982E13C175C</key>
-			<dict>
-				<key>fileRef</key>
-				<string>91D1568F53D3EC80AC718E7B</string>
-				<key>isa</key>
-				<string>PBXBuildFile</string>
-			</dict>
-			<key>91D1568F53D3EC80AC718E7B</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.cpp.cpp</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>EngineVk.cpp</string>
-				<key>path</key>
-				<string>../../../addons/ofxImGui/src/EngineVk.cpp</string>
 				<key>sourceTree</key>
 				<string>SOURCE_ROOT</string>
 			</dict>
@@ -4799,16 +4449,12 @@
 					<string>3A9013A02246381F14572188</string>
 					<string>3174462C64E918D8DA23041B</string>
 					<string>CB5C15EA0881D35A88C22937</string>
-					<string>91D1568F53D3EC80AC718E7B</string>
-					<string>99559F284344A867305900DB</string>
 					<string>F0E2047B4D03D5151730B52B</string>
 					<string>450466BDE619E4EC9BF85C57</string>
 					<string>2C966A8F6085AAA2FED6F411</string>
 					<string>748079BFB4742DB856EABE40</string>
 					<string>3AB24D308736280A07568671</string>
 					<string>D91100C1FBA245AD6CB55BD3</string>
-					<string>64438C8902B287DA10BCD63B</string>
-					<string>EF37E038E1DD79E1D9BA939D</string>
 					<string>0BB9F7D314FADD51BAB96878</string>
 				</array>
 				<key>isa</key>
@@ -4851,359 +4497,6 @@
 				<string>BaseEngine.cpp</string>
 				<key>path</key>
 				<string>../../../addons/ofxImGui/src/BaseEngine.cpp</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>0C07E96BEEF0C5193A584737</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxToggle.h</string>
-				<key>path</key>
-				<string>ofxGui/src/ofxToggle.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>C82125FC86547DD1F917514B</key>
-			<dict>
-				<key>fileRef</key>
-				<string>2E69F6E683267FB4902346EA</string>
-				<key>isa</key>
-				<string>PBXBuildFile</string>
-			</dict>
-			<key>2E69F6E683267FB4902346EA</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.cpp.cpp</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxToggle.cpp</string>
-				<key>path</key>
-				<string>ofxGui/src/ofxToggle.cpp</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>637AE37CAF93F19FA5725574</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxSliderGroup.h</string>
-				<key>path</key>
-				<string>ofxGui/src/ofxSliderGroup.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>E3B48722C15C76597EDA637A</key>
-			<dict>
-				<key>fileRef</key>
-				<string>87C7141D7DA1EA0850F205BF</string>
-				<key>isa</key>
-				<string>PBXBuildFile</string>
-			</dict>
-			<key>87C7141D7DA1EA0850F205BF</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.cpp.cpp</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxSliderGroup.cpp</string>
-				<key>path</key>
-				<string>ofxGui/src/ofxSliderGroup.cpp</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>83A4970FCE4731FD004EC655</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxSlider.h</string>
-				<key>path</key>
-				<string>ofxGui/src/ofxSlider.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>166838C2BA0E254AD79B1D06</key>
-			<dict>
-				<key>fileRef</key>
-				<string>B514DEABA3497E8A9C936334</string>
-				<key>isa</key>
-				<string>PBXBuildFile</string>
-			</dict>
-			<key>B514DEABA3497E8A9C936334</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.cpp.cpp</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxSlider.cpp</string>
-				<key>path</key>
-				<string>ofxGui/src/ofxSlider.cpp</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>A11E0C984F55964349619A93</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxPanel.h</string>
-				<key>path</key>
-				<string>ofxGui/src/ofxPanel.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>637D2D4BE7E237CCEE375F93</key>
-			<dict>
-				<key>fileRef</key>
-				<string>151F2B5437492E76CEC61D51</string>
-				<key>isa</key>
-				<string>PBXBuildFile</string>
-			</dict>
-			<key>151F2B5437492E76CEC61D51</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.cpp.cpp</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxPanel.cpp</string>
-				<key>path</key>
-				<string>ofxGui/src/ofxPanel.cpp</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>4C56E6D07432C349666C3C74</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxLabel.h</string>
-				<key>path</key>
-				<string>ofxGui/src/ofxLabel.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>69F9CB1536BD2EE1CE22AE3C</key>
-			<dict>
-				<key>fileRef</key>
-				<string>9F38CAF19390481ADFEACEB7</string>
-				<key>isa</key>
-				<string>PBXBuildFile</string>
-			</dict>
-			<key>9F38CAF19390481ADFEACEB7</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.cpp.cpp</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxLabel.cpp</string>
-				<key>path</key>
-				<string>ofxGui/src/ofxLabel.cpp</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>B526F5D928A03C13174DCE06</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxGuiGroup.h</string>
-				<key>path</key>
-				<string>ofxGui/src/ofxGuiGroup.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>8E17E054A188482A2F6C94D8</key>
-			<dict>
-				<key>fileRef</key>
-				<string>7283F8F1A3AAF41D8B9281DB</string>
-				<key>isa</key>
-				<string>PBXBuildFile</string>
-			</dict>
-			<key>7283F8F1A3AAF41D8B9281DB</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.cpp.cpp</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxGuiGroup.cpp</string>
-				<key>path</key>
-				<string>ofxGui/src/ofxGuiGroup.cpp</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>42B3FA50C027B3DF468EA108</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxGui.h</string>
-				<key>path</key>
-				<string>ofxGui/src/ofxGui.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>B50EB2A3E055ECF1DD7353A1</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxButton.h</string>
-				<key>path</key>
-				<string>ofxGui/src/ofxButton.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>DDDA2CBC0694CE0746BA2C2E</key>
-			<dict>
-				<key>fileRef</key>
-				<string>B4D3058D1B6DB1D55E267C45</string>
-				<key>isa</key>
-				<string>PBXBuildFile</string>
-			</dict>
-			<key>B4D3058D1B6DB1D55E267C45</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.cpp.cpp</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxButton.cpp</string>
-				<key>path</key>
-				<string>ofxGui/src/ofxButton.cpp</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>44E8B140C36DC705B88212C9</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxBaseGui.h</string>
-				<key>path</key>
-				<string>ofxGui/src/ofxBaseGui.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>11B5C919773FAA5CF5867B83</key>
-			<dict>
-				<key>children</key>
-				<array>
-					<string>F2220FED76AB40FE8ACAB969</string>
-					<string>44E8B140C36DC705B88212C9</string>
-					<string>B4D3058D1B6DB1D55E267C45</string>
-					<string>B50EB2A3E055ECF1DD7353A1</string>
-					<string>42B3FA50C027B3DF468EA108</string>
-					<string>7283F8F1A3AAF41D8B9281DB</string>
-					<string>B526F5D928A03C13174DCE06</string>
-					<string>9F38CAF19390481ADFEACEB7</string>
-					<string>4C56E6D07432C349666C3C74</string>
-					<string>151F2B5437492E76CEC61D51</string>
-					<string>A11E0C984F55964349619A93</string>
-					<string>B514DEABA3497E8A9C936334</string>
-					<string>83A4970FCE4731FD004EC655</string>
-					<string>87C7141D7DA1EA0850F205BF</string>
-					<string>637AE37CAF93F19FA5725574</string>
-					<string>2E69F6E683267FB4902346EA</string>
-					<string>0C07E96BEEF0C5193A584737</string>
-				</array>
-				<key>isa</key>
-				<string>PBXGroup</string>
-				<key>name</key>
-				<string>src</string>
-				<key>sourceTree</key>
-				<string>&lt;group&gt;</string>
-			</dict>
-			<key>B56552835FEAE13A91170B5F</key>
-			<dict>
-				<key>children</key>
-				<array>
-					<string>11B5C919773FAA5CF5867B83</string>
-				</array>
-				<key>isa</key>
-				<string>PBXGroup</string>
-				<key>name</key>
-				<string>ofxGui</string>
-				<key>sourceTree</key>
-				<string>&lt;group&gt;</string>
-			</dict>
-			<key>DFFB48B52F995A03A5961AE0</key>
-			<dict>
-				<key>fileRef</key>
-				<string>F2220FED76AB40FE8ACAB969</string>
-				<key>isa</key>
-				<string>PBXBuildFile</string>
-			</dict>
-			<key>F2220FED76AB40FE8ACAB969</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.cpp.cpp</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>ofxBaseGui.cpp</string>
-				<key>path</key>
-				<string>ofxGui/src/ofxBaseGui.cpp</string>
 				<key>sourceTree</key>
 				<string>SOURCE_ROOT</string>
 			</dict>
@@ -5284,9 +4577,7 @@
 			<key>6948EE371B920CB800B5AC1A</key>
 			<dict>
 				<key>children</key>
-				<array>
-					<string>B56552835FEAE13A91170B5F</string>
-				</array>
+				<array />
 				<key>isa</key>
 				<string>PBXGroup</string>
 				<key>name</key>
@@ -5455,7 +4746,6 @@
 					<key>OTHER_LDFLAGS</key>
 					<array>
 						<string>$(OF_CORE_FRAMEWORKS) $(OF_CORE_LIBS)</string>
-						<string>../../../addons/ofxKinect/libs/libusb/lib/osx/usb-1.0.0-latest-superspeed.a</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/lib/osx/usb-1.0.a</string>
 						<string>../../../addons/ofxOpenCv/libs/opencv/lib/osx/opencv.a</string>
 					</array>
@@ -5463,7 +4753,6 @@
 					<array>
 						<string>$(OF_CORE_HEADERS)</string>
 						<string>src</string>
-						<string>ofxGui/src</string>
 						<string>../../../addons/ofxImGui/libs</string>
 						<string>../../../addons/ofxImGui/libs/imgui</string>
 						<string>../../../addons/ofxImGui/libs/imgui/src</string>
@@ -5473,18 +4762,12 @@
 						<string>../../../addons/ofxKinect/libs/libfreenect/include</string>
 						<string>../../../addons/ofxKinect/libs/libfreenect/platform</string>
 						<string>../../../addons/ofxKinect/libs/libfreenect/src</string>
-						<string>../../../addons/ofxKinect/libs/libusb</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/include</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/include/libusb-1.0</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/lib</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/lib/osx</string>
 						<string>../../../addons/ofxKinect/libs/libusb-win32</string>
-						<string>../../../addons/ofxKinect/libs/libusb/include</string>
-						<string>../../../addons/ofxKinect/libs/libusb/include/libusb</string>
-						<string>../../../addons/ofxKinect/libs/libusb/include/libusb/os</string>
-						<string>../../../addons/ofxKinect/libs/libusb/lib</string>
-						<string>../../../addons/ofxKinect/libs/libusb/lib/osx</string>
 						<string>../../../addons/ofxKinect/src</string>
 						<string>../../../addons/ofxKinect/src/extra</string>
 						<string>../../../addons/ofxOpenCv/libs</string>
@@ -5577,7 +4860,6 @@
 					<key>OTHER_LDFLAGS</key>
 					<array>
 						<string>$(OF_CORE_FRAMEWORKS) $(OF_CORE_LIBS)</string>
-						<string>../../../addons/ofxKinect/libs/libusb/lib/osx/usb-1.0.0-latest-superspeed.a</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/lib/osx/usb-1.0.a</string>
 						<string>../../../addons/ofxOpenCv/libs/opencv/lib/osx/opencv.a</string>
 					</array>
@@ -5585,7 +4867,6 @@
 					<array>
 						<string>$(OF_CORE_HEADERS)</string>
 						<string>src</string>
-						<string>ofxGui/src</string>
 						<string>../../../addons/ofxImGui/libs</string>
 						<string>../../../addons/ofxImGui/libs/imgui</string>
 						<string>../../../addons/ofxImGui/libs/imgui/src</string>
@@ -5595,18 +4876,12 @@
 						<string>../../../addons/ofxKinect/libs/libfreenect/include</string>
 						<string>../../../addons/ofxKinect/libs/libfreenect/platform</string>
 						<string>../../../addons/ofxKinect/libs/libfreenect/src</string>
-						<string>../../../addons/ofxKinect/libs/libusb</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/include</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/include/libusb-1.0</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/lib</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/lib/osx</string>
 						<string>../../../addons/ofxKinect/libs/libusb-win32</string>
-						<string>../../../addons/ofxKinect/libs/libusb/include</string>
-						<string>../../../addons/ofxKinect/libs/libusb/include/libusb</string>
-						<string>../../../addons/ofxKinect/libs/libusb/include/libusb/os</string>
-						<string>../../../addons/ofxKinect/libs/libusb/lib</string>
-						<string>../../../addons/ofxKinect/libs/libusb/lib/osx</string>
 						<string>../../../addons/ofxKinect/src</string>
 						<string>../../../addons/ofxKinect/src/extra</string>
 						<string>../../../addons/ofxOpenCv/libs</string>
@@ -5700,22 +4975,12 @@
 					<string>E4B69E210A3A1BDC003C02F2</string>
 					<string>5679C219919B245CABB1900A</string>
 					<string>81584DBD61A637B78467382C</string>
-					<string>DFFB48B52F995A03A5961AE0</string>
-					<string>DDDA2CBC0694CE0746BA2C2E</string>
-					<string>8E17E054A188482A2F6C94D8</string>
-					<string>69F9CB1536BD2EE1CE22AE3C</string>
-					<string>637D2D4BE7E237CCEE375F93</string>
-					<string>166838C2BA0E254AD79B1D06</string>
-					<string>E3B48722C15C76597EDA637A</string>
-					<string>C82125FC86547DD1F917514B</string>
 					<string>DBBE189ECD171A97DCF46C6A</string>
 					<string>27CF6B6E279F8EE58C9D4B90</string>
 					<string>462C212713EFFA5383B35DAB</string>
 					<string>000315A9FA4E2F9A09533E05</string>
-					<string>6B3BB6E115053982E13C175C</string>
 					<string>016BB55A143AD429330F07DB</string>
 					<string>A0F2BFB15B92B4C6EB9527DE</string>
-					<string>A6F396BE5D1E24326E1F796A</string>
 					<string>5C2607C471F8D48C0036C56E</string>
 					<string>E984796BE84AA4315636B6E7</string>
 					<string>00413C35AAE31B483D7538AB</string>
@@ -5824,7 +5089,6 @@
 					<key>OTHER_LDFLAGS</key>
 					<array>
 						<string>$(OF_CORE_FRAMEWORKS) $(OF_CORE_LIBS)</string>
-						<string>../../../addons/ofxKinect/libs/libusb/lib/osx/usb-1.0.0-latest-superspeed.a</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/lib/osx/usb-1.0.a</string>
 						<string>../../../addons/ofxOpenCv/libs/opencv/lib/osx/opencv.a</string>
 					</array>
@@ -5832,7 +5096,6 @@
 					<array>
 						<string>$(OF_CORE_HEADERS)</string>
 						<string>src</string>
-						<string>ofxGui/src</string>
 						<string>../../../addons/ofxImGui/libs</string>
 						<string>../../../addons/ofxImGui/libs/imgui</string>
 						<string>../../../addons/ofxImGui/libs/imgui/src</string>
@@ -5842,18 +5105,12 @@
 						<string>../../../addons/ofxKinect/libs/libfreenect/include</string>
 						<string>../../../addons/ofxKinect/libs/libfreenect/platform</string>
 						<string>../../../addons/ofxKinect/libs/libfreenect/src</string>
-						<string>../../../addons/ofxKinect/libs/libusb</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/include</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/include/libusb-1.0</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/lib</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/lib/osx</string>
 						<string>../../../addons/ofxKinect/libs/libusb-win32</string>
-						<string>../../../addons/ofxKinect/libs/libusb/include</string>
-						<string>../../../addons/ofxKinect/libs/libusb/include/libusb</string>
-						<string>../../../addons/ofxKinect/libs/libusb/include/libusb/os</string>
-						<string>../../../addons/ofxKinect/libs/libusb/lib</string>
-						<string>../../../addons/ofxKinect/libs/libusb/lib/osx</string>
 						<string>../../../addons/ofxKinect/src</string>
 						<string>../../../addons/ofxKinect/src/extra</string>
 						<string>../../../addons/ofxOpenCv/libs</string>
@@ -5936,7 +5193,6 @@
 					<key>OTHER_LDFLAGS</key>
 					<array>
 						<string>$(OF_CORE_FRAMEWORKS) $(OF_CORE_LIBS)</string>
-						<string>../../../addons/ofxKinect/libs/libusb/lib/osx/usb-1.0.0-latest-superspeed.a</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/lib/osx/usb-1.0.a</string>
 						<string>../../../addons/ofxOpenCv/libs/opencv/lib/osx/opencv.a</string>
 					</array>
@@ -5944,7 +5200,6 @@
 					<array>
 						<string>$(OF_CORE_HEADERS)</string>
 						<string>src</string>
-						<string>ofxGui/src</string>
 						<string>../../../addons/ofxImGui/libs</string>
 						<string>../../../addons/ofxImGui/libs/imgui</string>
 						<string>../../../addons/ofxImGui/libs/imgui/src</string>
@@ -5954,18 +5209,12 @@
 						<string>../../../addons/ofxKinect/libs/libfreenect/include</string>
 						<string>../../../addons/ofxKinect/libs/libfreenect/platform</string>
 						<string>../../../addons/ofxKinect/libs/libfreenect/src</string>
-						<string>../../../addons/ofxKinect/libs/libusb</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/include</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/include/libusb-1.0</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/lib</string>
 						<string>../../../addons/ofxKinect/libs/libusb-1.0/lib/osx</string>
 						<string>../../../addons/ofxKinect/libs/libusb-win32</string>
-						<string>../../../addons/ofxKinect/libs/libusb/include</string>
-						<string>../../../addons/ofxKinect/libs/libusb/include/libusb</string>
-						<string>../../../addons/ofxKinect/libs/libusb/include/libusb/os</string>
-						<string>../../../addons/ofxKinect/libs/libusb/lib</string>
-						<string>../../../addons/ofxKinect/libs/libusb/lib/osx</string>
 						<string>../../../addons/ofxKinect/src</string>
 						<string>../../../addons/ofxKinect/src/extra</string>
 						<string>../../../addons/ofxOpenCv/libs</string>
