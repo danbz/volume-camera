@@ -28,6 +28,7 @@ public:
 	void draw();
 	void exit();
     void drawAnyPointCloud();
+    void triangulateMesh(ofMesh &mesh);
     void savePointCloud();
     void writeMetaData();
     void loadRecording();
@@ -47,11 +48,11 @@ public:
 	ofxKinect kinect2;
 #endif
 	
-	ofxCvColorImage colorCvImage; // RGB image from Kinect
-	ofxCvGrayscaleImage grayImage; // grayscale depth image from Kinect
-	ofxCvGrayscaleImage grayThreshNear; // the near thresholded image
-	ofxCvGrayscaleImage grayThreshFar; // the far thresholded image
-	ofxCvContourFinder contourFinder;
+	//ofxCvColorImage colorCvImage; // RGB image from Kinect
+//	ofxCvGrayscaleImage grayImage; // grayscale depth image from Kinect
+//	ofxCvGrayscaleImage grayThreshNear; // the near thresholded image
+//	ofxCvGrayscaleImage grayThreshFar; // the far thresholded image
+//	ofxCvContourFinder contourFinder;
     
     
     ofImage colorImage;

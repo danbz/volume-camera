@@ -42,11 +42,11 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
     framesLoaded = 0;
     
     //cout << "ofxKinectMeshRecorder::loadMesh() | Loading frame x "  " of " << totalFrames << endl;
-
+    
     for(int i = 0; i < totalFrames; i += 1) {
         
         cout << "ofxKinectMeshRecorder::loadMesh() | Loading frame " << i << " of " << totalFrames << endl;
-
+        
         string fileToload = path + "frame" + ofToString(i) + ".txt";
         ifstream fin;
         fin.open( ofToDataPath(fileToload).c_str() );
@@ -54,9 +54,7 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
         vector<frameData> data;
         int lineCounter = 0;
         //while(fin!=NULL)
-        while(fin)
-            
-        {
+        while(fin) {
             string str;
             getline(fin, str);
             vector<string> pointcoords = ofSplitString(str, ",");
@@ -72,19 +70,19 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
                 //cout << "loading line: " << lineCounter << endl;
                 lineCounter ++;
             }
-                    }
+        }
         fin.close();
         
         recordedMeshData[i].resize(data.size()); //appears to crash here occasionally....
         recordedMeshData[i] = data;
         
         framesLoaded = i;
-       // cout << "frame: " << fileToload << "  total lines per frame: " << lineCounter << endl; //ouput lines per frame
+        // cout << "frame: " << fileToload << "  total lines per frame: " << lineCounter << endl; //ouput lines per frame
         if(i == totalFrames-1) {
             unlock();
             stopThread();
             cout << "stopped thread" << endl ;
-             //stopThread(false); deprecated call
+            //stopThread(false); deprecated call
         }
     }
 }
