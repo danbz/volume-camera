@@ -1,0 +1,9 @@
+<exif>
+    <make>buzzo</make>
+    <model>experimental voumetric camera v0.1</model>
+    <orientation>top left</orientation>
+    <ImageWidth>160</ImageWidth>
+    <ImageLength>120</ImageLength>
+    <DateTimeDigitized>1372017204222</DateTimeDigitized>
+</exif>
+<exifLSensingMethod>kinect depth sensor</exifLSensingMethod>

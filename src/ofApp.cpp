@@ -1,15 +1,21 @@
 #include "ofApp.h"
 
-// If you are struggling to get the device to connect ( especially Windows Users )
-// please look at the ReadMe: in addons/ofxKinect/README.md
+// VOLCA: experimental volumetric camera/apparatus v0.1
+// © 2017 Daniel Buzzo. Dan@buzzo.com http://www.buzzo.com
+// all rights reserved
+
+using namespace ofxCv;
+using namespace cv;
+
+
+
 // kinect.setDepthClipping(float nearClip=500, float farClip=10000); //set depth clipping range
 
 string _timestamp = "default"; //default value for filepath opening on playback
 string filePath ="";
-int step = 1; // default point cloud step size for recorded mesh playback
-//int recordingStep =1; // default point cloud step size for recorded mesh quality
+//int step = 1; // default point cloud step size for mesh file playback
 bool paused;
-UInt64 timeNow =ofGetSystemTime(); // for timing elapsed time since past frame for playbackFPS control
+uint64 timeNow =ofGetSystemTime(); // for timing elapsed time since past frame for playbackFPS control
 
 bool doThemeColorsWindow = false;
 
@@ -21,7 +27,6 @@ void ofApp::setup() {
 	kinect.setRegistration(true); // enable depth->video image calibration
 	kinect.init(); //kinect.init(true); // shows infrared instead of RGB video image
     //kinect.init(false, false); // disable video image (faster fps)
-	
 	kinect.open();		// opens first available kinect
 	//kinect.open(1);	// open a kinect by id, starting with 0 (sorted by serial # lexicographically))
 	//kinect.open("A00362A08602047A");	// open a kinect using it's unique serial #
@@ -41,10 +46,15 @@ void ofApp::setup() {
     //////////////////////////////////////////////////////
     // application / depth sensing configuration
     //////////////////////////////////////////////////////
-    colorImg.allocate(kinect.width, kinect.height);
-	grayImage.allocate(kinect.width, kinect.height);
-	grayThreshNear.allocate(kinect.width, kinect.height);
-	grayThreshFar.allocate(kinect.width, kinect.height);
+    int  kWidth=kinect.width;
+    int kHeight=kinect.height;
+//    colorCvImage.allocate(kinect.width, kinect.height); //removing ofxOpenCv references
+//	grayImage.allocate(kinect.width, kinect.height);
+//	grayThreshNear.allocate(kinect.width, kinect.height);
+//	grayThreshFar.allocate(kinect.width, kinect.height);
+    colorImage.allocate(kWidth, kHeight, OF_IMAGE_COLOR);
+    depthImage.allocate(kWidth, kHeight, OF_IMAGE_GRAYSCALE);
+    
     nearThreshold = 230;
 	farThreshold = 70;
 	bThreshWithOpenCV = true;
@@ -59,17 +69,20 @@ void ofApp::setup() {
     playing = false;
     paintMesh = true;
     bDrawPointCloud = true;   // start from the camera view
-    kinect.setDepthClipping( 500,  10000); //set depth clipping range
+    kinect.setDepthClipping( 100,  20000); //set depth clipping range
     frame = 0; //play back frame initialisation
-    distanceMinima = 200;
-    distanceMaxima = 5000;
     paused = false;
     drawTriangles = false;
     renderStyle = 1;
     recordWidth =640; //default width for recording and playback of meshes, overridden by Exifmedta data when recorded files are loaded.
     recordHeight=480;
+    // shot length, exposure variables and recording FPS timing
+    singleShot = true;
+    exposureTime = 0.5; // length of exposure capture in seconds
+    recordFPS = 25;
+    lastRecordedFrame = 0;
     
-    //added in new thread class etc 8/july/17    
+    //added in new thread class etc 8/july/17
     ofxKinectMeshRecorder thread;
     
     //////////////////////////////////////////////////////
@@ -80,26 +93,29 @@ void ofApp::setup() {
     showNormals = false;
     renderFlatQuads = false;
     
+    // easyCam setup
+    
     //////////////////////////////////////////////////////
     // Gui Configuration
     //////////////////////////////////////////////////////
     showGui = true;
-    
     imGui.setup(); //ofxImGui set up
     ImGui::CaptureMouseFromApp();
     ImGui::GetIO().MouseDrawCursor = false;
     //backgroundColor is stored as an ImVec4 type but can handle ofColor
-    imBackgroundColor = ofColor(114, 144, 154);
+    imBackgroundColor = ofColor(44, 44, 54);
     show_test_window = false;
     playbackFPS=15;
     blobSize =4;
-    gridSize =1;
-    backPlane =15000;
+    //gridSize =1;
+    backPlane =25000;
     frontPlane=0;
     recordingStep =4;
     
-    //    recordWidth =640/recordingStep; //default width for recording and playback of meshes, overridden by Exifmedta data when recorded files are loaded.
-    //    recordHeight =480/recordingStep;
+    // ofCV stuff
+    
+    depthPixels.allocate(recordWidth, recordHeight, 1);
+
     
     if( !kinect.hasAccelControl()) {
         ofSystemAlertDialog("Note: this is a newer Xbox Kinect or Kinect For Windows device, motor / led / accel controls are not currently supported" );
@@ -112,53 +128,48 @@ void ofApp::update() {
 	ofBackground(imBackgroundColor); // background color
 	kinect.update();
     
-    //////////////////////////////////////////////////////
-    // mesh capture
-    //////////////////////////////////////////////////////
-    if(recording) {
+    if(recording) { // mesh capture
         savePointCloud();
     }
     
-    //////////////////////////////////////////////////////
-    // Playback
-    //////////////////////////////////////////////////////
     if(playing) { // if we are in playback mode
         if(!paused){ // and have not paused the playback
-            if (timeNow < (ofGetSystemTime() - (1000/playbackFPS))) {
+            if (timeNow < (ofGetSystemTime() - (1000/playbackFPS))) { // check playback FPS
                 frameToPlay += 1; // increment the frame we are playing
                 timeNow = ofGetSystemTime();
                 //cout << timeNow/1000 << " : " << ofGetSystemTime() << endl;
             }
-        if(frameToPlay >= meshRecorder.TotalFrames) frameToPlay = 0; //or start at the beginning of the recorded loop
+        if(frameToPlay >= meshRecorder.totalFrames) frameToPlay = 0; //or start at the beginning of the recorded loop
         }
     }
     
-    //////////////////////////////////////////////////////
-    // Kinect Live Render updating
-    //////////////////////////////////////////////////////
-    if(kinect.isFrameNew()) { 	// if there is a new frame and we are connected to a kinect device
-		grayImage.setFromPixels(kinect.getDepthPixels()); // load grayscale depth image from the kinect source
-		if(bThreshWithOpenCV) {
-			grayThreshNear = grayImage; 	// we do two thresholds - one for the far plane and one for the near plane
-            grayThreshFar = grayImage;   		// we then do a cvAnd to get the pixels which are a union of the two thresholds
-			grayThreshNear.threshold(nearThreshold, true);
-			grayThreshFar.threshold(farThreshold);
-			cvAnd(grayThreshNear.getCvImage(), grayThreshFar.getCvImage(), grayImage.getCvImage(), NULL);
-		} else {
-			ofPixels & pix = grayImage.getPixels(); // or we do it ourselves - show people how they can work with the pixels
-			int numPixels = pix.size();
-			for(int i = 0; i < numPixels; i++) {
-				if(pix[i] < nearThreshold && pix[i] > farThreshold) {
-					pix[i] = 255;
-				} else {
-					pix[i] = 0;
-				}
-			}
-		}
-		grayImage.flagImageChanged(); // update the cv images
-		// find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
-		// also, find holes is set to true so we will get interior contours as well....
-		contourFinder.findContours(grayImage, 10, (kinect.width*kinect.height)/2, 20, false);
+    if(kinect.isFrameNew()) {// if there is new frame and we are connected to kinect device Kinect Live Render CV updating
+		//grayImage.setFromPixels(kinect.getDepthPixels()); // load grayscale depth image from the kinect source
+        //colorCvImage.setFromPixels(kinect.getPixels()); // load RGB image from the kinect source
+        colorImage.setFromPixels(kinect.getPixels());
+        depthImage.setFromPixels(kinect.getDepthPixels());
+        //depthPixels = depthImage.getPixels();
+//		if(bThreshWithOpenCV) {
+//			grayThreshNear = grayImage; 	// we do two thresholds - one for the far plane and one for the near plane
+//            grayThreshFar = grayImage;   		// we then do a cvAnd to get the pixels which are a union of the two thresholds
+//			grayThreshNear.threshold(nearThreshold, true);
+//			grayThreshFar.threshold(farThreshold);
+//			cvAnd(grayThreshNear.getCvImage(), grayThreshFar.getCvImage(), grayImage.getCvImage(), NULL);
+//		} else {
+//			ofPixels & pix = grayImage.getPixels(); // or we do it ourselves - show people how they can work with the pixels
+//			int numPixels = pix.size();
+//			for(int i = 0; i < numPixels; i++) {
+//				if(pix[i] < nearThreshold && pix[i] > farThreshold) {
+//					pix[i] = 255;
+//				} else {
+//					pix[i] = 0;
+//				}
+//			}
+//		}
+//		grayImage.flagImageChanged(); // update the cv images
+//		// find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
+//		// also, find holes is set to true so we will get interior contours as well....
+//		contourFinder.findContours(grayImage, 10, (kinect.width*kinect.height)/2, 20, false);
 	}
 
 #ifdef USE_TWO_KINECTS
@@ -175,125 +186,49 @@ void ofApp::draw() {
     // Draw Live rendering
     //////////////////////////////////////////////////////
 	if(bDrawPointCloud) { //show pointcloud view
-        // add in routine to control playback speed based on playingFPS
-        
 		easyCam.begin();
         if (illuminateScene) light.enable(); //enable world light
-        drawAnyPointCloud(); //call new generic point render function
+            //if (exposureStart < (ofGetSystemTime() - (1000*exposureTime))) {
+            drawAnyPointCloud(); //call new generic point render function
+         //   exposureStart = ofGetSystemTime();
+        //}
         ofDisableLighting(); //disable world light
         easyCam.end();
 	} else { 		// draw from the live kinect as 3 windows
-		kinect.drawDepth(10, 10, 400, 300);
-		kinect.draw(420, 10, 400, 300);
-		grayImage.draw(10, 320, 400, 300);
-		contourFinder.draw(10, 320, 400, 300);
+		//kinect.drawDepth(10, 10, 480, 360);
+		//kinect.draw(490, 10, 480, 360);
+		depthImage.draw(10, 370, 480, 360);
+        colorImage.draw(490, 370, 480, 360);
+        ofImage depthRender = depthPixels;
+        depthRender.draw(490, 10, 480, 360);
 #ifdef USE_TWO_KINECTS
 		kinect2.draw(420, 320, 400, 300);
 #endif
 	}
     
     //////////////////////////////////////////////////////
-    // Do Recording
+    // Load Recording
     //////////////////////////////////////////////////////
     if(!meshRecorder.readyToPlay) {    //-- recorder  // Loadinf info:
-        string l = ofToString(meshRecorder.FramesLoaded);
-        string t = ofToString(meshRecorder.TotalFrames);
-        ofDrawBitmapString("loading... " + l + "/" + t,700, 20);
-    }
-		
-    //////////////////////////////////////////////////////
-    // Reporting and help text
-    //////////////////////////////////////////////////////
-	// stringstream reportStream; // draw instructions
-    
-//	reportStream << "press p to switch between images and point cloud, rotate the point cloud with the mouse" << endl
-//	<< "using opencv threshold = " << bThreshWithOpenCV <<" (press spacebar)" << endl
-//	<< "set near threshold " << nearThreshold << " (press: + -)" << endl
-//	<< "pause with space bar, press: < > to scrub frames " << contourFinder.nBlobs
-//    << " recordWidth: " << recordWidth/recordingStep << " recordHeight: " << recordHeight/recordingStep
-//	//<< ", fps: " << ofGetFrameRate() << " / " << playbackFPS << endl
-//    << "a: paint mesh   t: toggle triangles/pointcloud   g: show/hide gui"<< endl
-//     << "1, 2 or 3: rendering styles, n:  normals" <<showNormals<< " i:  world light" << illuminateScene<< endl
-//    << "r: START RECORDING   s: STOP RECORDING"
-//    << "l: LAST RECORDING / LIVE MODE  h: reset 3d cam view"<< endl
-//	<< "press c to close the connection and o to open it again, connection is: " << kinect.isConnected() << endl;
-    
-    if (showGui) { // show or hide the gui and instruction texts
-        // ofDrawBitmapString(reportStream.str(), 20, 600);
-        //ofxImGui example draw required to call this at beginning
-        imGui.begin();
-        
-        ImGuiIO& io = ImGui::GetIO(); // hide mouse input from rest of app
-        if (io.WantCaptureMouse){ //prevent mousemessages going to app while using imGui
-            easyCam.disableMouseInput();
-        }else {
-            easyCam.enableMouseInput();
-        };
-        
-    { // 1. Show a simple window
-        //ImGui::Text("Volume camera");
-        //ImGui::SliderFloat("Float", &floatValue, 0.0f, 1.0f);
-        ImGui::SliderInt("Frontplane", &frontPlane, 0, 10000);
-        ImGui::SliderInt("Backplane", &backPlane, 100, 15000);
-        ImGui::SliderInt("Pointsize", &blobSize, 1, 15);
-        ImGui::SliderInt("Mesh spacing", &gridSize, 1, 20);
-        ImGui::SliderInt("RecordingMesh Step",&recordingStep, 1, 10);
-        ImGui::SliderInt("FPS", &playbackFPS, 1, 120);
-        ImGui::ColorEdit3("Background Color", (float*)&imBackgroundColor);
-       
-        if (ImGui::CollapsingHeader("Render options")) {
-            ImGui::Text("Render style");
-            ImGui::RadioButton("cloud", &renderStyle, 1); ImGui::SameLine();
-            ImGui::RadioButton("faces", &renderStyle, 2); ImGui::SameLine();
-            ImGui::RadioButton("mesh", &renderStyle, 3);
-            
-            ImGui::Text("Surface style");
-            ImGui::Checkbox("paint mesh", &paintMesh); ImGui::SameLine();
-            ImGui::Checkbox("world light", &illuminateScene); ImGui::SameLine();
-            ImGui::Checkbox("normals", &showNormals); ImGui::SameLine();
-            ImGui::Checkbox("flatQuads", &renderFlatQuads);
-        }
-        if(ImGui::Button("Test Window"))
-        {
-            show_test_window = !show_test_window;
-        }
-        ImGui::SameLine();
-        
-        if (ImGui::Button("reset camera"))
-        {
-            easyCam.reset();//reset easycam settings to re-centre 3d view
-        }
-        ImGui::SameLine();
-        
-        if (ImGui::Button("load recording"))
-        {
-            loadRecording();   ImGui::SameLine();
-        }
-        ImGui::Checkbox("show live mesh", &bDrawPointCloud);
-       
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-        ImGui::Text("Recording mesh size", recordWidth/step, recordHeight,step);
+        string l = ofToString(meshRecorder.framesLoaded);
+        string t = ofToString(meshRecorder.totalFrames);
+        ofDrawBitmapString("loading... " + l + "/" + t,700, 20); // if loading then draw progress to screen
     }
     
-    // 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
-    if (show_test_window)
-    {
-        ImGui::SetNextWindowPos(ofVec2f(650, 20), ImGuiSetCond_FirstUseEver);
-        ImGui::ShowTestWindow(&show_test_window);
+    if (showGui) {
+        drawGui();
     }
     
-    if(doThemeColorsWindow)
-    {
-        imGui.openThemeColorWindow();
-    }
-    imGui.end(); //required to call this at end
+    if (recording) {
+        string f = to_string(frame);
+        ofDrawBitmapString("recording frame: " + f, 700,20);
     }
 }
 
 //--------------------------------------------------------------
-void ofApp::drawAnyPointCloud() {
-    int w = recordWidth;
-    int h = recordHeight;
+void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages rather than direct from kinect  - 28-7-17
+    
+    ofColor c;
     int pCount =0;
     ofMesh mesh;
     
@@ -313,57 +248,47 @@ void ofApp::drawAnyPointCloud() {
     
     if(playing) { // if we are playing then render data from file ---------------
         if(meshRecorder.readyToPlay) {
-            //int step = gridSize; //DB this crashes the mesh playback  .....
-            for(int y = 0; y < h; y += step) { //load data from recording into mesh as pointcloud
-                for(int x = 0; x < w; x += step) {
+            for(int y = 0; y < recordHeight; y += recordingStep) { //load data from recording into mesh as pointcloud
+                for(int x = 0; x < recordWidth; x += recordingStep) {
                     ofVec3f v2;
                     v2.set(0,0,0);
                     v2 = meshRecorder.getVectorAt(frameToPlay, pCount);
                     mesh.addVertex(v2);
-                    ofColor c;
                     c = meshRecorder.getColorAt(frameToPlay, pCount);
                     if(paintMesh) mesh.addColor(c); // add colour from map into mesh at each point
                     pCount ++;
-                    //cout << "pointcount from drawAnyCloud fctn: " << pCount << endl;
                 }
             }
-             //cout << "end pointcount from drawAnyCloud fctn: " << pCount << endl;
         }
-    } else {
-        //draw  pointcloud mesh from live source --------
-        int step = gridSize;
-        for(int y = 0; y < h; y += step) {
-            for(int x = 0; x < w; x += step) {
-                if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) { //exclude out of range data
+    } else { // draw  pointcloud mesh from live source --------
+        int index =0;
+        int i=0;
+        ofVec3f v3;
+        ofColor zGrey = 0;
+        for(int y = 0; y < recordHeight; y += recordingStep) {
+            for(int x = 0; x < recordWidth; x += recordingStep) {
+                if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) { // exclude out of range data
+                   zGrey = depthImage.getColor(x,y);
+                    //float z = zGrey;
+                    //ofVec3f v3;
+                    float z = ofMap(zGrey.r, 0, 400, 1024, 0); // scale responses from depth image into new mesh (10 bit data =1024 steps
+                // cout << zGrey << " : " << zGrey.r << " : " << z << " : " << kinect.getDistanceAt(x, y) << endl;
+                    v3.set(x- (recordWidth/2),y -(recordHeight/2),z);
+                    // mesh.addVertex(v3);
+                    depthPixels[i] = kinect.getDistanceAt(x, y);
+                    //cout << v3 << " : " << kinect.getWorldCoordinateAt(x, y) << endl;
                     mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
-                    if (paintMesh)mesh.addColor(kinect.getColorAt(x,y));
-                    
+                    if (paintMesh) {
+                        //c = (kinect.getColorAt(x,y));
+                        c = (colorImage.getColor(x,y)); // getting RGB from ofImage rather than direct from kinect.
+                        mesh.addColor(c);
+                    }
                 }
+                i++;
             }
         }
     }
- 
-    int numofVertices = mesh.getNumVertices();   //----- then generate triangles for mesh --
-    pCount = 0;
-    ofVec3f v2;
-    v2.set(0,0,0); //add triangles to mesh from vertices - move this to the 'read mesh' ?
-    for(int n = 0; n < numofVertices-1-w/step; n ++) {
-        // cout << "points:" << n  <<"," << n+1+w/step << "," << n+w/step <<endl;
-        // add in culling for zero location points from triangle mesh
-        // optimise to check less of the duplicate points
-        //  if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane)  // use backplane value to cull deeper points from cloud // to be added
-        if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1))==v2 or (mesh.getVertex(pCount+1+w/step))==v2){
-            //cout << "culled point" << pCount << endl ;
-        }else{
-            mesh.addTriangle(n, n+1, n+1+w/step); //even triangles for each mesh square
-        }
-        if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1+w/step))==v2 or (mesh.getVertex(pCount+w/step))==v2){
-            //cout << "culled point" << pCount << endl ;
-        }else{
-            mesh.addTriangle(n, n+1+w/step, n+w/step); //odd triangles for each mesh square
-        }
-         pCount ++;
-   } //------ end add triangles
+    triangulateMesh(mesh);
     
     if (showNormals) {//set normals for faces
         setNormals( mesh );
@@ -372,17 +297,17 @@ void ofApp::drawAnyPointCloud() {
     //glEnable(GL_POINT_SMOOTH); // use circular points instead of square points
     ofPushMatrix();
     ofScale(1, -1, -1);  // the projected points are 'upside down' and 'backwards'
-    ofTranslate(0, 0, -750); // center the points a bit
+    ofTranslate(0, 0, -1000); // center the points a bit
     glEnable(GL_DEPTH_TEST);
-    if (renderFlatQuads){
+    
+    glDepthRange(0, 2000);//expwriment with gldepth range
+    
+    if (renderFlatQuads){ // render as flat quads
         glShadeModel(GL_FLAT);
-        //cout <<"flat quads" << endl;
     }else {
         glShadeModel(GL_TRIANGLES);
-        //cout <<"triangles" << endl;
     }
-        
-    // render as flat quads
+    
     //mesh.drawVertices();
     //mesh.drawFaces();
     ofSetColor( 255, 255, 255);  //set render colour for unpainted points, faces and lines
@@ -394,15 +319,55 @@ void ofApp::drawAnyPointCloud() {
 
 //--------------------------------------------------------------
 
-//Universal function which sets normals for the triangle mesh
-void ofApp::setNormals( ofMesh &mesh ){
-    //The number of the vertices
-    int nV = mesh.getNumVertices();
-    //The number of the triangles
-    int nT = mesh.getNumIndices() / 3;
+void ofApp::triangulateMesh(ofMesh &mesh){
+    
+    int pCount =0;
+    int numofVertices = mesh.getNumVertices(); //----- then generate triangles for mesh --
+    pCount = 0;
+    ofVec3f v2;
+    v2.set(0,0,0); //add triangles to mesh from vertices - move this to the 'read mesh' ?
+    for(int n = 0; n < numofVertices-1-recordWidth/recordingStep; n ++) {
+        // add in culling for zero location points from triangle mesh & optimise to check less of the duplicate points
+        //  if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane)  // use backplane value to cull deeper points from cloud // to be added
+        if ((mesh.getVertex(pCount))!=v2 and (mesh.getVertex(pCount+1))!=v2 and (mesh.getVertex(pCount+1+recordWidth/recordingStep))!=v2){
+            //mesh.addTriangle(n, n+1, n+1+recordWidth/step); //even triangles for each mesh square
+        }
+        if ((mesh.getVertex(pCount))!=v2 and (mesh.getVertex(pCount+1+recordWidth/recordingStep))!=v2 and (mesh.getVertex(pCount+recordWidth/recordingStep))!=v2){
+            mesh.addTriangle(n, n+1+recordWidth/recordingStep, n+recordWidth/recordingStep); //odd triangles for each mesh square
+        
+        }
+        pCount ++;
+    }
+    
+    
+    ///
+//    for (int y = 0; y<recordHeight-1; y++){
+//        for (int x=0; x<recordWidth-1; x++){
+//            if (mesh.getVertex(x+y*recordWidth)==v2 or mesh.getVertex((x+1)+y*recordWidth) ==v2 or mesh.getVertex(x+(y+1)*recordWidth)==v2) {
+//                //do nothing
+//            }else{
+//                mesh.addIndex(x+y*recordWidth);				// 0
+//                mesh.addIndex((x+1)+y*recordWidth);			// 1
+//                mesh.addIndex(x+(y+1)*recordWidth);			// 10
+//            }
+//            
+//            mesh.addIndex((x+1)+y*recordWidth);			// 1
+//            mesh.addIndex((x+1)+(y+1)*recordWidth);		// 11
+//            mesh.addIndex(x+(y+1)*recordWidth);			// 10
+//        }
+//    }
+///
+    
+}
+
+//--------------------------------------------------------------
+
+void ofApp::setNormals( ofMesh &mesh ){ //Universal function which sets normals for the triangle mesh
+    int nV = mesh.getNumVertices();     //The number of the vertices
+    int nT = mesh.getNumIndices() / 3;     //The number of the triangles
+
     vector<ofPoint> norm( nV ); //Array for the normals
-    //Scan all the triangles. For each triangle add its
-    //normal to norm's vectors of triangle's vertices
+    //Scan all the triangles. For each triangle add its normal to norm's vectors of triangle's vertices
     for (int t=0; t<nT; t++) {
         //Get indices of the triangle t
         int i1 = mesh.getIndex( 3 * t );
@@ -414,17 +379,14 @@ void ofApp::setNormals( ofMesh &mesh ){
         const ofPoint &v3 = mesh.getVertex( i3 );
         //Compute the triangle's normal
         ofPoint dir = ( (v2 - v1).crossed( v3 - v1 ) ).normalized();
-        //Accumulate it to norm array for i1, i2, i3
-        norm[ i1 ] += dir;
+        norm[ i1 ] += dir;  //Accumulate it to norm array for i1, i2, i3
         norm[ i2 ] += dir;
         norm[ i3 ] += dir;
     }
-    //Normalize the normal's length
-    for (int i=0; i<nV; i++) {
+    for (int i=0; i<nV; i++) {     //Normalize the normal's length
         norm[i].normalize();
     }
-    //Set the normals to mesh
-    mesh.clearNormals();
+    mesh.clearNormals();     //Set the normals to mesh
     mesh.addNormals( norm );
 }
 
@@ -466,35 +428,46 @@ string ofApp::generateFileName() {
 void ofApp::savePointCloud() {
     int w = recordWidth;
     int h = recordHeight;
-
-    FILE* fout = fopen((saveTo + "frame" + ofToString(frame) + ".txt").c_str(), "w");
-    int pIndex = 0;
-    for(int y = 0; y < h; y += recordingStep) {
-        for(int x = 0; x < w; x += recordingStep) {
-            ofVec3f v2;
-            v2.set(0,0,0);
-            float distance;
-            distance = kinect.getDistanceAt(x, y);
-            
-            if(distance> distanceMinima && distance < distanceMaxima) {//only record points into v2 if within min & max distance
-                v2 = kinect.getWorldCoordinateAt(x, y);
+    
+    if (timeNow < (ofGetSystemTime() - (1000/recordFPS))) {     // add in timing element for recordFPS setting
+        FILE* fout = fopen((saveTo + "frame" + ofToString(frame) + ".txt").c_str(), "w");
+        int pIndex = 0;
+        for(int y = 0; y < h; y += recordingStep) {
+            for(int x = 0; x < w; x += recordingStep) {
+                ofVec3f v2;
+                v2.set(0,0,0);
+                float distance;
+                distance = kinect.getDistanceAt(x, y);
+                
+                if(distance> frontPlane && distance < backPlane) {//only record points into v2 if within min & max distance
+                    v2 = kinect.getWorldCoordinateAt(x, y);
+                }
+                ofColor pColor;
+                pColor = kinect.getColorAt(x, y);
+                
+                fprintf(fout, "%i%s%f%s%f%s%f%s%i%s", pIndex, ",", v2.x, ",",  v2.y, ",",  v2.z, ",",  pColor.getHex(), "\n");
+                pIndex++;
             }
-            ofColor pColor;
-            pColor = kinect.getColorAt(x, y);
-           
-            fprintf(fout, "%i%s%f%s%f%s%f%s%i%s", pIndex, ",", v2.x, ",",  v2.y, ",",  v2.z, ",",  pColor.getHex(), "\n");
-            pIndex++;
         }
+        fclose(fout);
+        frame++; // increment the frame we are recording
+        cout << "Recording frame: " << frame << endl;
+        timeNow = ofGetSystemTime();
+        //cout << timeNow/1000 << " : " << ofGetSystemTime() << endl;
+        
     }
-    fclose(fout);
-    frame++;
+    if (singleShot) {
+        recording=false; //if in singleShot mode then stop after this frame is recorded
+        cout << "Single Shot mode, frame" << frame << endl;
+    }
 }
+
 
 //--------------------------------------------------------------
 
 //////////////////////////////////////////////////////
 // XML exif data save and load
-// ImageDescription , ExposureTime , DateTimeOriginal , DateTimeDigitized, ShutterSpeedValue , ApertureValue, FocalLength, MakerNote, RelatedSoundFile, SensingMethod, WhiteBalance, DeviceSettingDescription, etc
+// to include; ImageDescription ,  , DateTimeOriginal , DateTimeDigitized, ShutterSpeedValue , ApertureValue, FocalLength, MakerNote, RelatedSoundFile, SensingMethod, WhiteBalance, DeviceSettingDescription, etc
 //////////////////////////////////////////////////////
 
 void ofApp::saveExifData() { //put some some settings into a file
@@ -508,13 +481,14 @@ void ofApp::saveExifData() { //put some some settings into a file
     ofToString(ofGetSeconds());
     
     //exifSettings.addTag("exifData");
-    exifSettings.setValue("exif:make", "buzzo");
-    exifSettings.setValue("exif:model", "experimental voumetric camera v0.1");
+    exifSettings.setValue("exif:make", "Buzzo");
+    exifSettings.setValue("exif:model", "Volca: Experimental volumetric camera/apparatus v0.1");
     exifSettings.setValue("exif:orientation", "top left");
     exifSettings.setValue("exif:ImageWidth", recordWidth/recordingStep);
     exifSettings.setValue("exif:ImageLength", recordHeight/recordingStep);
     exifSettings.setValue("exif:DateTimeDigitized", today);
-    exifSettings.setValue("exifLSensingMethod", "kinect depth sensor");
+    exifSettings.setValue("exif:ExposureTime", exposureTime);
+    exifSettings.setValue("exifSensingMethod", "Kinect depth sensor");
    
     exifSettings.saveFile(path + "exifSettings.xml"); //puts exifSettings.xml file in the current recordedframe folder
     string myXml;
@@ -530,6 +504,7 @@ void ofApp::loadExifData(string filePath) { // load exifXML file from the sele t
     //cout << filePath << "/exifSettings.xml" << endl;
     recordWidth = exifSettings.getValue("exif:ImageWidth", 0);
     recordHeight = exifSettings.getValue("exif:ImageLength", 0);
+    //recordingStep = 640 / recordWidth;
     string recordingDate = exifSettings.getValue("exif:DateTimeDigitized", "");
     string myXml;
     exifSettings.copyXmlToString(myXml);
@@ -552,10 +527,94 @@ void ofApp::exit() {
 }
 
 //--------------------------------------------------------------
+
+void ofApp::drawGui() {
+    imGui.begin(); //begin GUI
+    
+    ImGuiIO& io = ImGui::GetIO(); // hide mouse input from rest of app
+    if (io.WantCaptureMouse){ //prevent mousemessages going to app while using imGui
+        easyCam.disableMouseInput();
+    }else {
+        easyCam.enableMouseInput();
+    };
+    
+    { // 1. Show window
+        ImGui::Text("Welcome to Volca v0.0");
+        //ImGui::SliderFloat("Float", &floatValue, 0.0f, 1.0f);
+        //if (ImGui::CollapsingHeader("Capture options")) {
+        ImGui::Text("Capture parameters");
+        ImGui::Checkbox("Single shot capture", &singleShot);
+        ImGui::SliderFloat("Exposure time (s)", &exposureTime, 0.01, 5.0);
+        ImGui::SliderInt("Recording FPS", &recordFPS, 1, 60);
+        ImGui::SliderInt("RecordingMesh Step",&recordingStep, 1, 10);
+        // }
+        
+        if (ImGui::CollapsingHeader("Depth options")){
+            ImGui::SliderInt("Frontplane", &frontPlane, 0, 10000);
+            ImGui::SliderInt("Backplane", &backPlane, 100, 20000);
+        }
+        if (ImGui::CollapsingHeader("RGB options")){
+            // ImGui::SliderInt("Frontplane", &frontPlane, 0, 10000);
+            // ImGui::SliderInt("Backplane", &backPlane, 100, 15000);
+        }
+        
+        if (ImGui::CollapsingHeader("Render options")) {
+            ImGui::Text("Render style");
+            ImGui::RadioButton("cloud", &renderStyle, 1); ImGui::SameLine();
+            ImGui::RadioButton("faces", &renderStyle, 2); ImGui::SameLine();
+            ImGui::RadioButton("mesh", &renderStyle, 3);
+            
+            ImGui::Text("Surface style");
+            ImGui::Checkbox("paint mesh", &paintMesh); ImGui::SameLine();
+            ImGui::Checkbox("world light", &illuminateScene); ImGui::SameLine();
+            ImGui::Checkbox("normals", &showNormals); ImGui::SameLine();
+            ImGui::Checkbox("flatQuads", &renderFlatQuads);
+            ImGui::SliderInt("Cloud pointsize", &blobSize, 1, 15);
+            //ImGui::SliderInt("Mesh spacing", &gridSize, 1, 20);
+            ImGui::ColorEdit3("Background Color", (float*)&imBackgroundColor);
+        }
+        if (ImGui::CollapsingHeader("Playback options")) {
+            ImGui::Text("Playback style");
+            ImGui::SliderInt("Playback FPS", &playbackFPS, 1, 120);
+        }
+        
+        if(ImGui::Button("Test Window")) {
+            show_test_window = !show_test_window;
+        }
+        
+        ImGui::SameLine();
+        
+        if (ImGui::Button("reset camera")) {
+            easyCam.reset();//reset easycam settings to re-centre 3d view
+        }
+        ImGui::SameLine();
+        
+        if (ImGui::Button("load recording")) {
+            loadRecording();   ImGui::SameLine();
+        }
+        ImGui::Checkbox("show live mesh", &bDrawPointCloud);
+        
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        ImGui::Text("Recording mesh size %.1d , %1d", recordWidth/recordingStep , recordHeight/recordingStep);
+    }
+    
+    if (show_test_window) {     // 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
+        ImGui::SetNextWindowPos(ofVec2f(650, 20), ImGuiSetCond_FirstUseEver);
+        ImGui::ShowTestWindow(&show_test_window);
+    }
+    
+    if(doThemeColorsWindow) {
+        imGui.openThemeColorWindow();
+    }
+    imGui.end(); //end GUI
+}
+
+//--------------------------------------------------------------
 void ofApp::keyPressed (int key) {
 	switch (key) {
 		case ' ':
 			//bThreshWithOpenCV = !bThreshWithOpenCV;
+            //paused=!paused;
             paused=!paused;
 			break;
 			
@@ -649,25 +708,28 @@ void ofApp::keyPressed (int key) {
             break;
             
         case 'r':
+        case 'R':
             if(!meshRecorder.readyToPlay) return;
             if(recording) return;
             if(playing) return;
             saveTo = generateFileName();
             frame = 0;
+            exposureStart = ofGetSystemTime();
+            cout << "exposte start" << exposureStart << endl;
             recording = true;
+            saveExifData();
             break;
             
         case 's':
             if(!meshRecorder.readyToPlay) return;
             if(!recording) return;
             if(playing) return;
-            saveExifData();
             saveTo = "";
             recording = false;
             break;
             
-            case '<':
-            case ',':
+        case '<':
+        case ',':
             if(playing) {
                 if(paused){
                     if (frameToPlay>1){
@@ -681,7 +743,7 @@ void ofApp::keyPressed (int key) {
         case '.':
             if(playing) {
                 if(paused){
-                    if(frameToPlay < meshRecorder.TotalFrames){
+                    if(frameToPlay < meshRecorder.totalFrames){
                      frameToPlay ++;
                     }
                 }
@@ -709,7 +771,36 @@ void ofApp::keyPressed (int key) {
         case 'h':
             easyCam.reset();//reset easycam settings to re-centre 3d view
             break;
+            
+        case 'f':
+            ofToggleFullscreen();
+            break;
+            
     }    
+}
+
+//-------------------------
+
+void ofApp::keyReleased(int key){
+    
+
+    switch (key) {
+            
+//        case ' ':
+//            paused=false;
+//            break;
+//            
+//        case 'r':
+//        case 'R':
+//            if(!meshRecorder.readyToPlay) return;
+//            if(!recording) return;
+//            if(playing) return;
+//            saveExifData();
+//            saveTo = "";
+//            recording = false;
+//            break;
+
+    }
 }
 
 //--------------------------------------------------------------

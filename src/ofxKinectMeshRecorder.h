@@ -42,8 +42,8 @@ public:
     
     bool readyToPlay;
     
-    int TotalFrames;
-    int FramesLoaded;
+    int totalFrames;
+    int framesLoaded;
     
     ofxKinectMeshRecorder();
     void startLoading(const string _file);
