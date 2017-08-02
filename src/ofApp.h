@@ -9,6 +9,10 @@
 #include "ofxImGui.h"
 #include "ofxCv.h"
 
+// VOLCA: experimental volumetric camera/apparatus v0.1
+// © 2017 Daniel Buzzo. Dan@buzzo.com http://www.buzzo.com
+// all rights reserved
+
 // Windows users: You MUST install the libfreenect kinect drivers in order to be able to use
 // ofxKinect. Plug in the kinect and point your Windows Device Manager to the
 // driver folder in:     ofxKinect/libs/libfreenect/platform/windows/inf
@@ -41,6 +45,7 @@ public:
 	void mouseExited(int x, int y);
 	void windowResized(int w, int h);
     void drawGui();
+    void loadLiveMeshData();
     
 	ofxKinect kinect;
 	
@@ -104,8 +109,8 @@ public:
     
     ofxImGui::Gui imGui;
     ImVec4 imBackgroundColor;
-    bool show_test_window;
-    int playbackFPS, blobSize, gridSize, backPlane, frontPlane, recordingStep;
+    bool show_test_window, blur;
+    int playbackFPS, blobSize, gridSize, backPlane, frontPlane, recordingStep, blurRadius;
     
     // shot timing GUI elements
     bool singleShot;

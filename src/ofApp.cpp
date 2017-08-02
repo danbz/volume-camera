@@ -111,6 +111,8 @@ void ofApp::setup() {
     backPlane =25000;
     frontPlane=0;
     recordingStep =4;
+    blur =false;
+    blurRadius=10;
     
     // ofCV stuff
     
@@ -147,7 +149,7 @@ void ofApp::update() {
 		//grayImage.setFromPixels(kinect.getDepthPixels()); // load grayscale depth image from the kinect source
         //colorCvImage.setFromPixels(kinect.getPixels()); // load RGB image from the kinect source
         colorImage.setFromPixels(kinect.getPixels());
-        depthImage.setFromPixels(kinect.getDepthPixels());
+        depthImage.setFromPixels(kinect.getRawDepthPixels());
         //depthPixels = depthImage.getPixels();
 //		if(bThreshWithOpenCV) {
 //			grayThreshNear = grayImage; 	// we do two thresholds - one for the far plane and one for the near plane
@@ -172,6 +174,11 @@ void ofApp::update() {
 //		contourFinder.findContours(grayImage, 10, (kinect.width*kinect.height)/2, 20, false);
 	}
 
+    
+    if (blur){
+        ofxCv::GaussianBlur(colorImage, blurRadius);
+    }
+    
 #ifdef USE_TWO_KINECTS
 	kinect2.update();
 #endif
@@ -192,7 +199,7 @@ void ofApp::draw() {
         ofDisableLighting(); //disable world light
         easyCam.end();
 	} else { 		// draw from the live kinect as 3 windows
-		//kinect.drawDepth(10, 10, 480, 360);
+		kinect.drawDepth(10, 10, 480, 360);
 		//kinect.draw(490, 10, 480, 360);
 		depthImage.draw(10, 370, 480, 360);
         colorImage.draw(490, 370, 480, 360);
@@ -266,15 +273,14 @@ void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages ra
             for(int x = 0; x < recordWidth; x += recordingStep) {
                 if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) { // exclude out of range data
                     zGrey = depthImage.getColor(x,y);
-                    // int z = zGrey;
                     ofVec3f v3;
                     int z = ofMap(zGrey.r, 0, 400, 2048, 0); // scale responses from depth image into new mesh (11 bit data =2048 steps
                     // cout << zGrey << " : " << zGrey.r << " : " << z << " : " << kinect.getDistanceAt(x, y) << endl;
-                    v3.set(x- (recordWidth/2),y -(recordHeight/2),z);
-                    mesh.addVertex(v3);
+                   // v3.set(x- (recordWidth/2),y -(recordHeight/2),z);
+                   // mesh.addVertex(v3);
                     //depthPixels[i] = kinect.getDistanceAt(x, y);
                     //cout << v3 << " : " << kinect.getWorldCoordinateAt(x, y) << endl;
-                    //mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
+                    mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
                     if (paintMesh) {
                         c = (colorImage.getColor(x,y)); // getting RGB from ofImage
                         mesh.addColor(c);
@@ -314,35 +320,57 @@ void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages ra
 
 //--------------------------------------------------------------
 
-//void ofApp::loadLiveMeshData(const string _file) {
-//    
-//    liveMeshData.clear();
-//    liveMeshData.resize(1);
-//    //framesLoaded = 0;
-//    
-//    //for(int i = 0; i < totalFrames; i += 1) {
-//        vector<frameData> data;
-//        //while(fin!=NULL)
-//        while(fin) {
-//            string str;
-//            getline(fin, str);
-//            vector<string> pointcoords = ofSplitString(str, ",");
-//            
-//            if(str != "") {
-//                frameData pc;
-//                pc.framenum = ofToInt(pointcoords[0]);
-//                pc.x = ofToFloat(pointcoords[1]);
-//                pc.y = ofToFloat(pointcoords[2]);
-//                pc.z = ofToFloat(pointcoords[3]);
-//                pc.hexcolor = ofToInt(pointcoords[4]);
-//                data.push_back(pc); //push the string onto a vector of strings
-//            }
-//        }
-//        
-//        liveMeshData[i].resize(data.size()); //appears to crash here occasionally....
-//        liveMeshData[i] = data;
-//    
-//}
+void ofApp::loadLiveMeshData() {
+    //    //load point cloud from live mesh
+    //    liveMeshData.clear();
+    //    liveMeshData.resize(1);
+    //    //framesLoaded = 0;
+    //
+    //    //for(int i = 0; i < totalFrames; i += 1) {
+    //        vector<frameData> data;
+    //        //while(fin!=NULL)
+    //        while(fin) {
+    //            string str;
+    //            getline(fin, str);
+    //            vector<string> pointcoords = ofSplitString(str, ",");
+    //
+    //            if(str != "") {
+    //                frameData pc;
+    //                pc.framenum = ofToInt(pointcoords[0]);
+    //                pc.x = ofToFloat(pointcoords[1]);
+    //                pc.y = ofToFloat(pointcoords[2]);
+    //                pc.z = ofToFloat(pointcoords[3]);
+    //                pc.hexcolor = ofToInt(pointcoords[4]);
+    //                data.push_back(pc); //push the string onto a vector of strings
+    //            }
+    //        }
+    //
+    //        liveMeshData[i].resize(data.size()); //appears to crash here occasionally....
+    //        liveMeshData[i] = data;
+    //
+    ////
+    
+    
+    int index =0;
+    int i=0;
+    ofVec3f v3;
+    for(int y = 0; y < recordHeight; y += recordingStep) {
+        for(int x = 0; x < recordWidth; x += recordingStep) {
+            if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) { // exclude out of range data
+                //zGrey = depthImage.getColor(x,y);
+                ofVec3f v3;
+               // int z = ofMap(zGrey.r, 0, 400, 2048, 0); // scale responses from depth image into new mesh (11 bit data =2048 steps
+                // v3.set(x- (recordWidth/2),y -(recordHeight/2),z);
+                // mesh.addVertex(v3);
+                //depthPixels[i] = kinect.getDistanceAt(x, y);
+                mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
+                
+            }
+            i++;
+        }
+    }
+    
+}
 
 
 void ofApp::triangulateMesh(ofMesh &mesh){
@@ -599,6 +627,13 @@ void ofApp::drawGui() {
             //ImGui::SliderInt("Mesh spacing", &gridSize, 1, 20);
             ImGui::ColorEdit3("Background Color", (float*)&imBackgroundColor);
         }
+        
+        if (ImGui::CollapsingHeader("Image filters")) {
+            ImGui::Text("Playback style");
+            ImGui::Checkbox("Blur", &blur); ImGui::SameLine();
+            ImGui::SliderInt("Radius ", &blurRadius, 1, 200);
+        }
+        
         if (ImGui::CollapsingHeader("Playback options")) {
             ImGui::Text("Playback style");
             ImGui::SliderInt("Playback FPS", &playbackFPS, 1, 120);
