@@ -3,11 +3,15 @@
 #include "ofMain.h"
 #include "ofxOpenCv.h"
 #include "ofxKinect.h"
+<<<<<<< HEAD
 //#include "ofxGui.h"
+=======
+>>>>>>> shot-timing
 #include "ofxKinectMeshRecorder.h"
 #include "metaData.h"
 #include "ofxXmlSettings.h"
 #include "ofxImGui.h"
+#include "ofxCv.h"
 
 // Windows users: You MUST install the libfreenect kinect drivers in order to be able to use
 // ofxKinect. Plug in the kinect and point your Windows Device Manager to the
@@ -28,16 +32,19 @@ public:
 	void draw();
 	void exit();
     void drawAnyPointCloud();
+    void triangulateMesh(ofMesh &mesh);
     void savePointCloud();
     void writeMetaData();
     void loadRecording();
 	void keyPressed(int key);
+    void keyReleased(int key);
 	void mouseDragged(int x, int y, int button);
 	void mousePressed(int x, int y, int button);
 	void mouseReleased(int x, int y, int button);
 	void mouseEntered(int x, int y);
 	void mouseExited(int x, int y);
 	void windowResized(int w, int h);
+    void drawGui();
     
 	ofxKinect kinect;
 	
@@ -45,19 +52,22 @@ public:
 	ofxKinect kinect2;
 #endif
 	
-	ofxCvColorImage colorImg;
-	
-	ofxCvGrayscaleImage grayImage; // grayscale depth image
-	ofxCvGrayscaleImage grayThreshNear; // the near thresholded image
-	ofxCvGrayscaleImage grayThreshFar; // the far thresholded image
-	ofxCvContourFinder contourFinder;
+	//ofxCvColorImage colorCvImage; // RGB image from Kinect
+//	ofxCvGrayscaleImage grayImage; // grayscale depth image from Kinect
+//	ofxCvGrayscaleImage grayThreshNear; // the near thresholded image
+//	ofxCvGrayscaleImage grayThreshFar; // the far thresholded image
+//	ofxCvContourFinder contourFinder;
+    
+    
+    ofImage colorImage;
+    ofImage depthImage;
+    ofPixels depthPixels;
+    
 	
 	bool bThreshWithOpenCV;
 	bool bDrawPointCloud;
-	
 	int nearThreshold;
 	int farThreshold;
-	
 	int angle;
 	
     ofEasyCam easyCam; 	// used for viewing the point cloud
@@ -83,7 +93,6 @@ public:
     string saveTo;
     int distanceMinima;
     int distanceMaxima;
-    
     int recordWidth;
     int recordHeight;
     
@@ -101,6 +110,15 @@ public:
     ImVec4 imBackgroundColor;
     bool show_test_window;
     int playbackFPS, blobSize, gridSize, backPlane, frontPlane, recordingStep;
+    
+    // shot timing GUI elements
+    bool singleShot;
+    float exposureTime;
+    int exposureStart;
+    int recordFPS;
+    int lastRecordedFrame;
+    //unsigned char exposureBuffer; // array for racking frames from Kinext camera into for exposure timing
+    float numOfFramesInExposureBuffer; // number of frames read from kinect webcam into exposure buffer (actual exposure = buffer numbers/num of frames read in)
     
     //////////////////////////////////////////////////////
     // Rendering Reproduction
