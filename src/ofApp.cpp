@@ -516,7 +516,7 @@ void ofApp::loadExifData(string filePath) { // load exifXML file from the sele t
 void ofApp::exit() {
     
     meshRecorder.unlock();
-    //  meshRecorder.stopThread(false); //DB - depracated call
+    //  meshRecorder.stopThread(false); //DB - deprecated call
     meshRecorder.stopThread();
 	kinect.setCameraTiltAngle(0); // zero the tilt on exit
 	kinect.close();
