@@ -15,7 +15,8 @@
 
 #include "ofMain.h"
 
-class ofxKinectMeshRecorder : public ofThread {
+class ofxKinectMeshRecorder :
+public ofThread {
     
 private:
     

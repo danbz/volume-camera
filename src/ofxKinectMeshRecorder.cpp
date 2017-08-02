@@ -24,8 +24,7 @@ ofxKinectMeshRecorder::ofxKinectMeshRecorder() {
 void ofxKinectMeshRecorder::startLoading(const string _file) {
     
     fileToload = _file;
-    startThread(true, true);
-    
+   startThread(true, true);
     //loadMeshData(fileToload); //bypassing thread
     //readyToPlay = true;
     
@@ -35,40 +34,22 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
     
     cout << "ofxKinectMeshRecorder::loadMesh() | Loading..." << endl;
     
-    TotalFrames = countFrames(_file)-1;
+    TotalFrames = countFrames(_file)-2; // - 2 to accomodate the xml meta data file in the source folders and other stuff....
     ofFile file(ofToDataPath(_file + "/"));
     string path = file.getAbsolutePath();
     file.close();
-    
     recordedMeshData.clear();
     recordedMeshData.resize(TotalFrames);
-    
     FramesLoaded = 0;
     
+<<<<<<< HEAD
     for(int i = 0; i <= TotalFrames-1; i += 1) {
+=======
+    for(int i = 0; i < TotalFrames; i += 1) {
+>>>>>>> 578f7f1e91c55ad219445f15bba7f724b8efa380
         
         //string fileToload = path + "/frame" + ofToString(i) + ".txt";
         string fileToload = path + "frame" + ofToString(i) + ".txt";
-
-        
-        // TODO: Este metodo de parseo es muy lento.
-        // Habria que volcar con fscanf o algoa si el txt en la estrutura framedata directamente.
-        
-        /*
-         vector<frameData> data;
-         char line[200];
-         FILE* fp = fopen(ofToDataPath(fileToload).c_str(),"rt");
-         while(fgets(line,1,fp) != NULL)
-         {
-         frameData pc;
-         sscanf(line,"%i,%f,%f,%f,%i\n",pc.framenum, pc.x, pc.y, pc.z, pc.hexcolor);
-         data.push_back(pc);
-         // do something
-         }
-         fclose(fp);
-        
-         */
-        
         ifstream fin;
         fin.open( ofToDataPath(fileToload).c_str() );
         
@@ -101,10 +82,11 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
                     }
         fin.close();
         
-        recordedMeshData[i].resize(data.size());
+        recordedMeshData[i].resize(data.size()); //appears to crash here occasionally....
         recordedMeshData[i] = data;
         
         FramesLoaded = i;
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
         cout << "total line: " << lineCounter << endl;
@@ -113,9 +95,14 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
        cout << fileToload << endl;
         
         if(i == TotalFrames) {
+=======
+       // cout << "frame: " << fileToload << "  total lines per frame: " << lineCounter << endl; //ouput lines per frame
+        if(i == TotalFrames-1) {
+>>>>>>> 578f7f1e91c55ad219445f15bba7f724b8efa380
             unlock();
             stopThread();
-             //stopThread(false);
+            cout << "stopped thread" << endl ;
+             //stopThread(false); deprecated call
         }
     }
 }

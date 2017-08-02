@@ -5,13 +5,21 @@
 // kinect.setDepthClipping(float nearClip=500, float farClip=10000); //set depth clipping range
 
 string _timestamp = "default"; //default value for filepath opening on playback
+string filePath ="";
 int step = 1; // default point cloud step size for recorded mesh playback
+<<<<<<< HEAD
 <<<<<<< HEAD
 int recordingStep =1; // default point cloud step size for recorded mesh quality
 =======
 int recordingStep =1l; // default point cloud step size for recorded mesh quality
 >>>>>>> d6b8c8f0687aeac034200a955c22d3973baa11a9
+=======
+//int recordingStep =1; // default point cloud step size for recorded mesh quality
+>>>>>>> 578f7f1e91c55ad219445f15bba7f724b8efa380
 bool paused;
+UInt64 timeNow =ofGetSystemTime(); // for timing elapsed time since past frame for playbackFPS control
+
+bool doThemeColorsWindow = false;
 
 
 //----------------------------------------------------------------
@@ -51,7 +59,7 @@ void ofApp::setup() {
     nearThreshold = 230;
 	farThreshold = 70;
 	bThreshWithOpenCV = true;
-	ofSetFrameRate(60);
+	ofSetFrameRate(120); //make this into a separate variable for playback speed framerate alteration
 	angle = 0; // zero the tilt on startup
 	kinect.setCameraTiltAngle(angle);
     
@@ -69,31 +77,40 @@ void ofApp::setup() {
     paused = false;
     drawTriangles = false;
     renderStyle = 1;
-    recordWidth =640;
+    recordWidth =640; //default width for recording and playback of meshes, overridden by Exifmedta data when recorded files are loaded.
     recordHeight=480;
+    
+    //added in new thread class etc 8/july/17    
+    ofxKinectMeshRecorder thread;
     
     //////////////////////////////////////////////////////
     // Rendering Configuration
     //////////////////////////////////////////////////////
     //light.enable(); //enable world light
-    illuminateScene = true;
-    showNormals = true;
-    
+    illuminateScene = false;
+    showNormals = false;
+    renderFlatQuads = false;
     
     //////////////////////////////////////////////////////
     // Gui Configuration
     //////////////////////////////////////////////////////
-    myFont.load("fonts/profaisal-elitetahreerv1-0/ProfaisalEliteTahreer.ttf",9);
-    gui.setup( "Parameters", "settings.xml" );
-    gui.add( blobSize.setup( "blobSize", 3, 1, 100 ) );
-    gui.add( gridSize.setup( "gridSize", 2, 1, 50 ) );
-    gui.add( frontPlane.setup( "frontPlane", 0, 0, 2550 ) );
-    gui.add( backPlane.setup( "backPlane", 3000, 0, 15000 ) );
-    gui.add(backgroundColor.setup("background color",
-                              ofColor::black,
-                              ofColor(0,0,0,0),
-                              ofColor::white));
     showGui = true;
+    
+    imGui.setup(); //ofxImGui set up
+    ImGui::CaptureMouseFromApp();
+    ImGui::GetIO().MouseDrawCursor = false;
+    //backgroundColor is stored as an ImVec4 type but can handle ofColor
+    imBackgroundColor = ofColor(114, 144, 154);
+    show_test_window = false;
+    playbackFPS=15;
+    blobSize =4;
+    gridSize =1;
+    backPlane =15000;
+    frontPlane=0;
+    recordingStep =4;
+    
+    //    recordWidth =640/recordingStep; //default width for recording and playback of meshes, overridden by Exifmedta data when recorded files are loaded.
+    //    recordHeight =480/recordingStep;
     
     if( !kinect.hasAccelControl()) {
         ofSystemAlertDialog("Note: this is a newer Xbox Kinect or Kinect For Windows device, motor / led / accel controls are not currently supported" );
@@ -103,7 +120,7 @@ void ofApp::setup() {
 //--------------------------------------------------------------
 void ofApp::update() {
 	
-	ofBackground(backgroundColor); // background color
+	ofBackground(imBackgroundColor); // background color
 	kinect.update();
     
     //////////////////////////////////////////////////////
@@ -118,7 +135,11 @@ void ofApp::update() {
     //////////////////////////////////////////////////////
     if(playing) { // if we are in playback mode
         if(!paused){ // and have not paused the playback
-        frameToPlay += 1; // increment the frame we are playing
+            if (timeNow < (ofGetSystemTime() - (1000/playbackFPS))) {
+                frameToPlay += 1; // increment the frame we are playing
+                timeNow = ofGetSystemTime();
+                //cout << timeNow/1000 << " : " << ofGetSystemTime() << endl;
+            }
         if(frameToPlay >= meshRecorder.TotalFrames) frameToPlay = 0; //or start at the beginning of the recorded loop
         }
     }
@@ -164,19 +185,13 @@ void ofApp::draw() {
     //////////////////////////////////////////////////////
     // Draw Live rendering
     //////////////////////////////////////////////////////
-	if(bDrawPointCloud) { //show pointcloud view or 3 camera view
-		easyCam.begin();
-        light.enable(); //enable world light
-        drawAnyPointCloud(); //call new generic point render function
+	if(bDrawPointCloud) { //show pointcloud view
+        // add in routine to control playback speed based on playingFPS
         
-//        if(!playing) { // if we are not playing then draw live pointcloud
-//            drawPointCloud();
-//        } else {
-//            if(meshRecorder.readyToPlay) {
-//                drawRecordedPointCloud(); //draw recorded point cloud
-//            }
-//        }
-        light.disable(); //enable world light
+		easyCam.begin();
+        if (illuminateScene) light.enable(); //enable world light
+        drawAnyPointCloud(); //call new generic point render function
+        ofDisableLighting(); //disable world light
         easyCam.end();
 	} else { 		// draw from the live kinect as 3 windows
 		kinect.drawDepth(10, 10, 400, 300);
@@ -200,29 +215,89 @@ void ofApp::draw() {
     //////////////////////////////////////////////////////
     // Reporting and help text
     //////////////////////////////////////////////////////
-	ofSetColor(255, 255, 255);
-	stringstream reportStream; // draw instructions
+	// stringstream reportStream; // draw instructions
     
-	reportStream << "press p to switch between images and point cloud, rotate the point cloud with the mouse" << endl
-	<< "using opencv threshold = " << bThreshWithOpenCV <<" (press spacebar)" << endl
-	<< "set near threshold " << nearThreshold << " (press: + -)" << endl
-	<< "pause with space bar, press: < > to scrub frames " << contourFinder.nBlobs
-	<< ", fps: " << ofGetFrameRate() << endl
-    << "a: paint mesh   t: toggle triangles/pointcloud   g: show/hide gui"<< endl
-     << "1, 2 or 3: rendering styles, n:  normals" <<showNormals<< " i:  world light" << illuminateScene<< endl
-    << "r: START RECORDING   s: STOP RECORDING" << endl
-    << "l: LAST RECORDING / LIVE MODE" << endl
-	<< "press c to close the connection and o to open it again, connection is: " << kinect.isConnected() << endl;
-
-    if(kinect.hasCamTiltControl()) {
-        reportStream << "press UP and DOWN to change the tilt angle: " << angle << " degrees" << endl;
-        //<< "press 1-5 & 0 to change the led mode" << endl;
-    }
+//	reportStream << "press p to switch between images and point cloud, rotate the point cloud with the mouse" << endl
+//	<< "using opencv threshold = " << bThreshWithOpenCV <<" (press spacebar)" << endl
+//	<< "set near threshold " << nearThreshold << " (press: + -)" << endl
+//	<< "pause with space bar, press: < > to scrub frames " << contourFinder.nBlobs
+//    << " recordWidth: " << recordWidth/recordingStep << " recordHeight: " << recordHeight/recordingStep
+//	//<< ", fps: " << ofGetFrameRate() << " / " << playbackFPS << endl
+//    << "a: paint mesh   t: toggle triangles/pointcloud   g: show/hide gui"<< endl
+//     << "1, 2 or 3: rendering styles, n:  normals" <<showNormals<< " i:  world light" << illuminateScene<< endl
+//    << "r: START RECORDING   s: STOP RECORDING"
+//    << "l: LAST RECORDING / LIVE MODE  h: reset 3d cam view"<< endl
+//	<< "press c to close the connection and o to open it again, connection is: " << kinect.isConnected() << endl;
     
     if (showGui) { // show or hide the gui and instruction texts
-        ofSetColor(255, 255, 255);
-        ofDrawBitmapString(reportStream.str(), 20, 600);
-        gui.draw();
+        // ofDrawBitmapString(reportStream.str(), 20, 600);
+        //ofxImGui example draw required to call this at beginning
+        imGui.begin();
+        
+        ImGuiIO& io = ImGui::GetIO(); // hide mouse input from rest of app
+        if (io.WantCaptureMouse){ //prevent mousemessages going to app while using imGui
+            easyCam.disableMouseInput();
+        }else {
+            easyCam.enableMouseInput();
+        };
+        
+    { // 1. Show a simple window
+        //ImGui::Text("Volume camera");
+        //ImGui::SliderFloat("Float", &floatValue, 0.0f, 1.0f);
+        ImGui::SliderInt("Frontplane", &frontPlane, 0, 10000);
+        ImGui::SliderInt("Backplane", &backPlane, 100, 15000);
+        ImGui::SliderInt("Pointsize", &blobSize, 1, 15);
+        ImGui::SliderInt("Mesh spacing", &gridSize, 1, 20);
+        ImGui::SliderInt("RecordingMesh Step",&recordingStep, 1, 10);
+        ImGui::SliderInt("FPS", &playbackFPS, 1, 120);
+        ImGui::ColorEdit3("Background Color", (float*)&imBackgroundColor);
+       
+        if (ImGui::CollapsingHeader("Render options")) {
+            ImGui::Text("Render style");
+            ImGui::RadioButton("cloud", &renderStyle, 1); ImGui::SameLine();
+            ImGui::RadioButton("faces", &renderStyle, 2); ImGui::SameLine();
+            ImGui::RadioButton("mesh", &renderStyle, 3);
+            
+            ImGui::Text("Surface style");
+            ImGui::Checkbox("paint mesh", &paintMesh); ImGui::SameLine();
+            ImGui::Checkbox("world light", &illuminateScene); ImGui::SameLine();
+            ImGui::Checkbox("normals", &showNormals); ImGui::SameLine();
+            ImGui::Checkbox("flatQuads", &renderFlatQuads);
+        }
+        if(ImGui::Button("Test Window"))
+        {
+            show_test_window = !show_test_window;
+        }
+        ImGui::SameLine();
+        
+        if (ImGui::Button("reset camera"))
+        {
+            easyCam.reset();//reset easycam settings to re-centre 3d view
+        }
+        ImGui::SameLine();
+        
+        if (ImGui::Button("load recording"))
+        {
+            loadRecording();   ImGui::SameLine();
+        }
+        ImGui::Checkbox("show live mesh", &bDrawPointCloud);
+       
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        ImGui::Text("Recording mesh size", recordWidth/step, recordHeight,step);
+    }
+    
+    // 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
+    if (show_test_window)
+    {
+        ImGui::SetNextWindowPos(ofVec2f(650, 20), ImGuiSetCond_FirstUseEver);
+        ImGui::ShowTestWindow(&show_test_window);
+    }
+    
+    if(doThemeColorsWindow)
+    {
+        imGui.openThemeColorWindow();
+    }
+    imGui.end(); //required to call this at end
     }
 }
 
@@ -249,7 +324,6 @@ void ofApp::drawAnyPointCloud() {
     
     if(playing) { // if we are playing then render data from file ---------------
         if(meshRecorder.readyToPlay) {
-            pCount = 0;
             //int step = gridSize; //DB this crashes the mesh playback  .....
             for(int y = 0; y < h; y += step) { //load data from recording into mesh as pointcloud
                 for(int x = 0; x < w; x += step) {
@@ -261,34 +335,33 @@ void ofApp::drawAnyPointCloud() {
                     c = meshRecorder.getColorAt(frameToPlay, pCount);
                     if(paintMesh) mesh.addColor(c); // add colour from map into mesh at each point
                     pCount ++;
-                    
-
+                    //cout << "pointcount from drawAnyCloud fctn: " << pCount << endl;
                 }
             }
+             //cout << "end pointcount from drawAnyCloud fctn: " << pCount << endl;
         }
     } else {
         //draw  pointcloud mesh from live source --------
         int step = gridSize;
         for(int y = 0; y < h; y += step) {
             for(int x = 0; x < w; x += step) {
-                if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) {
-                    if (paintMesh)mesh.addColor(kinect.getColorAt(x,y));
+                if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) { //exclude out of range data
                     mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
-                    // mesh.addTriangle(kinect.getWorldCoordinateAt(x, y) , (kinect.getDistanceAt(x, y)));
+                    if (paintMesh)mesh.addColor(kinect.getColorAt(x,y));
+                    
                 }
             }
         }
     }
  
-    //----- then generate triangles for mesh --
-    int numofVertices = mesh.getNumVertices();
+    int numofVertices = mesh.getNumVertices();   //----- then generate triangles for mesh --
     pCount = 0;
     ofVec3f v2;
     v2.set(0,0,0); //add triangles to mesh from vertices - move this to the 'read mesh' ?
     for(int n = 0; n < numofVertices-1-w/step; n ++) {
         // cout << "points:" << n  <<"," << n+1+w/step << "," << n+w/step <<endl;
         // add in culling for zero location points from triangle mesh
-        // optimise to check less of the dupliacte points
+        // optimise to check less of the duplicate points
         //  if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane)  // use backplane value to cull deeper points from cloud // to be added
         if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1))==v2 or (mesh.getVertex(pCount+1+w/step))==v2){
             //cout << "culled point" << pCount << endl ;
@@ -312,6 +385,15 @@ void ofApp::drawAnyPointCloud() {
     ofScale(1, -1, -1);  // the projected points are 'upside down' and 'backwards'
     ofTranslate(0, 0, -750); // center the points a bit
     glEnable(GL_DEPTH_TEST);
+    if (renderFlatQuads){
+        glShadeModel(GL_FLAT);
+        //cout <<"flat quads" << endl;
+    }else {
+        glShadeModel(GL_TRIANGLES);
+        //cout <<"triangles" << endl;
+    }
+        
+    // render as flat quads
     //mesh.drawVertices();
     //mesh.drawFaces();
     ofSetColor( 255, 255, 255);  //set render colour for unpainted points, faces and lines
@@ -319,49 +401,6 @@ void ofApp::drawAnyPointCloud() {
     glDisable(GL_DEPTH_TEST);
     //mesh.clear();
     ofPopMatrix();
-}
-
-//-----------------------------------------
-void ofApp::drawPointCloud() { //deprecated function - now run by drawAnyPointCloud
-	int w = 640;
-	int h = 480;
-	ofMesh mesh;
-    //OF_PRIMITIVE_TRIANGLES, OF_PRIMITIVE_TRIANGLE_STRIP, OF_PRIMITIVE_TRIANGLE_FAN, OF_PRIMITIVE_LINES, OF_PRIMITIVE_LINE_STRIP, OF_PRIMITIVE_LINE_LOOP, OF_PRIMITIVE_POINTS
-    
-    switch (renderStyle) { //set render style
-        case 1:
-            mesh.setMode(OF_PRIMITIVE_POINTS);
-            break;
-            
-        case 2:
-            mesh.setMode(OF_PRIMITIVE_TRIANGLES);
-            break;
-            
-        case 3:
-            mesh.setMode(OF_PRIMITIVE_LINES);
-            break;
-    }
-
-	int step = gridSize;
-	for(int y = 0; y < h; y += step) {
-		for(int x = 0; x < w; x += step) {
-			if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) {
-				if (paintMesh)mesh.addColor(kinect.getColorAt(x,y));
-				mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
-               // mesh.addTriangle(kinect.getWorldCoordinateAt(x, y) , (kinect.getDistanceAt(x, y)));
-            }
-		}
-	}
-	glPointSize(blobSize);
-	ofPushMatrix();
-	// the projected points are 'upside down' and 'backwards' 
-	ofScale(1, -1, -1);
-	ofTranslate(0, 0, -1000); // center the points a bit
-	ofEnableDepthTest();
-    mesh.draw();
-	//mesh.drawFaces(); //alternative draw modes //mesh.drawVertices(); //mesh.drawWireframe();
-	ofDisableDepthTest();
-	ofPopMatrix();
 }
 
 //--------------------------------------------------------------
@@ -400,7 +439,24 @@ void ofApp::setNormals( ofMesh &mesh ){
     mesh.addNormals( norm );
 }
 
-
+//------------------------------------------------------------
+void ofApp::loadRecording() {
+    
+    if(!meshRecorder.readyToPlay) return;
+    if(recording) return;
+    if(!playing) {
+        ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded data", true, ofToDataPath(""));
+        if (result.getPath() != "") {
+            filePath =result.getPath();
+            playing = true;
+            frameToPlay = 0;
+            loadExifData(filePath);
+            meshRecorder.startLoading(filePath);
+        }
+    } else {
+        playing = false;
+    }
+}
 //--------------------------------------------------------------
 string ofApp::generateFileName() {
     string _root = "";
@@ -410,9 +466,7 @@ string ofApp::generateFileName() {
     ofToString(ofGetHours()) +
     ofToString(ofGetMinutes()) +
     ofToString(ofGetSeconds());
-    
     string _filename = (_root + _timestamp + "/");
-    
     dirHelper.createDirectory(_filename);
     ofFile file(ofToDataPath(_filename));
     //cout << file.getAbsolutePath();
@@ -421,8 +475,8 @@ string ofApp::generateFileName() {
 
 //--------------------------------------------------------------
 void ofApp::savePointCloud() {
-    int w = 640;
-    int h = 480;
+    int w = recordWidth;
+    int h = recordHeight;
 
     FILE* fout = fopen((saveTo + "frame" + ofToString(frame) + ".txt").c_str(), "w");
     int pIndex = 0;
@@ -444,27 +498,19 @@ void ofApp::savePointCloud() {
         }
     }
     fclose(fout);
-    
     frame++;
 }
 
 //--------------------------------------------------------------
 
-void ofApp::writeMetaData() {
-    //generate xml metadata file and save into recording directory
+//////////////////////////////////////////////////////
+// XML exif data save and load
+// ImageDescription , ExposureTime , DateTimeOriginal , DateTimeDigitized, ShutterSpeedValue , ApertureValue, FocalLength, MakerNote, RelatedSoundFile, SensingMethod, WhiteBalance, DeviceSettingDescription, etc
+//////////////////////////////////////////////////////
+
+void ofApp::saveExifData() { //put some some settings into a file
     
-    string exifData; // exif meta data
-    // get date, number of files, mesh resolution, RGB colour resolution (or data to separate file), GPS loc, recording apparatus, version number, author data, semantic data, free text descriptor.
-    
-    exifData = "press p to switch between images and point cloud, rotate the point cloud with the mouse"
-    && "using opencv threshold = " && bThreshWithOpenCV  && " (press spacebar)";
-  
-    
-    // write XML data to file
     string path = saveTo;
-    FILE* fout = fopen((saveTo + "meta.xml").c_str(), "w");
-     // create XML data
-    
     string today =  _timestamp = ofToString(ofGetDay()) + //generate date
     ofToString(ofGetMonth()) +
     ofToString(ofGetYear()) +
@@ -472,22 +518,33 @@ void ofApp::writeMetaData() {
     ofToString(ofGetMinutes()) +
     ofToString(ofGetSeconds());
     
-    fprintf(fout, "%s, %i, %s, %i, %s ", //generate xml strings and insert mostly placeholder data
-            "exifData \n "
-            "<exif: IFD rdf:ID = 'primary image'> \n"
-            "<extf:make>Buzzo</exif:make> \n"
-            "<extf:model>experimental voumetric camera v0.1</exif:model> \n"
-            "<extf:orientation>top left</exif:orientation> \n"
-             "<extf:xresolution>" , recordWidth, "</exif:xresolution> \n"
-             "<extf:yresolution>", recordHeight, "</exif:yresolution> \n"
-             "<extf:datetime>" "today" "</exif:datetime> \n"
-            "<extf:IFD>\n"
-            "<various exif data> freetext etc </various exif data> \n"
-            "</exif:IFD> \n"
-            "</exif:IFD \n" );
-    fclose(fout);
+    //exifSettings.addTag("exifData");
+    exifSettings.setValue("exif:make", "buzzo");
+    exifSettings.setValue("exif:model", "experimental voumetric camera v0.1");
+    exifSettings.setValue("exif:orientation", "top left");
+    exifSettings.setValue("exif:ImageWidth", recordWidth/recordingStep);
+    exifSettings.setValue("exif:ImageLength", recordHeight/recordingStep);
+    exifSettings.setValue("exif:DateTimeDigitized", today);
+    exifSettings.setValue("exifLSensingMethod", "kinect depth sensor");
+   
+    exifSettings.saveFile(path + "exifSettings.xml"); //puts exifSettings.xml file in the current recordedframe folder
+    string myXml;
+    exifSettings.copyXmlToString(myXml);
+    cout << myXml <<endl ;
+}
+
+//-------------------------------------------------------------------
+
+void ofApp::loadExifData(string filePath) { // load exifXML file from the sele ted folder and get the values out
     
-    
+    exifSettings.loadFile(filePath + "/exifSettings.xml");
+    //cout << filePath << "/exifSettings.xml" << endl;
+    recordWidth = exifSettings.getValue("exif:ImageWidth", 0);
+    recordHeight = exifSettings.getValue("exif:ImageLength", 0);
+    string recordingDate = exifSettings.getValue("exif:DateTimeDigitized", "");
+    string myXml;
+    exifSettings.copyXmlToString(myXml);
+    cout << "loaded exif data: " << myXml <<endl ;
 }
 
 //--------------------------------------------------------------
@@ -599,20 +656,7 @@ void ofApp::keyPressed (int key) {
             break;
             
         case 'l':
-            if(!meshRecorder.readyToPlay) return;
-            if(recording) return;
-            if(!playing) {
-                
-                ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded data", true, ofToDataPath(""));
-                if (result.getPath() != "") {
-                    // filePath =(result.getPath());
-                }
-                playing = true;
-                frameToPlay = 0;
-                meshRecorder.startLoading(result.getPath());
-            } else {
-                playing = false;
-            }
+            loadRecording();
             break;
             
         case 'r':
@@ -629,10 +673,13 @@ void ofApp::keyPressed (int key) {
             if(!meshRecorder.readyToPlay) return;
             if(!recording) return;
             if(playing) return;
-            writeMetaData();
+            saveExifData();
             saveTo = "";
             recording = false;
+<<<<<<< HEAD
          kinect.setLed(ofxKinect::LED_BLINK_GREEN);
+=======
+>>>>>>> 578f7f1e91c55ad219445f15bba7f724b8efa380
             break;
             
             case '<':
@@ -670,11 +717,15 @@ void ofApp::keyPressed (int key) {
                 light.enable();
                 illuminateScene=!illuminateScene;
             } else {
-                light.disable();
+                ofDisableLighting();
                 illuminateScene=!illuminateScene;
             }
-    }
-    
+            break;
+            
+        case 'h':
+            easyCam.reset();//reset easycam settings to re-centre 3d view
+            break;
+    }    
 }
 
 //--------------------------------------------------------------
