@@ -56,7 +56,7 @@ public:
     
     
     ofImage colorImage;
-    ofImage depthImage;
+    ofShortImage depthImage;
     ofPixels depthPixels;
     
 	

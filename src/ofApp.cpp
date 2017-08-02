@@ -143,7 +143,7 @@ void ofApp::update() {
         }
     }
     
-    if(kinect.isFrameNew()) {// if there is new frame and we are connected to kinect device Kinect Live Render CV updating
+    if(kinect.isFrameNew()) {// if new frame and connected to kinect Live Render CV updating
 		//grayImage.setFromPixels(kinect.getDepthPixels()); // load grayscale depth image from the kinect source
         //colorCvImage.setFromPixels(kinect.getPixels()); // load RGB image from the kinect source
         colorImage.setFromPixels(kinect.getPixels());
@@ -188,10 +188,7 @@ void ofApp::draw() {
 	if(bDrawPointCloud) { //show pointcloud view
 		easyCam.begin();
         if (illuminateScene) light.enable(); //enable world light
-            //if (exposureStart < (ofGetSystemTime() - (1000*exposureTime))) {
-            drawAnyPointCloud(); //call new generic point render function
-         //   exposureStart = ofGetSystemTime();
-        //}
+        drawAnyPointCloud(); //call new generic point render function
         ofDisableLighting(); //disable world light
         easyCam.end();
 	} else { 		// draw from the live kinect as 3 windows
@@ -229,6 +226,7 @@ void ofApp::draw() {
 void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages rather than direct from kinect  - 28-7-17
     
     ofColor c;
+    ofColor zGrey = 0;
     int pCount =0;
     ofMesh mesh;
     
@@ -246,7 +244,7 @@ void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages ra
             break;
     }
     
-    if(playing) { // if we are playing then render data from file ---------------
+    if(playing) { // if we are playing then load data from meshvector into mesh---------------
         if(meshRecorder.readyToPlay) {
             for(int y = 0; y < recordHeight; y += recordingStep) { //load data from recording into mesh as pointcloud
                 for(int x = 0; x < recordWidth; x += recordingStep) {
@@ -260,27 +258,25 @@ void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages ra
                 }
             }
         }
-    } else { // draw  pointcloud mesh from live source --------
+    } else { // draw pointcloud mesh from live source --------
         int index =0;
         int i=0;
         ofVec3f v3;
-        ofColor zGrey = 0;
         for(int y = 0; y < recordHeight; y += recordingStep) {
             for(int x = 0; x < recordWidth; x += recordingStep) {
                 if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) { // exclude out of range data
-                   zGrey = depthImage.getColor(x,y);
-                    //float z = zGrey;
-                    //ofVec3f v3;
-                    float z = ofMap(zGrey.r, 0, 400, 1024, 0); // scale responses from depth image into new mesh (10 bit data =1024 steps
-                // cout << zGrey << " : " << zGrey.r << " : " << z << " : " << kinect.getDistanceAt(x, y) << endl;
+                    zGrey = depthImage.getColor(x,y);
+                    // int z = zGrey;
+                    ofVec3f v3;
+                    int z = ofMap(zGrey.r, 0, 400, 2048, 0); // scale responses from depth image into new mesh (11 bit data =2048 steps
+                    // cout << zGrey << " : " << zGrey.r << " : " << z << " : " << kinect.getDistanceAt(x, y) << endl;
                     v3.set(x- (recordWidth/2),y -(recordHeight/2),z);
-                    // mesh.addVertex(v3);
-                    depthPixels[i] = kinect.getDistanceAt(x, y);
+                    mesh.addVertex(v3);
+                    //depthPixels[i] = kinect.getDistanceAt(x, y);
                     //cout << v3 << " : " << kinect.getWorldCoordinateAt(x, y) << endl;
-                    mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
+                    //mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
                     if (paintMesh) {
-                        //c = (kinect.getColorAt(x,y));
-                        c = (colorImage.getColor(x,y)); // getting RGB from ofImage rather than direct from kinect.
+                        c = (colorImage.getColor(x,y)); // getting RGB from ofImage
                         mesh.addColor(c);
                     }
                 }
@@ -317,6 +313,37 @@ void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages ra
 }
 
 //--------------------------------------------------------------
+
+//void ofApp::loadLiveMeshData(const string _file) {
+//    
+//    liveMeshData.clear();
+//    liveMeshData.resize(1);
+//    //framesLoaded = 0;
+//    
+//    //for(int i = 0; i < totalFrames; i += 1) {
+//        vector<frameData> data;
+//        //while(fin!=NULL)
+//        while(fin) {
+//            string str;
+//            getline(fin, str);
+//            vector<string> pointcoords = ofSplitString(str, ",");
+//            
+//            if(str != "") {
+//                frameData pc;
+//                pc.framenum = ofToInt(pointcoords[0]);
+//                pc.x = ofToFloat(pointcoords[1]);
+//                pc.y = ofToFloat(pointcoords[2]);
+//                pc.z = ofToFloat(pointcoords[3]);
+//                pc.hexcolor = ofToInt(pointcoords[4]);
+//                data.push_back(pc); //push the string onto a vector of strings
+//            }
+//        }
+//        
+//        liveMeshData[i].resize(data.size()); //appears to crash here occasionally....
+//        liveMeshData[i] = data;
+//    
+//}
+
 
 void ofApp::triangulateMesh(ofMesh &mesh){
     

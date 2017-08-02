@@ -1,9 +1,9 @@
 //
-//  ofxKinectMeshRecorder.hpp
-//  myKinectHack
+//  ofxKinectMeshRecorder.h
+//  volca: volume camera
 //
 //  modified by Daniel Buzzo on 14/05/2017.
-//
+// http://www.buzzo/com
 //
 //  ofxKinectMeshRecorder.h
 //  ofxKinectMeshRecorder
