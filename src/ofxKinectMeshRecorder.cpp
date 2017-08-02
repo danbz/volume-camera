@@ -33,7 +33,7 @@ void ofxKinectMeshRecorder::startLoading(const string _file) {
 void ofxKinectMeshRecorder::loadMeshData(const string _file) {
     
     
-    totalFrames = countFrames(_file); // - 1 to accomodate the xml meta data file in the source folders....
+    totalFrames = countFrames(_file); 
     ofFile file(ofToDataPath(_file + "/"));
     string path = file.getAbsolutePath();
     file.close();
@@ -52,7 +52,6 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
         fin.open( ofToDataPath(fileToload).c_str() );
         
         vector<frameData> data;
-        int lineCounter = 0;
         //while(fin!=NULL)
         while(fin) {
             string str;
@@ -67,8 +66,6 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
                 pc.z = ofToFloat(pointcoords[3]);
                 pc.hexcolor = ofToInt(pointcoords[4]);
                 data.push_back(pc); //push the string onto a vector of strings
-                //cout << "loading line: " << lineCounter << endl;
-                lineCounter ++;
             }
         }
         fin.close();
@@ -77,7 +74,6 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
         recordedMeshData[i] = data;
         
         framesLoaded = i;
-        // cout << "frame: " << fileToload << "  total lines per frame: " << lineCounter << endl; //ouput lines per frame
         if(i == totalFrames-1) {
             unlock();
             stopThread();

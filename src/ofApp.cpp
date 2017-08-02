@@ -299,8 +299,7 @@ void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages ra
     ofScale(1, -1, -1);  // the projected points are 'upside down' and 'backwards'
     ofTranslate(0, 0, -1000); // center the points a bit
     glEnable(GL_DEPTH_TEST);
-    
-    glDepthRange(0, 2000);//expwriment with gldepth range
+    glDepthRange(0, 2000);//experiment with gldepth range
     
     if (renderFlatQuads){ // render as flat quads
         glShadeModel(GL_FLAT);
@@ -330,7 +329,7 @@ void ofApp::triangulateMesh(ofMesh &mesh){
         // add in culling for zero location points from triangle mesh & optimise to check less of the duplicate points
         //  if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane)  // use backplane value to cull deeper points from cloud // to be added
         if ((mesh.getVertex(pCount))!=v2 and (mesh.getVertex(pCount+1))!=v2 and (mesh.getVertex(pCount+1+recordWidth/recordingStep))!=v2){
-            //mesh.addTriangle(n, n+1, n+1+recordWidth/step); //even triangles for each mesh square
+            mesh.addTriangle(n, n+1, n+1+recordWidth/recordingStep); //even triangles for each mesh square
         }
         if ((mesh.getVertex(pCount))!=v2 and (mesh.getVertex(pCount+1+recordWidth/recordingStep))!=v2 and (mesh.getVertex(pCount+recordWidth/recordingStep))!=v2){
             mesh.addTriangle(n, n+1+recordWidth/recordingStep, n+recordWidth/recordingStep); //odd triangles for each mesh square
@@ -504,7 +503,7 @@ void ofApp::loadExifData(string filePath) { // load exifXML file from the sele t
     //cout << filePath << "/exifSettings.xml" << endl;
     recordWidth = exifSettings.getValue("exif:ImageWidth", 0);
     recordHeight = exifSettings.getValue("exif:ImageLength", 0);
-    //recordingStep = 640 / recordWidth;
+    recordingStep = 1; // always default to 1:1 step when loading recorded meshes
     string recordingDate = exifSettings.getValue("exif:DateTimeDigitized", "");
     string myXml;
     exifSettings.copyXmlToString(myXml);
