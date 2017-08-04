@@ -52,17 +52,10 @@ public:
 #ifdef USE_TWO_KINECTS
 	ofxKinect kinect2;
 #endif
-	
-	//ofxCvColorImage colorCvImage; // RGB image from Kinect
-//	ofxCvGrayscaleImage grayImage; // grayscale depth image from Kinect
-//	ofxCvGrayscaleImage grayThreshNear; // the near thresholded image
-//	ofxCvGrayscaleImage grayThreshFar; // the far thresholded image
-//	ofxCvContourFinder contourFinder;
-    
-    
+        
     ofImage colorImage;
     ofShortImage depthImage;
-    ofPixels depthPixels;
+    ofShortPixels depthPixels;
     
 	
 	bool bThreshWithOpenCV;
@@ -109,8 +102,8 @@ public:
     
     ofxImGui::Gui imGui;
     ImVec4 imBackgroundColor;
-    bool show_test_window, blur;
-    int playbackFPS, blobSize, gridSize, backPlane, frontPlane, recordingStep, blurRadius;
+    bool show_test_window, blur, erodeImage, dilateImage, bfilterColorImage;
+    int playbackFPS, blobSize, gridSize, backPlane, frontPlane, recordingStep, blurRadius, erodeAmount, dilateAmount;
     
     // shot timing GUI elements
     bool singleShot;

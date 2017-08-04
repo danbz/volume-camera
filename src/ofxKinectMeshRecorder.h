@@ -14,6 +14,8 @@
 #define ofxKinectMeshRecorder_ofxKinectMeshRecorder_h
 
 #include "ofMain.h"
+#include "ofxXmlSettings.h"
+
 
 class ofxKinectMeshRecorder :
 public ofThread {
@@ -50,6 +52,14 @@ public:
     
     ofVec3f getVectorAt(int framenum, int coord);
     ofColor getColorAt(int framenum, int coord);
+    /// moving in metadata functions
+    
+    
+//    void loadExifData(string filePath);
+//    void saveExifData();
+    
+    
+    ofxXmlSettings exifSettings;
     
 };
 

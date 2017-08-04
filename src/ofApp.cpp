@@ -9,8 +9,6 @@ using namespace cv;
 
 
 
-// kinect.setDepthClipping(float nearClip=500, float farClip=10000); //set depth clipping range
-
 string _timestamp = "default"; //default value for filepath opening on playback
 string filePath ="";
 //int step = 1; // default point cloud step size for mesh file playback
@@ -28,6 +26,9 @@ void ofApp::setup() {
 	kinect.init(); //kinect.init(true); // shows infrared instead of RGB video image
     //kinect.init(false, false); // disable video image (faster fps)
 	kinect.open();		// opens first available kinect
+    kinect.setDepthClipping( 100,  20000); //set depth clipping range
+    
+
 	//kinect.open(1);	// open a kinect by id, starting with 0 (sorted by serial # lexicographically))
 	//kinect.open("A00362A08602047A");	// open a kinect using it's unique serial #
 		
@@ -53,7 +54,7 @@ void ofApp::setup() {
 //	grayThreshNear.allocate(kinect.width, kinect.height);
 //	grayThreshFar.allocate(kinect.width, kinect.height);
     colorImage.allocate(kWidth, kHeight, OF_IMAGE_COLOR);
-    depthImage.allocate(kWidth, kHeight, OF_IMAGE_GRAYSCALE);
+    depthImage.allocate(kWidth, kHeight, OF_IMAGE_COLOR);
     
     nearThreshold = 230;
 	farThreshold = 70;
@@ -113,6 +114,11 @@ void ofApp::setup() {
     recordingStep =4;
     blur =false;
     blurRadius=10;
+    erodeImage=false;
+    erodeAmount=2;
+    dilateImage=false;
+    dilateAmount=2;
+    bfilterColorImage = true;
     
     // ofCV stuff
     
@@ -122,13 +128,15 @@ void ofApp::setup() {
     if( !kinect.hasAccelControl()) {
         ofSystemAlertDialog("Note: this is a newer Xbox Kinect or Kinect For Windows device, motor / led / accel controls are not currently supported" );
     }
+  
+    
 }
 
 //--------------------------------------------------------------
 void ofApp::update() {
-	
-	ofBackground(imBackgroundColor); // background color
-	kinect.update();
+    
+    ofBackground(imBackgroundColor); // background color
+    kinect.update();
     
     if(recording) { // mesh capture
         savePointCloud();
@@ -141,46 +149,41 @@ void ofApp::update() {
                 timeNow = ofGetSystemTime();
                 //cout << timeNow/1000 << " : " << ofGetSystemTime() << endl;
             }
-        if(frameToPlay >= meshRecorder.totalFrames) frameToPlay = 0; //or start at the beginning of the recorded loop
+            if(frameToPlay >= meshRecorder.totalFrames) frameToPlay = 0; //or start at the beginning of the recorded loop
+        }
+    } else {
+        
+        if(kinect.isFrameNew()) {// if new frame and connected to kinect Live Render CV updating
+            colorImage.setFromPixels(kinect.getPixels());
+            depthImage.setFromPixels(kinect.getRawDepthPixels());
+        }
+    }
+    if (bfilterColorImage) {
+        if (blur){
+            ofxCv::GaussianBlur(colorImage, blurRadius);
+        }
+        if (erodeImage) {
+            ofxCv::erode(colorImage, colorImage, erodeAmount);
+        }
+        
+        if (dilateImage) {
+            ofxCv::dilate(colorImage, colorImage, dilateAmount);
+        }
+    } else{
+        if (blur){
+            ofxCv::GaussianBlur(depthImage, blurRadius);
+        }
+        if (erodeImage) {
+            ofxCv::erode(depthImage, depthImage, erodeAmount);
+        }
+        
+        if (dilateImage) {
+            ofxCv::dilate(depthImage, depthImage, dilateAmount);
         }
     }
     
-    if(kinect.isFrameNew()) {// if new frame and connected to kinect Live Render CV updating
-		//grayImage.setFromPixels(kinect.getDepthPixels()); // load grayscale depth image from the kinect source
-        //colorCvImage.setFromPixels(kinect.getPixels()); // load RGB image from the kinect source
-        colorImage.setFromPixels(kinect.getPixels());
-        depthImage.setFromPixels(kinect.getRawDepthPixels());
-        //depthPixels = depthImage.getPixels();
-//		if(bThreshWithOpenCV) {
-//			grayThreshNear = grayImage; 	// we do two thresholds - one for the far plane and one for the near plane
-//            grayThreshFar = grayImage;   		// we then do a cvAnd to get the pixels which are a union of the two thresholds
-//			grayThreshNear.threshold(nearThreshold, true);
-//			grayThreshFar.threshold(farThreshold);
-//			cvAnd(grayThreshNear.getCvImage(), grayThreshFar.getCvImage(), grayImage.getCvImage(), NULL);
-//		} else {
-//			ofPixels & pix = grayImage.getPixels(); // or we do it ourselves - show people how they can work with the pixels
-//			int numPixels = pix.size();
-//			for(int i = 0; i < numPixels; i++) {
-//				if(pix[i] < nearThreshold && pix[i] > farThreshold) {
-//					pix[i] = 255;
-//				} else {
-//					pix[i] = 0;
-//				}
-//			}
-//		}
-//		grayImage.flagImageChanged(); // update the cv images
-//		// find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
-//		// also, find holes is set to true so we will get interior contours as well....
-//		contourFinder.findContours(grayImage, 10, (kinect.width*kinect.height)/2, 20, false);
-	}
-
-    
-    if (blur){
-        ofxCv::GaussianBlur(colorImage, blurRadius);
-    }
-    
 #ifdef USE_TWO_KINECTS
-	kinect2.update();
+    kinect2.update();
 #endif
 }
 
@@ -198,13 +201,16 @@ void ofApp::draw() {
         drawAnyPointCloud(); //call new generic point render function
         ofDisableLighting(); //disable world light
         easyCam.end();
-	} else { 		// draw from the live kinect as 3 windows
-		kinect.drawDepth(10, 10, 480, 360);
+	} else { // draw from the live kinect and image arrays
+		//kinect.drawDepth(10, 10, 480, 360);
 		//kinect.draw(490, 10, 480, 360);
+        
+      
 		depthImage.draw(10, 370, 480, 360);
         colorImage.draw(490, 370, 480, 360);
-        ofImage depthRender = depthPixels;
-        depthRender.draw(490, 10, 480, 360);
+       ofShortImage depthRender = colorImage;
+        
+         depthRender.draw(490, 10, 480, 360);
 #ifdef USE_TWO_KINECTS
 		kinect2.draw(420, 320, 400, 300);
 #endif
@@ -219,13 +225,13 @@ void ofApp::draw() {
         ofDrawBitmapString("loading... " + l + "/" + t,700, 20); // if loading then draw progress to screen
     }
     
-    if (showGui) {
-        drawGui();
-    }
-    
     if (recording) {
         string f = to_string(frame);
         ofDrawBitmapString("recording frame: " + f, 700,20);
+    }
+    
+    if (showGui) {
+        drawGui();
     }
 }
 
@@ -233,7 +239,7 @@ void ofApp::draw() {
 void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages rather than direct from kinect  - 28-7-17
     
     ofColor c;
-    ofColor zGrey = 0;
+    ofShortColor zGrey = 0;
     int pCount =0;
     ofMesh mesh;
     
@@ -251,7 +257,7 @@ void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages ra
             break;
     }
     
-    if(playing) { // if we are playing then load data from meshvector into mesh---------------
+    if(playing) { // if we are playing then load data from meshvector into mesh --- NB. move this stuff into update() to update mesh and rgb ofImage
         if(meshRecorder.readyToPlay) {
             for(int y = 0; y < recordHeight; y += recordingStep) { //load data from recording into mesh as pointcloud
                 for(int x = 0; x < recordWidth; x += recordingStep) {
@@ -260,7 +266,12 @@ void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages ra
                     v2 = meshRecorder.getVectorAt(frameToPlay, pCount);
                     mesh.addVertex(v2);
                     c = meshRecorder.getColorAt(frameToPlay, pCount);
-                    if(paintMesh) mesh.addColor(c); // add colour from map into mesh at each point
+                    colorImage.setColor(x, y, c);
+                    if (paintMesh) {
+                        c = (colorImage.getColor(x,y)); // getting RGB from ofImage
+                        mesh.addColor(c);
+                    }
+
                     pCount ++;
                 }
             }
@@ -268,21 +279,20 @@ void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages ra
     } else { // draw pointcloud mesh from live source --------
         int index =0;
         int i=0;
+        int z = 0;
         ofVec3f v3;
         for(int y = 0; y < recordHeight; y += recordingStep) {
             for(int x = 0; x < recordWidth; x += recordingStep) {
-                if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) { // exclude out of range data
-                    zGrey = depthImage.getColor(x,y);
+                if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) { // exclude out of range data - change to use depthImage data
+                    zGrey = depthImage.getPixels()[x+y*recordWidth];
                     ofVec3f v3;
-                    int z = ofMap(zGrey.r, 0, 400, 2048, 0); // scale responses from depth image into new mesh (11 bit data =2048 steps
-                    // cout << zGrey << " : " << zGrey.r << " : " << z << " : " << kinect.getDistanceAt(x, y) << endl;
-                   // v3.set(x- (recordWidth/2),y -(recordHeight/2),z);
-                   // mesh.addVertex(v3);
-                    //depthPixels[i] = kinect.getDistanceAt(x, y);
-                    //cout << v3 << " : " << kinect.getWorldCoordinateAt(x, y) << endl;
-                    mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
+                    z = zGrey.r;
+                   // cout << "image z : " << z << " dist: " << kinect.getDistanceAt(x, y) << " world: " << kinect.getWorldCoordinateAt(x, y) << endl;
+                    v3.set(x- (recordWidth/2),y -(recordHeight/2),z);
+                    mesh.addVertex(v3);
+                    // mesh.addVertex(kinect.getWorldCoordinateAt(x, y)); // allocate direct from live kinext world data
                     if (paintMesh) {
-                        c = (colorImage.getColor(x,y)); // getting RGB from ofImage
+                        c = (colorImage.getColor(x,y)); // getting RGB from ofShortImage
                         mesh.addColor(c);
                     }
                 }
@@ -349,26 +359,7 @@ void ofApp::loadLiveMeshData() {
     //        liveMeshData[i] = data;
     //
     ////
-    
-    
-    int index =0;
-    int i=0;
-    ofVec3f v3;
-    for(int y = 0; y < recordHeight; y += recordingStep) {
-        for(int x = 0; x < recordWidth; x += recordingStep) {
-            if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) { // exclude out of range data
-                //zGrey = depthImage.getColor(x,y);
-                ofVec3f v3;
-               // int z = ofMap(zGrey.r, 0, 400, 2048, 0); // scale responses from depth image into new mesh (11 bit data =2048 steps
-                // v3.set(x- (recordWidth/2),y -(recordHeight/2),z);
-                // mesh.addVertex(v3);
-                //depthPixels[i] = kinect.getDistanceAt(x, y);
-                mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
-                
-            }
-            i++;
-        }
-    }
+
     
 }
 
@@ -629,9 +620,20 @@ void ofApp::drawGui() {
         }
         
         if (ImGui::CollapsingHeader("Image filters")) {
+            
             ImGui::Text("Playback style");
-            ImGui::Checkbox("Blur", &blur); ImGui::SameLine();
+            ImGui::Checkbox("Filter Color Image / depth image", &bfilterColorImage);
+ 
+            ImGui::Checkbox("Blur", &blur);
+            ImGui::SameLine();
             ImGui::SliderInt("Radius ", &blurRadius, 1, 200);
+            ImGui::Checkbox("Erode", &erodeImage);
+            ImGui::SameLine();
+            ImGui::SliderInt("Amount ", &erodeAmount, 1, 50);
+            
+            ImGui::Checkbox("Dilate", &dilateImage);
+            ImGui::SameLine();
+            ImGui::SliderInt("Amount ", &dilateAmount, 1, 50);
         }
         
         if (ImGui::CollapsingHeader("Playback options")) {

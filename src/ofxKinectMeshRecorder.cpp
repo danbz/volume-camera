@@ -1,4 +1,4 @@
-//
+ //
 //  ofxKinectMeshRecorder.cpp
 //  myKinectHack
 //
@@ -31,7 +31,6 @@ void ofxKinectMeshRecorder::startLoading(const string _file) {
 }
 
 void ofxKinectMeshRecorder::loadMeshData(const string _file) {
-    
     
     totalFrames = countFrames(_file); 
     ofFile file(ofToDataPath(_file + "/"));
@@ -122,6 +121,50 @@ ofColor ofxKinectMeshRecorder::getColorAt(int framenum, int coord) {
     c.setHex(recordedMeshData[framenum][coord].hexcolor);
     return c;
 }
+
+
+//-------------------------------------------------------------------
+
+//void ofxKinectMeshRecorder::loadExifData(string filePath) { // load exifXML file from the sele ted folder and get the values out
+//    
+//    //cout << filePath << "/exifSettings.xml" << endl;
+//    
+//    exifSettings.loadFile(filePath + "/exifSettings.xml");
+//    recordWidth = exifSettings.getValue("exif:ImageWidth", 0);
+//    recordHeight = exifSettings.getValue("exif:ImageLength", 0);
+//    recordingStep = 1; // always default to 1:1 step when loading recorded meshes
+//    string recordingDate = exifSettings.getValue("exif:DateTimeDigitized", "");
+//    string myXml;
+//    exifSettings.copyXmlToString(myXml);
+//    
+//    cout << "loaded exif data: " << myXml <<endl ;
+//}
+//
+//void ofxKinectMeshRecorder::saveExifData() { //put some some settings into a file
+//    
+//    string path = saveTo;
+//    string today =  _timestamp = ofToString(ofGetDay()) + //generate date
+//    ofToString(ofGetMonth()) +
+//    ofToString(ofGetYear()) +
+//    ofToString(ofGetHours()) +
+//    ofToString(ofGetMinutes()) +
+//    ofToString(ofGetSeconds());
+//    
+//    //exifSettings.addTag("exifData");
+//    exifSettings.setValue("exif:make", "Buzzo");
+//    exifSettings.setValue("exif:model", "Volca: Experimental volumetric camera/apparatus v0.1");
+//    exifSettings.setValue("exif:orientation", "top left");
+//    exifSettings.setValue("exif:ImageWidth", recordWidth/recordingStep);
+//    exifSettings.setValue("exif:ImageLength", recordHeight/recordingStep);
+//    exifSettings.setValue("exif:DateTimeDigitized", today);
+//    exifSettings.setValue("exif:ExposureTime", exposureTime);
+//    exifSettings.setValue("exifSensingMethod", "Kinect depth sensor");
+//    
+//    exifSettings.saveFile(path + "exifSettings.xml"); //puts exifSettings.xml file in the current recordedframe folder
+//    string myXml;
+//    exifSettings.copyXmlToString(myXml);
+//    cout << myXml <<endl ;
+//}
 
 
 
