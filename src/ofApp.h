@@ -99,6 +99,7 @@ public:
     bool recording;
     bool playing;
     bool colorMode;
+    bool oldPlayer;
     
     ofxImGui::Gui imGui;
     ImVec4 imBackgroundColor;
@@ -129,6 +130,8 @@ public:
     bool showNormals;
     bool illuminateScene;
     bool renderFlatQuads;
+    float depthFactor;
+    float perspectiveFactor;
     
     //////////////////////////////////////////////////////
     // XML exif data save and load
