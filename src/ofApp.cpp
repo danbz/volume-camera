@@ -150,29 +150,32 @@ void ofApp::update() {
         if(kinect.isFrameNew()) {// if new frame and connected to kinect Live Render CV updating
             colorImage.setFromPixels(kinect.getPixels());
             depthImage.setFromPixels(kinect.getRawDepthPixels());
+            
         }
     }
-    if (bfilterColorImage) { //process depth or RGB image holders
+    filteredColorImage=colorImage;
+    filteredDepthImage=depthImage;
+    if (bfilterColorImage) { //process depth or RGB image holders //re write as pipeline rather than discrete operations
         if (blur){
-            ofxCv::GaussianBlur(colorImage, blurRadius);
+            ofxCv::GaussianBlur(filteredColorImage, blurRadius);
         }
         if (erodeImage) {
-            ofxCv::erode(colorImage, colorImage, erodeAmount);
+            ofxCv::erode(colorImage, filteredColorImage, erodeAmount);
         }
         
         if (dilateImage) {
-            ofxCv::dilate(colorImage, colorImage, dilateAmount);
+            ofxCv::dilate(colorImage, filteredColorImage, dilateAmount);
         }
     } else {
         if (blur){
-            ofxCv::GaussianBlur(depthImage, blurRadius);
+            ofxCv::GaussianBlur(filteredDepthImage, blurRadius);
         }
         if (erodeImage) {
-            ofxCv::erode(depthImage, depthImage, erodeAmount);
+            ofxCv::erode(depthImage, filteredDepthImage, erodeAmount);
         }
         
         if (dilateImage) {
-            ofxCv::dilate(depthImage, depthImage, dilateAmount);
+            ofxCv::dilate(depthImage, filteredDepthImage, dilateAmount);
         }
     }
     
@@ -217,9 +220,7 @@ void ofApp::draw() {
 	
 	ofSetColor(255, 255, 255);
 	 
-    //////////////////////////////////////////////////////
     // Draw Live rendering
-    //////////////////////////////////////////////////////
 	if(bDrawPointCloud) { //show pointcloud view
 		easyCam.begin();
         if (illuminateScene) light.enable(); //enable world light
@@ -229,21 +230,17 @@ void ofApp::draw() {
 	} else { // draw from the live kinect and image arrays
 		//kinect.drawDepth(10, 10, 480, 360);
 		//kinect.draw(490, 10, 480, 360);
-        ofShortImage depthRender = depthImage;
-        ofShortImage colorRender = colorImage;
-
+      
 		depthImage.draw(10, 370, 480, 360);
         colorImage.draw(490, 370, 480, 360);
-        colorRender.draw(490, 10, 480, 360);
-         depthRender.draw(490, 10, 480, 360);
+        filteredColorImage.draw(490, 10, 480, 360);
+        filteredDepthImage.draw(490, 10, 480, 360);
 #ifdef USE_TWO_KINECTS
 		kinect2.draw(420, 320, 400, 300);
 #endif
 	}
     
-    //////////////////////////////////////////////////////
-    // Load Recording
-    //////////////////////////////////////////////////////
+    // Loading Recording
     if(!meshRecorder.readyToPlay) {    //-- recorder  // Loadinf info:
         string l = ofToString(meshRecorder.framesLoaded);
         string t = ofToString(meshRecorder.totalFrames);
@@ -309,7 +306,7 @@ void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages ra
     for(int y = 0; y < recordHeight; y += recordingStep) {
         for(int x = 0; x < recordWidth; x += recordingStep) {
             // if(kinect.getDistanceAt(x, y) > frontPlane & kinect.getDistanceAt(x, y) < backPlane) { // exclude out of range data - change to use depthImage data
-            zGrey = depthImage.getPixels()[x+y*recordWidth];
+            zGrey = filteredDepthImage.getPixels()[x+y*recordWidth];
             z = zGrey.r;
             if(z > frontPlane & z < backPlane) { // clip out pixels
                 // cout << "image z : " << z << " dist: " << kinect.getDistanceAt(x, y) << " world: " << kinect.getWorldCoordinateAt(x, y) << endl;
@@ -318,7 +315,7 @@ void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages ra
                 mesh.addVertex(v3);
                 // mesh.addVertex(kinect.getWorldCoordinateAt(x, y)); // allocate direct from live kinext world data
                 if (paintMesh) {
-                    c = (colorImage.getColor(x,y)); // getting RGB from ofShortImage (should be index not co-ordinates? bug in getColor (x,y)?
+                    c = (filteredColorImage.getColor(x,y)); // getting RGB from ofShortImage (should be index not co-ordinates? bug in getColor (x,y)?
                     mesh.addColor(c);
                 }
             }
@@ -337,8 +334,8 @@ void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages ra
     ofScale(1, -1, -1);  // the projected points are 'upside down' and 'backwards'
     ofTranslate(0, 0, -1000); // center the points a bit
     glEnable(GL_DEPTH_TEST);
-    glDepthRange(0, 2000);//experiment with gldepth range
-    
+    //glDepthRange(0, 20000);//experiment with gldepth range
+    //gluPerspective(57.0, 1.5, 0.1, 20000.0); // fov,
     if (renderFlatQuads){ // render as flat quads
         glShadeModel(GL_FLAT);
     } else {
@@ -555,7 +552,7 @@ void ofApp::saveExifData() { //put some some settings into a file
     exifSettings.setValue("exif:ImageWidth", recordWidth/recordingStep);
     exifSettings.setValue("exif:ImageLength", recordHeight/recordingStep);
     exifSettings.setValue("exif:DateTimeDigitized", today);
-    exifSettings.setValue("exif:ExposureTime", exposureTime);
+   // exifSettings.setValue("exif:ExposureTime", exposureTime);
     exifSettings.setValue("exifSensingMethod", "Kinect depth sensor");
    
     exifSettings.saveFile(path + "exifSettings.xml"); //puts exifSettings.xml file in the current recordedframe folder
@@ -612,7 +609,7 @@ void ofApp::drawGui() {
         //if (ImGui::CollapsingHeader("Capture options")) {
         ImGui::Text("Capture parameters");
         ImGui::Checkbox("Single shot capture", &singleShot);
-        ImGui::SliderFloat("Exposure time (s)", &exposureTime, 0.01, 5.0);
+       // ImGui::SliderFloat("Exposure time (s)", &exposureTime, 0.01, 5.0);
         ImGui::SliderInt("Recording FPS", &recordFPS, 1, 60);
         ImGui::SliderInt("RecordingMesh Step",&recordingStep, 1, 10);
         // }
@@ -802,8 +799,8 @@ void ofApp::keyPressed (int key) {
             if(playing) return;
             saveTo = generateFileName();
             frame = 0;
-            exposureStart = ofGetSystemTime();
-            cout << "exposte start" << exposureStart << endl;
+//            exposureStart = ofGetSystemTime();
+//            cout << "exposte start" << exposureStart << endl;
             recording = true;
             saveExifData();
             break;

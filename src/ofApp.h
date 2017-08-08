@@ -53,9 +53,10 @@ public:
 	ofxKinect kinect2;
 #endif
         
-    ofImage colorImage;
-    ofShortImage depthImage;
-    ofShortPixels depthPixels;
+    ofImage colorImage, filteredColorImage;
+    
+    ofShortImage depthImage, filteredDepthImage;
+    ofShortPixels depthPixels, filteredDepthPixels;
     
 	
 	bool bThreshWithOpenCV;
@@ -85,8 +86,8 @@ public:
     string generateFileName();
     int frame;
     string saveTo;
-    int distanceMinima;
-    int distanceMaxima;
+    //int distanceMinima;
+    //int distanceMaxima;
     int recordWidth;
     int recordHeight;
     
@@ -107,13 +108,11 @@ public:
     int playbackFPS, blobSize, gridSize, backPlane, frontPlane, recordingStep, blurRadius, erodeAmount, dilateAmount;
     
     // shot timing GUI elements
-    bool singleShot;
+    bool singleShot;  // move these into new volca object/class
     float exposureTime;
     int exposureStart;
     int recordFPS;
     int lastRecordedFrame;
-    //unsigned char exposureBuffer; // array for racking frames from Kinext camera into for exposure timing
-    float numOfFramesInExposureBuffer; // number of frames read from kinect webcam into exposure buffer (actual exposure = buffer numbers/num of frames read in)
     
     //////////////////////////////////////////////////////
     // Rendering Reproduction
@@ -138,7 +137,7 @@ public:
     //////////////////////////////////////////////////////
     ofxXmlSettings exifSettings;
      
-    void saveExifData();
+    void saveExifData(); // move these into meshRecorder
     void loadExifData( string filePath);
     
 };
