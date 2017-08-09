@@ -89,7 +89,7 @@ void ofApp::setup() {
     showNormals = false;
     renderFlatQuads = false;
     depthFactor=1.0; //multiplier for rendering zdepth
-    perspectiveFactor = 0.01;
+    perspectiveFactor = 0.002;
     // easyCam setup
     
     //////////////////////////////////////////////////////
@@ -179,8 +179,8 @@ void ofApp::update() {
         }
     }
     
-    depthImage.update();
-    colorImage.update();
+//    depthImage.update();
+//    colorImage.update();
     ////  update depth and color images from recorded mesh array
     
     ofColor c;
@@ -208,6 +208,8 @@ void ofApp::update() {
             }
             depthImage.update();
             colorImage.update();
+            filteredDepthImage.update();
+            filteredColorImage.update();
         }
     }
 #ifdef USE_TWO_KINECTS
@@ -231,10 +233,10 @@ void ofApp::draw() {
 		//kinect.drawDepth(10, 10, 480, 360);
 		//kinect.draw(490, 10, 480, 360);
       
-		depthImage.draw(10, 370, 480, 360);
-        colorImage.draw(490, 370, 480, 360);
-        filteredColorImage.draw(490, 10, 480, 360);
-        filteredDepthImage.draw(490, 10, 480, 360);
+		depthImage.draw(10, 10, 480, 360);
+        colorImage.draw(490, 10, 480, 360);
+        filteredColorImage.draw(10, 370, 480, 360);
+        filteredDepthImage.draw(490, 370, 480, 360);
 #ifdef USE_TWO_KINECTS
 		kinect2.draw(420, 320, 400, 300);
 #endif
@@ -278,27 +280,27 @@ void ofApp::drawAnyPointCloud() { // modified to read from  loaded ofcvimages ra
             mesh.setMode(OF_PRIMITIVE_LINE_STRIP);
             break;
     }
-    ofVec3f v2;
-    if (oldPlayer){
-        if(playing) { // if we are playing then load data from meshvector into mesh ---
-            if(meshRecorder.readyToPlay) {
-                for(int y = 0; y < recordHeight; y += recordingStep) { //load data from recording into mesh as pointcloud
-                    for(int x = 0; x < recordWidth; x += recordingStep) {
-                        v2.set(0,0,0);
-                        v2 = meshRecorder.getVectorAt(frameToPlay, pCount);
-                        mesh.addVertex(v2);
-                        c = meshRecorder.getColorAt(frameToPlay, pCount);
-                        colorImage.setColor(x, y, c);
-                        if (paintMesh) {
-                            c = (colorImage.getColor(x,y)); // getting RGB from ofImage
-                            mesh.addColor(c);
-                        }
-                        pCount ++;
-                    }
-                }
-            }
-        } // else { // draw pointcloud mesh from live source --------
-    }
+//  ofVec3f v2;  // old style of recording and loading images from world co-ordinates - will retain for now for backward compatibility
+//    if (oldPlayer){
+//        if(playing) { // if we are playing then load data from meshvector into mesh ---
+//            if(meshRecorder.readyToPlay) {
+//                for(int y = 0; y < recordHeight; y += recordingStep) { //load data from recording into mesh as pointcloud
+//                    for(int x = 0; x < recordWidth; x += recordingStep) {
+//                        v2.set(0,0,0);
+//                        v2 = meshRecorder.getVectorAt(frameToPlay, pCount);
+//                        mesh.addVertex(v2);
+//                        c = meshRecorder.getColorAt(frameToPlay, pCount);
+//                        colorImage.setColor(x, y, c);
+//                        if (paintMesh) {
+//                            c = (colorImage.getColor(x,y)); // getting RGB from ofImage
+//                            mesh.addColor(c);
+//                        }
+//                        pCount ++;
+//                    }
+//                }
+//            }
+//        } // else { // draw pointcloud mesh from live source --------
+//    }
     int index =0;
     //int i=0;
     int z = 0;

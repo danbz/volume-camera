@@ -86,8 +86,6 @@ public:
     string generateFileName();
     int frame;
     string saveTo;
-    //int distanceMinima;
-    //int distanceMaxima;
     int recordWidth;
     int recordHeight;
     
