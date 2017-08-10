@@ -37,6 +37,9 @@ void ofApp::setup() {
 		ofLogNotice() << "sensor-camera dist:  " << kinect.getSensorCameraDistance() << "cm";
 		ofLogNotice() << "zero plane pixel size: " << kinect.getZeroPlanePixelSize() << "mm";
 		ofLogNotice() << "zero plane dist: " << kinect.getZeroPlaneDistance() << "mm";
+        
+        kinect.setLed(ofxKinect::LED_BLINK_GREEN);
+
 	}
 	
 #ifdef USE_TWO_KINECTS
@@ -763,6 +766,7 @@ void ofApp::keyPressed (int key) {
             frame = 0;
             recording = true;
             saveExifData();
+            kinect.setLed(ofxKinect::LED_BLINK_YELLOW_RED);
             break;
             
         case 's':
@@ -771,6 +775,10 @@ void ofApp::keyPressed (int key) {
             if(playing) return;
             saveTo = "";
             recording = false;
+<<<<<<< HEAD
+         kinect.setLed(ofxKinect::LED_BLINK_GREEN);
+=======
+>>>>>>> 578f7f1e91c55ad219445f15bba7f724b8efa380
             break;
             
         case '<':
