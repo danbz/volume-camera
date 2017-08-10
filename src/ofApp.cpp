@@ -190,28 +190,39 @@ void ofApp::update() {
     ofShortColor zGrey = 0;
     int pCount =0;
     ofVec3f v3;
-    if (!oldPlayer) {
-       // cout << "new Player" << recordWidth << " x " << recordHeight << endl;
-        if(playing) { // if we are playing then load data from meshvector into mesh --- NB. move this stuff into update() to update mesh and rgb ofImage
+//    if (!oldPlayer) { // old mesh player for text recordings
+//       // cout << "new Player" << recordWidth << " x " << recordHeight << endl;
+//        if(playing) { // if we are playing then load data from meshvector into mesh 
+//            if(meshRecorder.readyToPlay) {
+//                for(int y = 0; y < recordHeight; y += recordingStep) { //load data from recording into mesh as pointcloud
+//                    for(int x = 0; x < recordWidth; x += recordingStep) {
+//                        v3.set(0,0,0);
+//                        v3 = meshRecorder.getVectorAt(frameToPlay, pCount);
+//                        //mesh.addVertex(v3);
+//                        ofShortColor z = v3.z;
+//                        //cout << "v3 :" << v3 << " z: " << z << endl;
+//                        depthImage.setColor(x,y,z);
+//                        //cout << "x: " << x << " y: " << y << " z: " << z << " zgrey : " << zGrey << endl;
+//                        c = meshRecorder.getColorAt(frameToPlay, pCount);
+//                        colorImage.setColor(x, y, c);
+//                        pCount ++;
+//                    }
+//                }
+//            }
+//            
+//        }
+//    }
+    
+    if (!oldPlayer) { // new load from png files
+        if(playing) { // if we are playing then load data from meshrecorder object into images
             if(meshRecorder.readyToPlay) {
-                for(int y = 0; y < recordHeight; y += recordingStep) { //load data from recording into mesh as pointcloud
-                    for(int x = 0; x < recordWidth; x += recordingStep) {
-                        v3.set(0,0,0);
-                        v3 = meshRecorder.getVectorAt(frameToPlay, pCount);
-                        //mesh.addVertex(v3);
-                        ofShortColor z = v3.z;
-                        //cout << "v3 :" << v3 << " z: " << z << endl;
-                        depthImage.setColor(x,y,z);
-                        //cout << "x: " << x << " y: " << y << " z: " << z << " zgrey : " << zGrey << endl;
-                        c = meshRecorder.getColorAt(frameToPlay, pCount);
-                        colorImage.setColor(x, y, c);
-                        pCount ++;
-                    }
-                }
+                colorImage = meshRecorder.getColorImageAt(frameToPlay);
+                depthImage = meshRecorder.getDepthImageAt(frameToPlay);
+                pCount ++;
             }
-            
         }
     }
+
     depthImage.update();
     colorImage.update();
     filteredDepthImage.update();

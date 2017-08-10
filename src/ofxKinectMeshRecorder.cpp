@@ -43,16 +43,12 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
     //cout << "ofxKinectMeshRecorder::loadMesh() | Loading frame x "  " of " << totalFrames << endl;
     
     for(int i = 0; i < totalFrames; i += 1) {
-        
         cout << "ofxKinectMeshRecorder::loadMesh() | Loading frame " << i << " of " << totalFrames << endl;
-        
         string fileToload = path + "frame" + ofToString(i) + ".txt";
         ifstream fin;
         fin.open( ofToDataPath(fileToload).c_str() );
-        
         vector<frameData> data;
-
-        int lineCounter = 0;
+        //int lineCounter = 0;
         //while(fin!=NULL)
         while(fin) {
             string str;
@@ -70,9 +66,43 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
             }
         }
         fin.close();
-        
         recordedMeshData[i].resize(data.size()); //appears to crash here occasionally....
         recordedMeshData[i] = data;
+
+        framesLoaded = i;
+        if(i == totalFrames-1) {
+            unlock();
+            stopThread();
+            cout << "stopped thread" << endl ;
+            //stopThread(false); deprecated call
+        }
+    }
+}
+
+void ofxKinectMeshRecorder::loadImageData(const string _file) { // new routine to load rgb & depth data from png files
+    
+    totalFrames = countImageFrames(_file);
+    ofFile file(ofToDataPath(_file + "/"));
+    string path = file.getAbsolutePath();
+    file.close();
+    recordedMeshData.clear();
+    recordedMeshData.resize(totalFrames);
+    framesLoaded = 0;
+    ofImage colorImage;
+    colorImage.allocate(recordWidth, recordHeight, OF_IMAGE_COLOR);
+    ofShortImage depthImage;
+    depthImage.allocate(recordWidth, recordHeight, OF_IMAGE_GRAYSCALE);
+        
+    for(int i = 0; i < totalFrames; i += 1) {
+        cout << "ofxKinectMeshRecorder::loadImageMesh() | Loading frame " << i << " of " << totalFrames << endl;
+        string colorFileToload = path + "colorData" + ofToString(i) + ".png";
+        string depthFileToload = path + "depthData" + ofToString(i) + ".png";
+        
+        colorImage.load(colorFileToload);
+        depthImage.load(depthFileToload);
+        recordedColorImageData.push_back(colorImage);
+        recordedDepthImageData.push_back(depthImage);
+        //recordedDepthImageData[i] = depthImage;
         
         framesLoaded = i;
         if(i == totalFrames-1) {
@@ -84,6 +114,7 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
     }
 }
 
+
 void ofxKinectMeshRecorder::threadedFunction() {
     
     cout << "ofxKinectMeshRecorder::loadMesh() | Start Thread..." << endl;
@@ -91,7 +122,8 @@ void ofxKinectMeshRecorder::threadedFunction() {
     lock();
     
     while(isThreadRunning()) {
-        loadMeshData(fileToload);
+       // loadMeshData(fileToload);
+        loadImageData(fileToload);
     }
     
     readyToPlay = true;
@@ -106,6 +138,16 @@ int ofxKinectMeshRecorder::countFrames(const string _file) {
     dir.allowExt("txt");
     dir.listDir();
     return dir.size();
+}
+
+//------------------------------------
+int ofxKinectMeshRecorder::countImageFrames(const string _file) {
+    
+    string path = ofToDataPath(_file + "/");
+    ofDirectory dir(path);
+    dir.allowExt("png");
+    dir.listDir();
+    return (dir.size()/2);
 }
 
 //------------------------------------
@@ -124,6 +166,21 @@ ofColor ofxKinectMeshRecorder::getColorAt(int framenum, int coord) {
     return c;
 }
 
+//------------------------------------
+ofImage ofxKinectMeshRecorder::getColorImageAt(int framenum) {
+    
+    ofImage colorImage;
+    colorImage= recordedColorImageData[framenum];
+    return colorImage;
+}
+
+//------------------------------------
+ofShortImage ofxKinectMeshRecorder::getDepthImageAt(int framenum) {
+    
+    ofShortImage depthImage;
+    depthImage= recordedColorImageData[framenum];
+    return depthImage;
+}
 
 //-------------------------------------------------------------------
 
