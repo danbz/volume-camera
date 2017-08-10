@@ -470,32 +470,44 @@ void ofApp::savePointCloud() {
     int h = recordHeight;
     
     if (timeNow < (ofGetSystemTime() - (1000/recordFPS))) {     // add in timing element for recordFPS setting
-        FILE* fout = fopen((saveTo + "frame" + ofToString(frame) + ".txt").c_str(), "w");
-        int pIndex = 0;
-        for(int y = 0; y < h; y += recordingStep) {
-            for(int x = 0; x < w; x += recordingStep) {
-                ofVec3f v2;
-                v2.set(0,0,0);
-                float distance;
-                distance = kinect.getDistanceAt(x, y);
-                
-                if(distance> frontPlane && distance < backPlane) {//only record points into v2 if within min & max distance
-                    v2 = kinect.getWorldCoordinateAt(x, y);
-                }
-                ofColor pColor;
-                pColor = kinect.getColorAt(x, y);
-                
-                fprintf(fout, "%i%s%f%s%f%s%f%s%i%s", pIndex, ",", v2.x, ",",  v2.y, ",",  v2.z, ",",  pColor.getHex(), "\n");
-                pIndex++;
-            }
-        }
-        fclose(fout);
-        frame++; // increment the frame we are recording
-        cout << "Recording frame: " << frame << endl;
+//        FILE* fout = fopen((saveTo + "frame" + ofToString(frame) + ".txt").c_str(), "w");
+//        int pIndex = 0;
+//        for(int y = 0; y < h; y += recordingStep) {
+//            for(int x = 0; x < w; x += recordingStep) {
+//                ofVec3f v2;
+//                v2.set(0,0,0);
+//                float distance;
+//                distance = kinect.getDistanceAt(x, y);
+//                
+//                if(distance> frontPlane && distance < backPlane) {//only record points into v2 if within min & max distance
+//                    v2 = kinect.getWorldCoordinateAt(x, y);
+//                }
+//                ofColor pColor;
+//                pColor = kinect.getColorAt(x, y);
+//                
+//                fprintf(fout, "%i%s%f%s%f%s%f%s%i%s", pIndex, ",", v2.x, ",",  v2.y, ",",  v2.z, ",",  pColor.getHex(), "\n");
+//                pIndex++;
+//            }
+//        }
+//        fclose(fout);
+        
+       // cout << "Recording frame: " << frame << endl;
         timeNow = ofGetSystemTime();
         //cout << timeNow/1000 << " : " << ofGetSystemTime() << endl;
         
+        //new routine to save depth and color data as png images
+        string frameNum = to_string(frame);
+        string path = saveTo;
+        
+        cout << " saving framenum" << frameNum << endl;
+        colorImage.save(path + "colorData" + frameNum + ".png", OF_IMAGE_QUALITY_BEST);
+        depthImage.save(path + "depthData" + frameNum + ".png", OF_IMAGE_QUALITY_BEST);
+        frame++; // increment the frame we are recording
     }
+    
+    // new routine for recording image buffers to PNG files
+    
+    
     if (singleShot) {
         recording=false; //if in singleShot mode then stop after this frame is recorded
         cout << "Single Shot mode, frame" << frame << endl;
@@ -775,7 +787,7 @@ void ofApp::keyPressed (int key) {
             if(playing) return;
             saveTo = "";
             recording = false;
-            kinect.setLed(ofxKinect::LED_BLINK_YELLOW_RED);
+            kinect.setLed(ofxKinect::LED_GREEN);
             break;
             
         case '<':
