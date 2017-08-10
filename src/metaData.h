@@ -11,6 +11,8 @@
 
 #include <stdio.h>
 #include "ofMain.h"
+#include "ofApp.h"
 
 
 #endif /* metaData_h */
+

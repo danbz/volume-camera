@@ -13,6 +13,10 @@
 #include "ofxImGui.h"
 #include "ofxCv.h"
 
+// VOLCA: experimental volumetric camera/apparatus v0.1
+// © 2017 Daniel Buzzo. Dan@buzzo.com http://www.buzzo.com
+// all rights reserved
+
 // Windows users: You MUST install the libfreenect kinect drivers in order to be able to use
 // ofxKinect. Plug in the kinect and point your Windows Device Manager to the
 // driver folder in:     ofxKinect/libs/libfreenect/platform/windows/inf
@@ -45,23 +49,18 @@ public:
 	void mouseExited(int x, int y);
 	void windowResized(int w, int h);
     void drawGui();
+    void loadLiveMeshData();
     
 	ofxKinect kinect;
 	
 #ifdef USE_TWO_KINECTS
 	ofxKinect kinect2;
 #endif
-	
-	//ofxCvColorImage colorCvImage; // RGB image from Kinect
-//	ofxCvGrayscaleImage grayImage; // grayscale depth image from Kinect
-//	ofxCvGrayscaleImage grayThreshNear; // the near thresholded image
-//	ofxCvGrayscaleImage grayThreshFar; // the far thresholded image
-//	ofxCvContourFinder contourFinder;
+        
+    ofImage colorImage, filteredColorImage;
     
-    
-    ofImage colorImage;
-    ofImage depthImage;
-    ofPixels depthPixels;
+    ofShortImage depthImage, filteredDepthImage;
+    ofShortPixels depthPixels, filteredDepthPixels;
     
 	
 	bool bThreshWithOpenCV;
@@ -91,8 +90,6 @@ public:
     string generateFileName();
     int frame;
     string saveTo;
-    int distanceMinima;
-    int distanceMaxima;
     int recordWidth;
     int recordHeight;
     
@@ -105,20 +102,19 @@ public:
     bool recording;
     bool playing;
     bool colorMode;
+    bool oldPlayer;
     
     ofxImGui::Gui imGui;
     ImVec4 imBackgroundColor;
-    bool show_test_window;
-    int playbackFPS, blobSize, gridSize, backPlane, frontPlane, recordingStep;
+    bool show_test_window, blur, erodeImage, dilateImage, bfilterColorImage;
+    int playbackFPS, blobSize, gridSize, backPlane, frontPlane, recordingStep, blurRadius, erodeAmount, dilateAmount;
     
     // shot timing GUI elements
-    bool singleShot;
+    bool singleShot;  // move these into new volca object/class
     float exposureTime;
     int exposureStart;
     int recordFPS;
     int lastRecordedFrame;
-    //unsigned char exposureBuffer; // array for racking frames from Kinext camera into for exposure timing
-    float numOfFramesInExposureBuffer; // number of frames read from kinect webcam into exposure buffer (actual exposure = buffer numbers/num of frames read in)
     
     //////////////////////////////////////////////////////
     // Rendering Reproduction
@@ -135,13 +131,15 @@ public:
     bool showNormals;
     bool illuminateScene;
     bool renderFlatQuads;
+    float depthFactor;
+    float perspectiveFactor;
     
     //////////////////////////////////////////////////////
     // XML exif data save and load
     //////////////////////////////////////////////////////
     ofxXmlSettings exifSettings;
      
-    void saveExifData();
+    void saveExifData(); // move these into meshRecorder
     void loadExifData( string filePath);
     
 };
