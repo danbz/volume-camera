@@ -192,7 +192,7 @@ void ofApp::update() {
     ofVec3f v3;
 //    if (!oldPlayer) { // old mesh player for text recordings
 //       // cout << "new Player" << recordWidth << " x " << recordHeight << endl;
-//        if(playing) { // if we are playing then load data from meshvector into mesh 
+//        if(playing) { // if we are playing then load data from meshvector into mesh
 //            if(meshRecorder.readyToPlay) {
 //                for(int y = 0; y < recordHeight; y += recordingStep) { //load data from recording into mesh as pointcloud
 //                    for(int x = 0; x < recordWidth; x += recordingStep) {
@@ -453,7 +453,7 @@ void ofApp::loadRecording() {
             playing = true;
             frameToPlay = 0;
             loadExifData(filePath);
-            meshRecorder.startLoading(filePath);
+            meshRecorder.startLoading(filePath, recordWidth, recordHeight);
         }
     } else {
         playing = false;

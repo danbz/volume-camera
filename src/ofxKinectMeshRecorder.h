@@ -51,12 +51,15 @@ public:
     int framesLoaded;
     
     ofxKinectMeshRecorder();
-    void startLoading(const string _file);
+    void startLoading(const string _file, int width, int height);
     
     ofVec3f getVectorAt(int framenum, int coord);
     ofColor getColorAt(int framenum, int coord);
     ofImage getColorImageAt ( int framenum);
     ofShortImage getDepthImageAt ( int framenum);
+    
+    int imageWidth =640;
+    int imageHeight =480;
     /// moving in metadata functions
     
     

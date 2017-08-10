@@ -13,6 +13,8 @@
 
 #include "ofxKinectMeshRecorder.h"
 
+   
+
 ofxKinectMeshRecorder::ofxKinectMeshRecorder() {
     
     readyToPlay = true;
@@ -21,8 +23,10 @@ ofxKinectMeshRecorder::ofxKinectMeshRecorder() {
 
 //------------------------------------
 
-void ofxKinectMeshRecorder::startLoading(const string _file) {
+void ofxKinectMeshRecorder::startLoading(const string _file, int width, int height) {
     
+    imageWidth = width;
+    imageHeight = height;
     fileToload = _file;
     startThread(true, true);
     //loadMeshData(fileToload); //bypassing thread
@@ -89,9 +93,9 @@ void ofxKinectMeshRecorder::loadImageData(const string _file) { // new routine t
     recordedMeshData.resize(totalFrames);
     framesLoaded = 0;
     ofImage colorImage;
-    colorImage.allocate(recordWidth, recordHeight, OF_IMAGE_COLOR);
+    //colorImage.allocate(imageWidth, imageHeight, OF_IMAGE_COLOR);
     ofShortImage depthImage;
-    depthImage.allocate(recordWidth, recordHeight, OF_IMAGE_GRAYSCALE);
+    //depthImage.allocate(imageWidth, imageHeight, OF_IMAGE_GRAYSCALE);
         
     for(int i = 0; i < totalFrames; i += 1) {
         cout << "ofxKinectMeshRecorder::loadImageMesh() | Loading frame " << i << " of " << totalFrames << endl;
@@ -147,7 +151,7 @@ int ofxKinectMeshRecorder::countImageFrames(const string _file) {
     ofDirectory dir(path);
     dir.allowExt("png");
     dir.listDir();
-    return (dir.size()/2);
+    return dir.size();
 }
 
 //------------------------------------
