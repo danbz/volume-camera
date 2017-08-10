@@ -51,14 +51,8 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
         fin.open( ofToDataPath(fileToload).c_str() );
         
         vector<frameData> data;
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-        
-       // while(fin!=NULL)
-=======
+
         int lineCounter = 0;
->>>>>>> c681df83a984c9ef5a712d0898e9ee9ced4b5be6
         //while(fin!=NULL)
         while(fin) {
             string str;

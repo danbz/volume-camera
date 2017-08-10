@@ -3,10 +3,6 @@
 #include "ofMain.h"
 #include "ofxOpenCv.h"
 #include "ofxKinect.h"
-<<<<<<< HEAD
-//#include "ofxGui.h"
-=======
->>>>>>> shot-timing
 #include "ofxKinectMeshRecorder.h"
 #include "metaData.h"
 #include "ofxXmlSettings.h"
