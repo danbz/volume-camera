@@ -83,29 +83,31 @@ void ofxKinectMeshRecorder::loadMeshData(const string _file) {
     }
 }
 
-void ofxKinectMeshRecorder::loadImageData(const string _file) { // new routine to load rgb & depth data from png files
+void ofxKinectMeshRecorder::loadImageData(const string _file ) { // new routine to load rgb & depth data from png files
     
-    totalFrames = countImageFrames(_file);
+    totalFrames = countImageFrames(_file)/2;
     ofFile file(ofToDataPath(_file + "/"));
     string path = file.getAbsolutePath();
     file.close();
-    recordedMeshData.clear();
-    recordedMeshData.resize(totalFrames);
+    recordedColorImageData.clear();
+    recordedDepthImageData.clear();
+    //recordedMeshData.resize(totalFrames);
     framesLoaded = 0;
-    ofImage colorImage;
-    //colorImage.allocate(imageWidth, imageHeight, OF_IMAGE_COLOR);
-    ofShortImage depthImage;
-    //depthImage.allocate(imageWidth, imageHeight, OF_IMAGE_GRAYSCALE);
+    colImage.setUseTexture(false); // prevent images loading to GPU while in thread (causes crashing https://stackoverflow.com/questions/35634525/in-openframeworksc-cannot-initialize-ofimage-object-in-thread-class-due-to-t#35653210)
+    depImage.setUseTexture(false);
+
+    colImage.allocate(imageWidth, imageHeight, OF_IMAGE_COLOR);
+    depImage.allocate(imageWidth, imageHeight, OF_IMAGE_GRAYSCALE);
         
     for(int i = 0; i < totalFrames; i += 1) {
         cout << "ofxKinectMeshRecorder::loadImageMesh() | Loading frame " << i << " of " << totalFrames << endl;
         string colorFileToload = path + "colorData" + ofToString(i) + ".png";
         string depthFileToload = path + "depthData" + ofToString(i) + ".png";
         
-        colorImage.load(colorFileToload);
-        depthImage.load(depthFileToload);
-        recordedColorImageData.push_back(colorImage);
-        recordedDepthImageData.push_back(depthImage);
+        colImage.load(colorFileToload);
+        depImage.load(depthFileToload);
+        recordedColorImageData.push_back(colImage);
+        recordedDepthImageData.push_back(depImage);
         //recordedDepthImageData[i] = depthImage;
         
         framesLoaded = i;

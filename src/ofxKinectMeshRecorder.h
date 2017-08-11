@@ -60,6 +60,8 @@ public:
     
     int imageWidth =640;
     int imageHeight =480;
+    ofImage colImage;
+    ofShortImage depImage;
     /// moving in metadata functions
     
     
