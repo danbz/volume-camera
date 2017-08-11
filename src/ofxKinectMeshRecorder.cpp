@@ -184,7 +184,7 @@ ofImage ofxKinectMeshRecorder::getColorImageAt(int framenum) {
 ofShortImage ofxKinectMeshRecorder::getDepthImageAt(int framenum) {
     
     ofShortImage depthImage;
-    depthImage= recordedColorImageData[framenum];
+    depthImage= recordedDepthImageData[framenum];
     return depthImage;
 }
 
