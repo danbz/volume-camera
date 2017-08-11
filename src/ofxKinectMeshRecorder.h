@@ -63,10 +63,7 @@ public:
     ofImage colImage;
     ofShortImage depImage;
     /// moving in metadata functions
-    
-    
-//    void loadExifData(string filePath);
-//    void saveExifData();
+
     
     
     ofxXmlSettings exifSettings;

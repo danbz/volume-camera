@@ -119,19 +119,28 @@ void ofApp::setup() {
     dilateAmount=2;
     bfilterColorImage = true;
     
-    oldPlayer = false;
+   // oldPlayer = false;
     
     // ofCV stuff
-    depthPixels.allocate(recordWidth, recordHeight, 1);
+    //depthPixels.allocate(recordWidth, recordHeight, 1);
     
-    if( !kinect.hasAccelControl()) {
-        ofSystemAlertDialog("Note: this is a newer Xbox Kinect or Kinect For Windows device, motor / led / accel controls are not currently supported" );
-    }
+//    if( !kinect.hasAccelControl()) {
+//        ofSystemAlertDialog("Note: this is a newer Xbox Kinect or Kinect For Windows device, motor / led / accel controls are not currently supported" );
+//    }
     
 }
 
 //--------------------------------------------------------------
 void ofApp::update() {
+    
+    
+    ofColor c;
+    ofShortColor zGrey = 0;
+    //int pCount =0;
+    ofVec3f v3;
+    
+    filteredColorImage=colorImage;
+    filteredDepthImage=depthImage;
     
     ofBackground(imBackgroundColor); // background color
     kinect.update();
@@ -145,9 +154,15 @@ void ofApp::update() {
             if (timeNow < (ofGetSystemTime() - (1000/playbackFPS))) { // check playback FPS
                 frameToPlay += 1; // increment the frame we are playing
                 timeNow = ofGetSystemTime();
-                //cout << timeNow/1000 << " : " << ofGetSystemTime() << endl;
             }
             if(frameToPlay >= meshRecorder.totalFrames) frameToPlay = 0; //or start at the beginning of the recorded loop
+        }
+         // if we are playing then load data from meshrecorder object into images
+            if(meshRecorder.readyToPlay) {
+                //colorImage = meshRecorder.getColorImageAt(frameToPlay);
+                colorImage.setFromPixels(meshRecorder.getColorImageAt(frameToPlay)); //use set from pixels to update after loading in threaded function
+                depthImage.setFromPixels(meshRecorder.getDepthImageAt(frameToPlay));
+            
         }
     } else {
         if(kinect.isFrameNew()) {// if new frame and connected to kinect Live Render CV updating
@@ -156,8 +171,7 @@ void ofApp::update() {
             
         }
     }
-    filteredColorImage=colorImage;
-    filteredDepthImage=depthImage;
+   
     if (bfilterColorImage) { //process depth or RGB image holders //re write as pipeline rather than discrete operations
         if (blur){
             ofxCv::GaussianBlur(filteredColorImage, blurRadius);
@@ -182,14 +196,6 @@ void ofApp::update() {
         }
     }
     
-//    depthImage.update();
-//    colorImage.update();
-    ////  update depth and color images from recorded mesh array
-    
-    ofColor c;
-    ofShortColor zGrey = 0;
-    int pCount =0;
-    ofVec3f v3;
 //    if (!oldPlayer) { // old mesh player for text recordings
 //       // cout << "new Player" << recordWidth << " x " << recordHeight << endl;
 //        if(playing) { // if we are playing then load data from meshvector into mesh
@@ -212,16 +218,6 @@ void ofApp::update() {
 //            
 //        }
 //    }
-    
-    if (!oldPlayer) { // new load from png files
-        if(playing) { // if we are playing then load data from meshrecorder object into images
-            if(meshRecorder.readyToPlay) {
-                colorImage = meshRecorder.getColorImageAt(frameToPlay);
-                depthImage = meshRecorder.getDepthImageAt(frameToPlay);
-                pCount ++;
-            }
-        }
-    }
 
     depthImage.update();
     colorImage.update();
@@ -248,7 +244,6 @@ void ofApp::draw() {
 	} else { // draw from the live kinect and image arrays
 		//kinect.drawDepth(10, 10, 480, 360);
 		//kinect.draw(490, 10, 480, 360);
-      // draw the images and processed images
 		depthImage.draw(10, 10, 480, 360);
         colorImage.draw(490, 10, 480, 360);
         filteredColorImage.draw(10, 370, 480, 360);
@@ -281,7 +276,7 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
     
     ofColor c;
     ofShortColor zGrey = 0;
-    int pCount =0;
+   // int pCount =0;
     ofMesh mesh;
     
     switch (renderStyle) { //set render style
@@ -368,12 +363,6 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
 
 //--------------------------------------------------------------
 
-void ofApp::loadLiveMeshData() {
- // not currently doing anything much at all
-}
-
-//--------------------------------------------------------------
-
 void ofApp::triangulateMesh(ofMesh &mesh){
     
     int pCount =0;
@@ -447,7 +436,7 @@ void ofApp::loadRecording() {
     if(!meshRecorder.readyToPlay) return;
     if(recording) return;
     if(!playing) {
-        ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded data", true, ofToDataPath(""));
+        ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded PNG data", true, ofToDataPath(""));
         if (result.getPath() != "") {
             filePath =result.getPath();
             playing = true;
@@ -480,7 +469,7 @@ void ofApp::savePointCloud() {
     int w = recordWidth;
     int h = recordHeight;
     
-    if (timeNow < (ofGetSystemTime() - (1000/recordFPS))) {     // add in timing element for recordFPS setting
+    if (timeNow < (ofGetSystemTime() - (1000/recordFPS))) {     // timing element for recordFPS setting
 //        FILE* fout = fopen((saveTo + "frame" + ofToString(frame) + ".txt").c_str(), "w");
 //        int pIndex = 0;
 //        for(int y = 0; y < h; y += recordingStep) {
@@ -502,26 +491,21 @@ void ofApp::savePointCloud() {
 //        }
 //        fclose(fout);
         
-       // cout << "Recording frame: " << frame << endl;
         timeNow = ofGetSystemTime();
-        //cout << timeNow/1000 << " : " << ofGetSystemTime() << endl;
         
         //new routine to save depth and color data as png images
         string frameNum = to_string(frame);
         string path = saveTo;
         
-        cout << " saving framenum" << frameNum << endl;
+        cout << " saving frame number " << frameNum << endl;
         colorImage.save(path + "colorData" + frameNum + ".png", OF_IMAGE_QUALITY_BEST);
         depthImage.save(path + "depthData" + frameNum + ".png", OF_IMAGE_QUALITY_BEST);
         frame++; // increment the frame we are recording
     }
     
-    // new routine for recording image buffers to PNG files
-    
-    
     if (singleShot) {
         recording=false; //if in singleShot mode then stop after this frame is recorded
-        cout << "Single Shot mode, frame" << frame << endl;
+        cout << "Single Shot mode, frame " << frame << endl;
     }
 }
 
@@ -849,11 +833,11 @@ void ofApp::keyPressed (int key) {
             ofToggleFullscreen();
             break;
             
-        case 'k':
-            oldPlayer =!oldPlayer;
-            break;
-            
-    }    
+//        case 'k':
+//            oldPlayer =!oldPlayer;
+//            break;
+//            
+    }
 }
 
 //-------------------------

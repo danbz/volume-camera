@@ -45,7 +45,6 @@ public:
 	void mouseExited(int x, int y);
 	void windowResized(int w, int h);
     void drawGui();
-    void loadLiveMeshData();
     
 	ofxKinect kinect;
 	
