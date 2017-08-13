@@ -127,6 +127,6 @@ public:
     ofxXmlSettings exifSettings;
      
     void saveExifData(); // move these into meshRecorder
-    void loadExifData( string filePath);
+    bool loadExifData( string filePath);
     
 };

@@ -345,10 +345,11 @@ void ofApp::loadRecording() {
         ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded PNG data", true, ofToDataPath(""));
         if (result.getPath() != "") {
             filePath =result.getPath();
-            playing = true;
             frameToPlay = 0;
-            loadExifData(filePath);
-            meshRecorder.startLoading(filePath, recordWidth, recordHeight);
+            if (loadExifData(filePath)) {
+                meshRecorder.startLoading(filePath, recordWidth, recordHeight);
+                playing = true;
+            }
         }
     } else {
         playing = false;
@@ -426,19 +427,25 @@ void ofApp::saveExifData() { //put some some settings into a file
 
 //-------------------------------------------------------------------
 
-void ofApp::loadExifData(string filePath) { // load exifXML file from the sele ted folder and get the values out
+bool ofApp::loadExifData(string filePath) { // load exifXML file from the sele ted folder and get the values out
     
-    exifSettings.loadFile(filePath + "/exifSettings.xml");
-    //cout << filePath << "/exifSettings.xml" << endl;
-    recordWidth = exifSettings.getValue("exif:ImageWidth", 0);
-    recordHeight = exifSettings.getValue("exif:ImageLength", 0);
-    //dataProcess =exifSettings.getValue("exifDataProcess", 0); //use to tag whether using old render or new render method.
+    if (exifSettings.loadFile(filePath + "/exifSettings.xml")){
+        //cout << filePath << "/exifSettings.xml" << endl;
+        recordWidth = exifSettings.getValue("exif:ImageWidth", 0);
+        recordHeight = exifSettings.getValue("exif:ImageLength", 0);
+        //dataProcess =exifSettings.getValue("exifDataProcess", 0); //use to tag whether using old render or new render method.
+        
+        recordingStep = 1; // always default to 1:1 step when loading recorded meshes
+        string recordingDate = exifSettings.getValue("exif:DateTimeDigitized", "");
+        string myXml;
+        exifSettings.copyXmlToString(myXml);
+        cout << "loaded exif data: " << myXml <<endl ;
+        return true;
+    } else {
+        ofSystemAlertDialog("No EXIF meta data file found. Is this a Volca recording folder?");
+        return false;
+    }
     
-    recordingStep = 1; // always default to 1:1 step when loading recorded meshes
-    string recordingDate = exifSettings.getValue("exif:DateTimeDigitized", "");
-    string myXml;
-    exifSettings.copyXmlToString(myXml);
-    cout << "loaded exif data: " << myXml <<endl ;
 }
 
 //--------------------------------------------------------------
@@ -557,6 +564,7 @@ void ofApp::keyPressed (int key) {
 			break;
 			
 		case'p':
+        case'P':
 			bDrawPointCloud = !bDrawPointCloud;
 			break;
 			
@@ -572,15 +580,18 @@ void ofApp::keyPressed (int key) {
 			break;
 			
 		case 'w':
+        case 'W':
 			kinect.enableDepthNearValueWhite(!kinect.isDepthNearValueWhite());
 			break;
 			
 		case 'o':
+        case 'O':
 			kinect.setCameraTiltAngle(angle); // go back to prev tilt
 			kinect.open();
 			break;
 			
 		case 'c':
+        case 'C':
 			kinect.setCameraTiltAngle(0); // zero the tilt
 			kinect.close();
 			break;
@@ -609,15 +620,18 @@ void ofApp::keyPressed (int key) {
 			kinect.setCameraTiltAngle(angle);
 			break;
             
-            case 'g':
+        case 'g':
+        case 'G':
             showGui=!showGui;
             break;
             
         case 'a':
+        case 'A':
             paintMesh=!paintMesh;
             break;
             
         case 'l':
+        case 'L':
             loadRecording();
             break;
             
@@ -634,6 +648,7 @@ void ofApp::keyPressed (int key) {
             break;
             
         case 's':
+        case 'S':
             if(!meshRecorder.readyToPlay) return;
             if(!recording) return;
             if(playing) return;
@@ -665,10 +680,12 @@ void ofApp::keyPressed (int key) {
             break;
             
         case 'n':
+        case 'N':
             showNormals = !showNormals;//swap between normals on mesh on and off
             break;
         
         case 'i':
+        case 'I':
             if (!illuminateScene) { //swap on and off world light
                 light.enable();
                 illuminateScene=!illuminateScene;
@@ -679,10 +696,12 @@ void ofApp::keyPressed (int key) {
             break;
             
         case 'h':
+        case 'H':
             easyCam.reset();//reset easycam settings to re-centre 3d view
             break;
             
         case 'f':
+        case 'F':
             ofToggleFullscreen();
             break;
         
