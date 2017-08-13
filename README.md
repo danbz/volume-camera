@@ -27,6 +27,8 @@ see more at http://buzzo.com/building-a-volumetric-camera/
 Dan Buzzo 2017
 
 
+"ostranenie (Russian verb): make an audience see common things in an unfamiliar or strange way in order to enhance perception of the familiar."
+
 [![Watch the video](http://buzzo.com/wp-content/uploads/2017/06/Screen-Shot-2017-06-01-at-20.29.59.png)](https://player.vimeo.com/video/229040967)
 
 example screencapture video on vimeo https://player.vimeo.com/video/229040967
