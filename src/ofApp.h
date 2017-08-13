@@ -3,10 +3,6 @@
 #include "ofMain.h"
 #include "ofxOpenCv.h"
 #include "ofxKinect.h"
-<<<<<<< HEAD
-//#include "ofxGui.h"
-=======
->>>>>>> shot-timing
 #include "ofxKinectMeshRecorder.h"
 #include "metaData.h"
 #include "ofxXmlSettings.h"
@@ -49,7 +45,6 @@ public:
 	void mouseExited(int x, int y);
 	void windowResized(int w, int h);
     void drawGui();
-    void loadLiveMeshData();
     
 	ofxKinect kinect;
 	
