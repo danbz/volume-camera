@@ -481,25 +481,22 @@ void ofApp::drawGui() {
         ImGui::Text("Welcome to Volca v0.0");
         //ImGui::SliderFloat("Float", &floatValue, 0.0f, 1.0f);
         if (ImGui::CollapsingHeader("Capture options")) {
-        ImGui::Text("Capture parameters");
-        ImGui::Checkbox("Single shot capture", &singleShot);
-       // ImGui::SliderFloat("Exposure time (s)", &exposureTime, 0.01, 5.0);
-        ImGui::SliderInt("Recording FPS", &recordFPS, 1, 60);
-        ImGui::SliderInt("RecordingMesh Step",&recordingStep, 1, 10);
-         }
-        
-        if (ImGui::CollapsingHeader("Depth options")){
+            ImGui::Text("Capture parameters");
+            ImGui::Checkbox("Single shot capture", &singleShot);
+            // ImGui::SliderFloat("Exposure time (s)", &exposureTime, 0.01, 5.0);
+            ImGui::SliderInt("Mesh play/record spacing",&recordingStep, 1, 20);
+            ImGui::SliderInt("Recording FPS", &recordFPS, 1, 60);
+            //ImGui::Text("Playback style");
+            ImGui::SliderInt("Playback FPS", &playbackFPS, 1, 120);
+            
             ImGui::SliderInt("Frontplane", &frontPlane, 0, 10000);
             ImGui::SliderInt("Backplane", &backPlane, 100, 20000);
-        }
-        if (ImGui::CollapsingHeader("RGB options")){
-            // ImGui::SliderInt("Frontplane", &frontPlane, 0, 10000);
-            // ImGui::SliderInt("Backplane", &backPlane, 100, 15000);
         }
         
         if (ImGui::CollapsingHeader("Render options")) {
             ImGui::SliderFloat("Depth factor", &depthFactor, 0.05, 5.0);
             ImGui::SliderFloat("Perspective factor", &perspectiveFactor, 0.0001, 0.1);
+            
             ImGui::Text("Render style");
             ImGui::RadioButton("cloud", &renderStyle, 1); ImGui::SameLine();
             ImGui::RadioButton("faces", &renderStyle, 2); ImGui::SameLine();
@@ -511,14 +508,12 @@ void ofApp::drawGui() {
             ImGui::Checkbox("normals", &showNormals); ImGui::SameLine();
             ImGui::Checkbox("flatQuads", &renderFlatQuads);
             ImGui::SliderInt("Cloud pointsize", &blobSize, 1, 15);
-            //ImGui::SliderInt("Mesh spacing", &gridSize, 1, 20);
             ImGui::ColorEdit3("Background Color", (float*)&imBackgroundColor);
         }
         
         if (ImGui::CollapsingHeader("Image filters")) {
             
-            ImGui::Text("Playback style");
-            ImGui::Checkbox("Filter Color Image / depth image", &bfilterColorImage);
+            ImGui::Checkbox("Filter colorImage/depthImage", &bfilterColorImage);
  
             ImGui::Checkbox("Blur", &blur);
             ImGui::SameLine();
@@ -532,29 +527,29 @@ void ofApp::drawGui() {
             ImGui::SliderInt("Amount ", &dilateAmount, 1, 50);
         }
         
-        if (ImGui::CollapsingHeader("Playback options")) {
-            ImGui::Text("Playback style");
-            ImGui::SliderInt("Playback FPS", &playbackFPS, 1, 120);
-        }
-        
         if(ImGui::Button("Test Window")) {
             show_test_window = !show_test_window;
         }
         
-        ImGui::SameLine();
+ //       ImGui::SameLine();
         
         if (ImGui::Button("reset camera")) {
             easyCam.reset();//reset easycam settings to re-centre 3d view
         }
         ImGui::SameLine();
-        
-        if (ImGui::Button("load recording")) {
-            loadRecording();   ImGui::SameLine();
-        }
         ImGui::Checkbox("show live mesh", &bDrawPointCloud);
+        ImGui::SameLine();
+        if (ImGui::Button("load recording")) {
+            loadRecording();
+        }
         
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         ImGui::Text("Recording mesh size %.1d , %1d", recordWidth/recordingStep , recordHeight/recordingStep);
+        if (playing){
+           int totalFrames = meshRecorder.totalFrames;
+            ImGui::Text("Playing frame %.1d of %.2d frames in sequence", frameToPlay +1, totalFrames);
+        }
+
     }
     
     if (show_test_window) {     // 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
@@ -565,6 +560,7 @@ void ofApp::drawGui() {
     if(doThemeColorsWindow) {
         imGui.openThemeColorWindow();
     }
+    
     imGui.end(); //end GUI
 }
 
