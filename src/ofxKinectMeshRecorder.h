@@ -37,25 +37,24 @@ private:
     string fileToload;
     
     
-    void loadMeshData(const string _file); // old routine to load mesh from text files
-    void loadImageData(const string _file); //new routine to load rgb and depth data from png images
-    int countFrames(const string _file);
+    //void loadMeshData(const string _file); // old routine to load mesh from text files
+   // int countFrames(const string _file);
     int countImageFrames(const string _file);
-    void threadedFunction();
+    //void threadedFunction();
     
 public:
-    
-    
+        
     bool readyToPlay;
     
     int totalFrames;
     int framesLoaded;
     
     ofxKinectMeshRecorder();
-    void startLoading(const string _file, int width, int height);
-    
-    ofVec3f getVectorAt(int framenum, int coord);
-    ofColor getColorAt(int framenum, int coord);
+    //void startLoading(const string _file, int width, int height);
+    bool loadImageData(const string _file, int width, int height); //new routine to load rgb and depth data from png images
+
+    //ofVec3f getVectorAt(int framenum, int coord);
+    //ofColor getColorAt(int framenum, int coord);
     ofImage getColorImageAt ( int framenum);
     ofShortImage getDepthImageAt ( int framenum);
     
@@ -65,8 +64,6 @@ public:
     ofShortImage depImage;
     /// moving in metadata functions
 
-    
-    
     ofxXmlSettings exifSettings;
     
 };

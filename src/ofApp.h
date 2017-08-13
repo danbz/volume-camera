@@ -128,5 +128,6 @@ public:
      
     void saveExifData(); // move these into meshRecorder
     bool loadExifData( string filePath);
+    string exifModel;
     
 };

@@ -339,20 +339,31 @@ void ofApp::setNormals( ofMesh &mesh ){ //Universal function which sets normals 
 
 void ofApp::loadRecording() {
     
+    bool loadSuccess = false;
     if(!meshRecorder.readyToPlay) return;
     if(recording) return;
     if(!playing) {
-        ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded PNG data", true, ofToDataPath(""));
+        ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded Volca PNG data", true, ofToDataPath(""));
         if (result.getPath() != "") {
             filePath =result.getPath();
             frameToPlay = 0;
             if (loadExifData(filePath)) {
-                meshRecorder.startLoading(filePath, recordWidth, recordHeight);
-                playing = true;
+                loadSuccess = meshRecorder.loadImageData(filePath, recordWidth, recordHeight);
+                
+                if (loadSuccess){
+                    playing = true;
+                    cout << loadSuccess << " playing is true" << endl;
+                } else {
+                    playing = false;
+                    cout << loadSuccess << " playing is false" << endl;
+                }
             }
         }
     } else {
         playing = false;
+        // generate system dialog to ask if user wants to stop playing and load new files
+        ofSystemAlertDialog("You have stopped playing the currently loaded mesh ");
+        
     }
 }
 //--------------------------------------------------------------
@@ -412,7 +423,7 @@ void ofApp::saveExifData() { //put some some settings into a file
     
     //exifSettings.addTag("exifData");
     exifSettings.setValue("exif:make", "Buzzo");
-    exifSettings.setValue("exif:model", "Volca: Experimental volumetric camera/apparatus v0.1");
+    exifSettings.setValue("exif:model", "Volca: Experimental volumetric camera/apparatus");
     exifSettings.setValue("exif:orientation", "top left");
     exifSettings.setValue("exif:ImageWidth", recordWidth/recordingStep);
     exifSettings.setValue("exif:ImageLength", recordHeight/recordingStep);
@@ -430,19 +441,26 @@ void ofApp::saveExifData() { //put some some settings into a file
 bool ofApp::loadExifData(string filePath) { // load exifXML file from the sele ted folder and get the values out
     
     if (exifSettings.loadFile(filePath + "/exifSettings.xml")){
-        //cout << filePath << "/exifSettings.xml" << endl;
-        recordWidth = exifSettings.getValue("exif:ImageWidth", 0);
-        recordHeight = exifSettings.getValue("exif:ImageLength", 0);
-        //dataProcess =exifSettings.getValue("exifDataProcess", 0); //use to tag whether using old render or new render method.
-        
-        recordingStep = 1; // always default to 1:1 step when loading recorded meshes
-        string recordingDate = exifSettings.getValue("exif:DateTimeDigitized", "");
-        string myXml;
-        exifSettings.copyXmlToString(myXml);
-        cout << "loaded exif data: " << myXml <<endl ;
-        return true;
+        exifModel = exifSettings.getValue("exif:model", "");
+        string thisModel ="Volca";
+        if (exifModel.find(thisModel) != string::npos){
+            //cout << filePath << "/exifSettings.xml" << endl;
+            recordWidth = exifSettings.getValue("exif:ImageWidth", 0);
+            recordHeight = exifSettings.getValue("exif:ImageLength", 0);
+            //dataProcess =exifSettings.getValue("exifDataProcess", 0); //use to tag whether using old render or new render method.
+            
+            recordingStep = 1; // always default to 1:1 step when loading recorded meshes
+            string recordingDate = exifSettings.getValue("exif:DateTimeDigitized", "");
+            string myXml;
+            exifSettings.copyXmlToString(myXml);
+            cout << "loaded exif data: " << myXml <<endl ;
+            return true;
+        } else {
+            ofSystemAlertDialog("Correct Volca EXIF metadata not found. Is the exifSettings.xml file corrupt?");
+            
+        }
     } else {
-        ofSystemAlertDialog("No EXIF meta data file found. Is this a Volca recording folder?");
+        ofSystemAlertDialog("No Volca EXIF metadata file found. Is this a Volca recording folder?");
         return false;
     }
     
@@ -453,7 +471,6 @@ bool ofApp::loadExifData(string filePath) { // load exifXML file from the sele t
 void ofApp::exit() {
     
     meshRecorder.unlock();
-    //  meshRecorder.stopThread(false); //DB - deprecated call
     meshRecorder.stopThread();
 	kinect.setCameraTiltAngle(0); // zero the tilt on exit
 	kinect.close();
@@ -508,7 +525,6 @@ void ofApp::drawGui() {
         }
         
         if (ImGui::CollapsingHeader("Image filters")) {
-            
             ImGui::Checkbox("Filter colorImage/depthImage", &bfilterColorImage);
             ImGui::Checkbox("Blur", &blur);
             ImGui::SameLine();

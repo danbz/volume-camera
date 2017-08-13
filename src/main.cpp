@@ -2,7 +2,7 @@
 
 int main() {
     ofSetupOpenGL(1080, 800, OF_WINDOW);
-	ofRunApp(new ofApp());
+	ofRunApp(new ofApp());    
 }
 
 // VOLCA: experimental volumetric camera/apparatus v0.1
