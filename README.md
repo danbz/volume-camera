@@ -21,9 +21,11 @@ Basic OpenCV routines are integrated allowing gaussian blur, eroding and dilatio
 Please refer to the master branch as the most stable version and the project page for details of work in progress, the wiki for more detailed information, controls & Gui, references etc.
 Please add any issues, bugs and requests to the issues track.
 
-<iframe src="https://player.vimeo.com/video/229040967" width="640" height="400" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
-<p><a href="https://vimeo.com/229040967">test of openframeworks Kinect RGBD Volca volume camera software with simple OpenCv routines</a> from <a href="https://vimeo.com/danielbuzzo">Daniel Buzzo</a> on <a href="https://vimeo.com">Vimeo</a>.</p>
+example screencapture video on vimeo https://player.vimeo.com/video/229040967
 
 see more at http://buzzo.com/building-a-volumetric-camera/
 
 Dan Buzzo 2017
+
+
+[![Watch the video](http://buzzo.com/wp-content/uploads/2017/06/Screen-Shot-2017-06-01-at-20.29.59.png)](https://player.vimeo.com/video/229040967)
