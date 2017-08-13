@@ -70,10 +70,7 @@ void ofApp::setup() {
     exposureTime = 0.5; // length of exposure capture in seconds
     recordFPS = 25;
     lastRecordedFrame = 0;
-    
-    //added in new thread class etc 8/july/17
-    //ofxKinectMeshRecorder thread;
-    
+
     //////////////////////////////////////////////////////
     // Rendering Configuration
     //////////////////////////////////////////////////////
@@ -117,7 +114,6 @@ void ofApp::update() {
     
     ofColor c;
     ofShortColor zGrey = 0;
-    //int pCount =0;
     ofVec3f v3;
     
     filteredColorImage=colorImage;
@@ -137,20 +133,18 @@ void ofApp::update() {
             }
             if(frameToPlay >= meshRecorder.totalFrames) frameToPlay = 0; //or start at the beginning of the recorded loop
         }
-         // if we are playing then load data from meshrecorder object into images
-            if(meshRecorder.readyToPlay) {
-                //colorImage = meshRecorder.getColorImageAt(frameToPlay);
-                colorImage.setFromPixels(meshRecorder.getColorImageAt(frameToPlay)); //use set from pixels to update after loading in threaded function
-                depthImage.setFromPixels(meshRecorder.getDepthImageAt(frameToPlay));
+        if(meshRecorder.readyToPlay) {    // we are playing so load data from meshrecorder object into images
+            colorImage.setFromPixels(meshRecorder.getColorImageAt(frameToPlay));
+            depthImage.setFromPixels(meshRecorder.getDepthImageAt(frameToPlay));
         }
-    } else {
+    } else { // we are running from live depth source
         if(kinect.isFrameNew()) {// if new frame and connected to kinect Live Render CV updating
             colorImage.setFromPixels(kinect.getPixels());
             depthImage.setFromPixels(kinect.getRawDepthPixels());
         }
     }
-   
-    if (bfilterColorImage) { //process depth or RGB image holders //re write as pipeline rather than discrete operations
+    
+    if (bfilterColorImage) { //process depth or RGB image holders //re-write as pipeline chain rather than discrete operations
         if (blur){
             ofxCv::GaussianBlur(filteredColorImage, blurRadius);
         }
@@ -173,7 +167,7 @@ void ofApp::update() {
             ofxCv::dilate(depthImage, filteredDepthImage, dilateAmount);
         }
     }
-
+    
     depthImage.update();
     colorImage.update();
     filteredDepthImage.update();
