@@ -2,6 +2,7 @@
 
 // VOLCA: experimental volumetric camera/apparatus v0.1
 // © 2017 Daniel Buzzo. Dan@buzzo.com http://www.buzzo.com
+// https://github.com/danbz/volume-camera
 // all rights reserved
 
 using namespace ofxCv;
@@ -62,14 +63,11 @@ void ofApp::setup() {
     //kinect.setDepthClipping( 100,  20000); //set depth clipping range
     frame = 0; //play back frame initialisation
     paused = false;
-    drawTriangles = false;
     renderStyle = 1;
     recordWidth =640; //default width for recording and playback of meshes, overridden by Exifmedta data when recorded files are loaded.
     recordHeight=480;
-    singleShot = true;     // shot length, exposure variables and recording FPS timing
-    exposureTime = 0.5; // length of exposure capture in seconds
+    singleShot = true;
     recordFPS = 25;
-    lastRecordedFrame = 0;
 
     //////////////////////////////////////////////////////
     // Rendering Configuration
@@ -418,7 +416,6 @@ void ofApp::saveExifData() { //put some some settings into a file
     exifSettings.setValue("exif:ImageWidth", recordWidth/recordingStep);
     exifSettings.setValue("exif:ImageLength", recordHeight/recordingStep);
     exifSettings.setValue("exif:DateTimeDigitized", today);
-   // exifSettings.setValue("exif:ExposureTime", exposureTime);
     exifSettings.setValue("exifSensingMethod", "Kinect depth sensor");
     exifSettings.setValue("exifDataProcess", "RGB and Depth Image"); //use to tag whether using old render or new render method.
     exifSettings.saveFile(path + "exifSettings.xml"); //puts exifSettings.xml file in the current recordedframe folder
@@ -463,8 +460,8 @@ void ofApp::exit() {
 
 void ofApp::drawGui() {
     imGui.begin(); //begin GUI
-    
     ImGuiIO& io = ImGui::GetIO(); // hide mouse input from rest of app
+    
     if (io.WantCaptureMouse){ //prevent mousemessages going to app while using imGui
         easyCam.disableMouseInput();
     } else {
@@ -473,11 +470,9 @@ void ofApp::drawGui() {
     
     { // 1. Show window
         ImGui::Text("Welcome to Volca v0.0");
-        //ImGui::SliderFloat("Float", &floatValue, 0.0f, 1.0f);
         if (ImGui::CollapsingHeader("Capture options")) {
             ImGui::Text("Capture parameters");
             ImGui::Checkbox("Single shot capture", &singleShot);
-            // ImGui::SliderFloat("Exposure time (s)", &exposureTime, 0.01, 5.0);
             ImGui::SliderInt("Mesh play/record spacing",&recordingStep, 1, 20);
             ImGui::SliderInt("Recording FPS", &recordFPS, 1, 60);
             //ImGui::Text("Playback style");
@@ -508,14 +503,12 @@ void ofApp::drawGui() {
         if (ImGui::CollapsingHeader("Image filters")) {
             
             ImGui::Checkbox("Filter colorImage/depthImage", &bfilterColorImage);
- 
             ImGui::Checkbox("Blur", &blur);
             ImGui::SameLine();
             ImGui::SliderInt("Radius ", &blurRadius, 1, 200);
             ImGui::Checkbox("Erode", &erodeImage);
             ImGui::SameLine();
             ImGui::SliderInt("Amount ", &erodeAmount, 1, 50);
-            
             ImGui::Checkbox("Dilate", &dilateImage);
             ImGui::SameLine();
             ImGui::SliderInt("Amount ", &dilateAmount, 1, 50);
@@ -524,8 +517,6 @@ void ofApp::drawGui() {
         if(ImGui::Button("Test Window")) {
             show_test_window = !show_test_window;
         }
-        
- //       ImGui::SameLine();
         
         if (ImGui::Button("reset camera")) {
             easyCam.reset();//reset easycam settings to re-centre 3d view
@@ -671,10 +662,6 @@ void ofApp::keyPressed (int key) {
                     }
                 }
             }
-            break;
-            
-        case 't':
-            drawTriangles = !drawTriangles;//swap between point cloud rendering and primitive triangle rendering 
             break;
             
         case 'n':

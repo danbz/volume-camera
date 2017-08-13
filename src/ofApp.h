@@ -11,6 +11,7 @@
 
 // VOLCA: experimental volumetric camera/apparatus v0.1
 // © 2017 Daniel Buzzo. Dan@buzzo.com http://www.buzzo.com
+// https://github.com/danbz/volume-camera
 // all rights reserved
 
 // Windows users: You MUST install the libfreenect kinect drivers in order to be able to use
@@ -88,16 +89,12 @@ public:
     int recordWidth;
     int recordHeight;
     
-    //////////////////////////////////////////////////////
     // GUI  Configuration
-    //////////////////////////////////////////////////////
+
     bool showGui;
     bool paintMesh;
-    bool drawTriangles;
     bool recording;
     bool playing;
-    bool colorMode;
-    bool oldPlayer;
     
     ofxImGui::Gui imGui;
     ImVec4 imBackgroundColor;
@@ -106,14 +103,10 @@ public:
     
     // shot timing GUI elements
     bool singleShot;  // move these into new volca object/class
-    float exposureTime;
-    int exposureStart;
     int recordFPS;
-    int lastRecordedFrame;
     
-    //////////////////////////////////////////////////////
     // Rendering Reproduction
-    //////////////////////////////////////////////////////
+    
     ofMesh mesh;
     ofLight light;
     ofxKinectMeshRecorder meshRecorder;
@@ -129,9 +122,8 @@ public:
     float depthFactor;
     float perspectiveFactor;
     
-    //////////////////////////////////////////////////////
     // XML exif data save and load
-    //////////////////////////////////////////////////////
+    
     ofxXmlSettings exifSettings;
      
     void saveExifData(); // move these into meshRecorder

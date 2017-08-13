@@ -4,6 +4,7 @@
 //
 //  modified by Daniel Buzzo on 14/05/2017.
 // http://www.buzzo/com
+// https://github.com/danbz/volume-camera
 //
 //  ofxKinectMeshRecorder.h
 //  ofxKinectMeshRecorder

@@ -1,9 +1,8 @@
- //
+//
 //  ofxKinectMeshRecorder.cpp
-//  myKinectHack
 //
 //  modified by Daniel Buzzo on 14/05/2017.
-//
+// https://github.com/danbz/volume-camera
 //
 //  ofxKinectMeshRecorder.cpp
 //  ofxKinectMeshRecorder
