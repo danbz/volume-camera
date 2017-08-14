@@ -180,8 +180,8 @@ void ofApp::update() {
 void ofApp::draw() {
 	
 	ofSetColor(255, 255, 255);
-    // Draw Live rendering
-	if(bDrawPointCloud) { //show pointcloud view
+    
+	if(bDrawPointCloud) {  // Draw Live rendering - show pointcloud view
 		easyCam.begin();
         if (illuminateScene) light.enable(); //enable world light
         drawAnyPointCloud(); //call new generic point render function
@@ -361,7 +361,8 @@ void ofApp::loadRecording() {
         }
     } else {
         playing = false;
-        // generate system dialog to ask if user wants to stop playing and load new files
+        // generate system dialog to ask if user wants to stop playing and load new files        
+        meshRecorder.clearImageData(); // clear mesh buffer
         ofSystemAlertDialog("You have stopped playing the currently loaded mesh ");
         
     }

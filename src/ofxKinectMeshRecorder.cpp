@@ -104,8 +104,6 @@ bool ofxKinectMeshRecorder::loadImageData(const string _file, int width, int hei
         readyToPlay = true;
         return true;
         cout << "stopped successful loading" << endl ;
-
-
     }
 }
 
@@ -137,7 +135,10 @@ ofShortImage ofxKinectMeshRecorder::getDepthImageAt(int framenum) {
 
 //-------------------------------------------------------------------
 
-
+void ofxKinectMeshRecorder::clearImageData() {
+    recordedColorImageData.clear();
+    recordedDepthImageData.clear();
+}
 
 
 

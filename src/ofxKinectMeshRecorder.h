@@ -53,8 +53,8 @@ public:
     //void startLoading(const string _file, int width, int height);
     bool loadImageData(const string _file, int width, int height); //new routine to load rgb and depth data from png images
 
-    //ofVec3f getVectorAt(int framenum, int coord);
-    //ofColor getColorAt(int framenum, int coord);
+    void clearImageData();
+    
     ofImage getColorImageAt ( int framenum);
     ofShortImage getDepthImageAt ( int framenum);
     
