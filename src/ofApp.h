@@ -137,4 +137,5 @@ public:
     ofSoundPlayer shutterSound;
     ofSoundPlayer errorSound;
     
+    
 };
