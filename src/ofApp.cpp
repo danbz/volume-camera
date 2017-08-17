@@ -28,6 +28,7 @@ void ofApp::setup() {
 		
 	if(kinect.isConnected()) { // print the intrinsic IR sensor values
         kinectConnected = true;
+        
 		ofLogNotice() << "sensor-emitter dist: " << kinect.getSensorEmitterDistance() << "cm";
 		ofLogNotice() << "sensor-camera dist:  " << kinect.getSensorCameraDistance() << "cm";
 		ofLogNotice() << "zero plane pixel size: " << kinect.getZeroPlanePixelSize() << "mm";
