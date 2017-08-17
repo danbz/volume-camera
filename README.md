@@ -21,8 +21,9 @@ Basic OpenCV routines are integrated allowing gaussian blur, eroding and dilatio
 Please refer to the master branch as the most stable version and the project page for details of work in progress, the wiki for more detailed information, controls & Gui, references etc.
 Please add any issues, bugs and requests to the issues track.
 
+see the wiki for keyboard controls, gui details and related useage information. https://github.com/danbz/volume-camera/wiki
 
-see more at http://buzzo.com/building-a-volumetric-camera/
+see more about the project and development of custom hardware etc at http://buzzo.com/building-a-volumetric-camera/
 
 Dan Buzzo 2017
 
