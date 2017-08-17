@@ -80,10 +80,10 @@ void ofApp::setup() {
     // easyCam setup
     
     nearThreshold = 10;
-    farThreshold = 10000;
+    farThreshold = 50000;
     easyCam.setNearClip(nearThreshold);
     easyCam.setFarClip(farThreshold);
-    
+
     //////////////////////////////////////////////////////
     // Gui Configuration
     //////////////////////////////////////////////////////
