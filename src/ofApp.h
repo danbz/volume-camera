@@ -48,6 +48,7 @@ public:
     void drawGui();
     
 	ofxKinect kinect;
+    bool kinectConnected;
 	
 #ifdef USE_TWO_KINECTS
 	ofxKinect kinect2;
@@ -61,8 +62,8 @@ public:
 	
 	bool bThreshWithOpenCV;
 	bool bDrawPointCloud;
-	int nearThreshold;
-	int farThreshold;
+	float nearThreshold;
+	float farThreshold;
 	int angle;
 	
     ofEasyCam easyCam; 	// used for viewing the point cloud
@@ -129,5 +130,11 @@ public:
     void saveExifData(); // move these into meshRecorder
     bool loadExifData( string filePath);
     string exifModel;
+    
+    
+    //GUI sounds
+    ofSoundPlayer startupSound;
+    ofSoundPlayer shutterSound;
+    ofSoundPlayer errorSound;
     
 };

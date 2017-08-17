@@ -19,6 +19,7 @@ uint64 timeNow =ofGetSystemTime(); // for timing elapsed time since past frame f
 void ofApp::setup() {
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	
+    kinectConnected = false;
 	kinect.setRegistration(true); // enable depth->video image calibration
 	kinect.init(); //kinect.init(true); // shows infrared instead of RGB video image
     //kinect.init(false, false); // disable video image (faster fps)
@@ -26,6 +27,7 @@ void ofApp::setup() {
     kinect.setDepthClipping( 100,  20000); //set depth clipping range
 		
 	if(kinect.isConnected()) { // print the intrinsic IR sensor values
+        kinectConnected = true;
 		ofLogNotice() << "sensor-emitter dist: " << kinect.getSensorEmitterDistance() << "cm";
 		ofLogNotice() << "sensor-camera dist:  " << kinect.getSensorCameraDistance() << "cm";
 		ofLogNotice() << "zero plane pixel size: " << kinect.getZeroPlanePixelSize() << "mm";
@@ -46,8 +48,6 @@ void ofApp::setup() {
     colorImage.allocate(kWidth, kHeight, OF_IMAGE_COLOR);
     depthImage.allocate(kWidth, kHeight, OF_IMAGE_GRAYSCALE);
     
-    nearThreshold = 230;
-	farThreshold = 70;
 	bThreshWithOpenCV = true;
 	ofSetFrameRate(120); //make this into a separate variable for playback speed framerate alteration
 	angle = 0; // zero the tilt on startup
@@ -79,6 +79,11 @@ void ofApp::setup() {
     perspectiveFactor = 0.002;
     // easyCam setup
     
+    nearThreshold = 10;
+    farThreshold = 10000;
+    easyCam.setNearClip(nearThreshold);
+    easyCam.setFarClip(farThreshold);
+    
     //////////////////////////////////////////////////////
     // Gui Configuration
     //////////////////////////////////////////////////////
@@ -101,6 +106,18 @@ void ofApp::setup() {
     dilateAmount=2;
     bfilterColorImage = true;
     
+    
+    if (!startupSound.load("sounds/pad_confirm.wav", false)){
+        ofSystemAlertDialog("Unable to load system sounds");
+    }else {
+         startupSound.setVolume(0.5f);
+        startupSound.play();
+        ofSoundUpdate();
+    
+        shutterSound.load("sounds/beep_short_on.wav", false);
+        errorSound.load("sounds/beep_short_off.wav", false);
+
+    };
 //    if( !kinect.hasAccelControl()) {
 //        ofSystemAlertDialog("Note: this is a newer Xbox Kinect or Kinect For Windows device, motor / led / accel controls are not currently supported" );
 //    }
@@ -170,6 +187,11 @@ void ofApp::update() {
     colorImage.update();
     filteredDepthImage.update();
     filteredColorImage.update();
+    
+    easyCam.setNearClip(nearThreshold);
+    easyCam.setFarClip(farThreshold);
+    
+    ofSoundUpdate();
     
 #ifdef USE_TWO_KINECTS
     kinect2.update();
@@ -363,6 +385,7 @@ void ofApp::loadRecording() {
         playing = false;
         // generate system dialog to ask if user wants to stop playing and load new files        
         meshRecorder.clearImageData(); // clear mesh buffer
+        errorSound.play();
         ofSystemAlertDialog("You have stopped playing the currently loaded mesh ");
         
     }
@@ -457,10 +480,12 @@ bool ofApp::loadExifData(string filePath) { // load exifXML file from the sele t
             cout << "loaded exif data: " << myXml <<endl ;
             return true;
         } else {
+            errorSound.play();
             ofSystemAlertDialog("Correct Volca EXIF metadata not found. Is the exifSettings.xml file corrupt?");
             
         }
     } else {
+        errorSound.play();
         ofSystemAlertDialog("No Volca EXIF metadata file found. Is this a Volca recording folder?");
         return false;
     }
@@ -523,6 +548,10 @@ void ofApp::drawGui() {
             ImGui::Checkbox("flatQuads", &renderFlatQuads);
             ImGui::SliderInt("Cloud pointsize", &blobSize, 1, 15);
             ImGui::ColorEdit3("Background Color", (float*)&imBackgroundColor);
+            
+            ImGui::SliderFloat("Far threshhold", &farThreshold, 0, 100000);
+            ImGui::SliderFloat("Near threshhold", &nearThreshold, 0, 10000);
+
         }
         
         if (ImGui::CollapsingHeader("Image filters")) {
@@ -605,6 +634,9 @@ void ofApp::keyPressed (int key) {
         case 'O':
 			kinect.setCameraTiltAngle(angle); // go back to prev tilt
 			kinect.open();
+            if(kinect.isConnected()) {
+                kinectConnected=true;
+            }
 			break;
 			
 		case 'c':
@@ -657,11 +689,18 @@ void ofApp::keyPressed (int key) {
             if(!meshRecorder.readyToPlay) return;
             if(recording) return;
             if(playing) return;
-            saveTo = generateFileName();
-            frame = 0;
-            recording = true;
-            saveExifData();
-            kinect.setLed(ofxKinect::LED_BLINK_YELLOW_RED);
+            if (kinectConnected){
+                shutterSound.play();
+                saveTo = generateFileName();
+                frame = 0;
+                recording = true;
+                saveExifData();
+                kinect.setLed(ofxKinect::LED_BLINK_YELLOW_RED);
+            } else {
+                errorSound.play();
+                ofSystemAlertDialog("No connected kinect device detected");
+            }
+            
             break;
             
         case 's':
