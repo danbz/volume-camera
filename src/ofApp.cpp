@@ -2,6 +2,7 @@
 
 // VOLCA: experimental volumetric camera/apparatus v0.1
 // © 2017 Daniel Buzzo. Dan@buzzo.com http://www.buzzo.com
+// https://github.com/danbz/volume-camera
 // all rights reserved
 
 using namespace ofxCv;
@@ -18,6 +19,7 @@ uint64 timeNow =ofGetSystemTime(); // for timing elapsed time since past frame f
 void ofApp::setup() {
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	
+    kinectConnected = false;
 	kinect.setRegistration(true); // enable depth->video image calibration
 	kinect.init(); //kinect.init(true); // shows infrared instead of RGB video image
     //kinect.init(false, false); // disable video image (faster fps)
@@ -25,6 +27,7 @@ void ofApp::setup() {
     kinect.setDepthClipping( 100,  20000); //set depth clipping range
 		
 	if(kinect.isConnected()) { // print the intrinsic IR sensor values
+        kinectConnected = true;
 		ofLogNotice() << "sensor-emitter dist: " << kinect.getSensorEmitterDistance() << "cm";
 		ofLogNotice() << "sensor-camera dist:  " << kinect.getSensorCameraDistance() << "cm";
 		ofLogNotice() << "zero plane pixel size: " << kinect.getZeroPlanePixelSize() << "mm";
@@ -45,8 +48,6 @@ void ofApp::setup() {
     colorImage.allocate(kWidth, kHeight, OF_IMAGE_COLOR);
     depthImage.allocate(kWidth, kHeight, OF_IMAGE_GRAYSCALE);
     
-    nearThreshold = 230;
-	farThreshold = 70;
 	bThreshWithOpenCV = true;
 	ofSetFrameRate(120); //make this into a separate variable for playback speed framerate alteration
 	angle = 0; // zero the tilt on startup
@@ -62,14 +63,11 @@ void ofApp::setup() {
     //kinect.setDepthClipping( 100,  20000); //set depth clipping range
     frame = 0; //play back frame initialisation
     paused = false;
-    drawTriangles = false;
     renderStyle = 1;
     recordWidth =640; //default width for recording and playback of meshes, overridden by Exifmedta data when recorded files are loaded.
     recordHeight=480;
-    singleShot = true;     // shot length, exposure variables and recording FPS timing
-    exposureTime = 0.5; // length of exposure capture in seconds
+    singleShot = true;
     recordFPS = 25;
-    lastRecordedFrame = 0;
 
     //////////////////////////////////////////////////////
     // Rendering Configuration
@@ -81,6 +79,11 @@ void ofApp::setup() {
     perspectiveFactor = 0.002;
     // easyCam setup
     
+    nearThreshold = 10;
+    farThreshold = 50000;
+    easyCam.setNearClip(nearThreshold);
+    easyCam.setFarClip(farThreshold);
+
     //////////////////////////////////////////////////////
     // Gui Configuration
     //////////////////////////////////////////////////////
@@ -103,6 +106,18 @@ void ofApp::setup() {
     dilateAmount=2;
     bfilterColorImage = true;
     
+    
+    if (!startupSound.load("sounds/pad_confirm.wav", false)){
+        ofSystemAlertDialog("Unable to load system sounds");
+    }else {
+         startupSound.setVolume(0.5f);
+        startupSound.play();
+        ofSoundUpdate();
+    
+        shutterSound.load("sounds/beep_short_on.wav", false);
+        errorSound.load("sounds/beep_short_off.wav", false);
+
+    };
 //    if( !kinect.hasAccelControl()) {
 //        ofSystemAlertDialog("Note: this is a newer Xbox Kinect or Kinect For Windows device, motor / led / accel controls are not currently supported" );
 //    }
@@ -173,6 +188,11 @@ void ofApp::update() {
     filteredDepthImage.update();
     filteredColorImage.update();
     
+    easyCam.setNearClip(nearThreshold);
+    easyCam.setFarClip(farThreshold);
+    
+    ofSoundUpdate();
+    
 #ifdef USE_TWO_KINECTS
     kinect2.update();
 #endif
@@ -182,8 +202,8 @@ void ofApp::update() {
 void ofApp::draw() {
 	
 	ofSetColor(255, 255, 255);
-    // Draw Live rendering
-	if(bDrawPointCloud) { //show pointcloud view
+    
+	if(bDrawPointCloud) {  // Draw Live rendering - show pointcloud view
 		easyCam.begin();
         if (illuminateScene) light.enable(); //enable world light
         drawAnyPointCloud(); //call new generic point render function
@@ -341,19 +361,33 @@ void ofApp::setNormals( ofMesh &mesh ){ //Universal function which sets normals 
 
 void ofApp::loadRecording() {
     
+    bool loadSuccess = false;
     if(!meshRecorder.readyToPlay) return;
     if(recording) return;
     if(!playing) {
-        ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded PNG data", true, ofToDataPath(""));
+        ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded Volca PNG data", true, ofToDataPath(""));
         if (result.getPath() != "") {
             filePath =result.getPath();
-            playing = true;
             frameToPlay = 0;
-            loadExifData(filePath);
-            meshRecorder.startLoading(filePath, recordWidth, recordHeight);
+            if (loadExifData(filePath)) {
+                loadSuccess = meshRecorder.loadImageData(filePath, recordWidth, recordHeight);
+                
+                if (loadSuccess){
+                    playing = true;
+                    cout << loadSuccess << " playing is true" << endl;
+                } else {
+                    playing = false;
+                    cout << loadSuccess << " playing is false" << endl;
+                }
+            }
         }
     } else {
         playing = false;
+        // generate system dialog to ask if user wants to stop playing and load new files        
+        meshRecorder.clearImageData(); // clear mesh buffer
+        errorSound.play();
+        ofSystemAlertDialog("You have stopped playing the currently loaded mesh ");
+        
     }
 }
 //--------------------------------------------------------------
@@ -413,12 +447,11 @@ void ofApp::saveExifData() { //put some some settings into a file
     
     //exifSettings.addTag("exifData");
     exifSettings.setValue("exif:make", "Buzzo");
-    exifSettings.setValue("exif:model", "Volca: Experimental volumetric camera/apparatus v0.1");
+    exifSettings.setValue("exif:model", "Volca: Experimental volumetric camera/apparatus");
     exifSettings.setValue("exif:orientation", "top left");
     exifSettings.setValue("exif:ImageWidth", recordWidth/recordingStep);
     exifSettings.setValue("exif:ImageLength", recordHeight/recordingStep);
     exifSettings.setValue("exif:DateTimeDigitized", today);
-   // exifSettings.setValue("exif:ExposureTime", exposureTime);
     exifSettings.setValue("exifSensingMethod", "Kinect depth sensor");
     exifSettings.setValue("exifDataProcess", "RGB and Depth Image"); //use to tag whether using old render or new render method.
     exifSettings.saveFile(path + "exifSettings.xml"); //puts exifSettings.xml file in the current recordedframe folder
@@ -429,19 +462,34 @@ void ofApp::saveExifData() { //put some some settings into a file
 
 //-------------------------------------------------------------------
 
-void ofApp::loadExifData(string filePath) { // load exifXML file from the sele ted folder and get the values out
+bool ofApp::loadExifData(string filePath) { // load exifXML file from the sele ted folder and get the values out
     
-    exifSettings.loadFile(filePath + "/exifSettings.xml");
-    //cout << filePath << "/exifSettings.xml" << endl;
-    recordWidth = exifSettings.getValue("exif:ImageWidth", 0);
-    recordHeight = exifSettings.getValue("exif:ImageLength", 0);
-    //dataProcess =exifSettings.getValue("exifDataProcess", 0); //use to tag whether using old render or new render method.
+    if (exifSettings.loadFile(filePath + "/exifSettings.xml")){
+        exifModel = exifSettings.getValue("exif:model", "");
+        string thisModel ="Volca";
+        if (exifModel.find(thisModel) != string::npos){
+            //cout << filePath << "/exifSettings.xml" << endl;
+            recordWidth = exifSettings.getValue("exif:ImageWidth", 0);
+            recordHeight = exifSettings.getValue("exif:ImageLength", 0);
+            //dataProcess =exifSettings.getValue("exifDataProcess", 0); //use to tag whether using old render or new render method.
+            
+            recordingStep = 1; // always default to 1:1 step when loading recorded meshes
+            string recordingDate = exifSettings.getValue("exif:DateTimeDigitized", "");
+            string myXml;
+            exifSettings.copyXmlToString(myXml);
+            cout << "loaded exif data: " << myXml <<endl ;
+            return true;
+        } else {
+            errorSound.play();
+            ofSystemAlertDialog("Correct Volca EXIF metadata not found. Is the exifSettings.xml file corrupt?");
+            
+        }
+    } else {
+        errorSound.play();
+        ofSystemAlertDialog("No Volca EXIF metadata file found. Is this a Volca recording folder?");
+        return false;
+    }
     
-    recordingStep = 1; // always default to 1:1 step when loading recorded meshes
-    string recordingDate = exifSettings.getValue("exif:DateTimeDigitized", "");
-    string myXml;
-    exifSettings.copyXmlToString(myXml);
-    cout << "loaded exif data: " << myXml <<endl ;
 }
 
 //--------------------------------------------------------------
@@ -449,7 +497,6 @@ void ofApp::loadExifData(string filePath) { // load exifXML file from the sele t
 void ofApp::exit() {
     
     meshRecorder.unlock();
-    //  meshRecorder.stopThread(false); //DB - deprecated call
     meshRecorder.stopThread();
 	kinect.setCameraTiltAngle(0); // zero the tilt on exit
 	kinect.close();
@@ -463,8 +510,8 @@ void ofApp::exit() {
 
 void ofApp::drawGui() {
     imGui.begin(); //begin GUI
-    
     ImGuiIO& io = ImGui::GetIO(); // hide mouse input from rest of app
+    
     if (io.WantCaptureMouse){ //prevent mousemessages going to app while using imGui
         easyCam.disableMouseInput();
     } else {
@@ -473,11 +520,9 @@ void ofApp::drawGui() {
     
     { // 1. Show window
         ImGui::Text("Welcome to Volca v0.0");
-        //ImGui::SliderFloat("Float", &floatValue, 0.0f, 1.0f);
         if (ImGui::CollapsingHeader("Capture options")) {
             ImGui::Text("Capture parameters");
             ImGui::Checkbox("Single shot capture", &singleShot);
-            // ImGui::SliderFloat("Exposure time (s)", &exposureTime, 0.01, 5.0);
             ImGui::SliderInt("Mesh play/record spacing",&recordingStep, 1, 20);
             ImGui::SliderInt("Recording FPS", &recordFPS, 1, 60);
             //ImGui::Text("Playback style");
@@ -503,19 +548,20 @@ void ofApp::drawGui() {
             ImGui::Checkbox("flatQuads", &renderFlatQuads);
             ImGui::SliderInt("Cloud pointsize", &blobSize, 1, 15);
             ImGui::ColorEdit3("Background Color", (float*)&imBackgroundColor);
+            
+            ImGui::SliderFloat("Far threshhold", &farThreshold, 0, 100000);
+            ImGui::SliderFloat("Near threshhold", &nearThreshold, 0, 10000);
+
         }
         
         if (ImGui::CollapsingHeader("Image filters")) {
-            
             ImGui::Checkbox("Filter colorImage/depthImage", &bfilterColorImage);
- 
             ImGui::Checkbox("Blur", &blur);
             ImGui::SameLine();
             ImGui::SliderInt("Radius ", &blurRadius, 1, 200);
             ImGui::Checkbox("Erode", &erodeImage);
             ImGui::SameLine();
             ImGui::SliderInt("Amount ", &erodeAmount, 1, 50);
-            
             ImGui::Checkbox("Dilate", &dilateImage);
             ImGui::SameLine();
             ImGui::SliderInt("Amount ", &dilateAmount, 1, 50);
@@ -524,8 +570,6 @@ void ofApp::drawGui() {
         if(ImGui::Button("Test Window")) {
             show_test_window = !show_test_window;
         }
-        
- //       ImGui::SameLine();
         
         if (ImGui::Button("reset camera")) {
             easyCam.reset();//reset easycam settings to re-centre 3d view
@@ -566,6 +610,7 @@ void ofApp::keyPressed (int key) {
 			break;
 			
 		case'p':
+        case'P':
 			bDrawPointCloud = !bDrawPointCloud;
 			break;
 			
@@ -581,15 +626,21 @@ void ofApp::keyPressed (int key) {
 			break;
 			
 		case 'w':
+        case 'W':
 			kinect.enableDepthNearValueWhite(!kinect.isDepthNearValueWhite());
 			break;
 			
 		case 'o':
+        case 'O':
 			kinect.setCameraTiltAngle(angle); // go back to prev tilt
 			kinect.open();
+            if(kinect.isConnected()) {
+                kinectConnected=true;
+            }
 			break;
 			
 		case 'c':
+        case 'C':
 			kinect.setCameraTiltAngle(0); // zero the tilt
 			kinect.close();
 			break;
@@ -618,15 +669,18 @@ void ofApp::keyPressed (int key) {
 			kinect.setCameraTiltAngle(angle);
 			break;
             
-            case 'g':
+        case 'g':
+        case 'G':
             showGui=!showGui;
             break;
             
         case 'a':
+        case 'A':
             paintMesh=!paintMesh;
             break;
             
         case 'l':
+        case 'L':
             loadRecording();
             break;
             
@@ -635,14 +689,22 @@ void ofApp::keyPressed (int key) {
             if(!meshRecorder.readyToPlay) return;
             if(recording) return;
             if(playing) return;
-            saveTo = generateFileName();
-            frame = 0;
-            recording = true;
-            saveExifData();
-            kinect.setLed(ofxKinect::LED_BLINK_YELLOW_RED);
+            if (kinectConnected){
+                shutterSound.play();
+                saveTo = generateFileName();
+                frame = 0;
+                recording = true;
+                saveExifData();
+                kinect.setLed(ofxKinect::LED_BLINK_YELLOW_RED);
+            } else {
+                errorSound.play();
+                ofSystemAlertDialog("No connected kinect device detected");
+            }
+            
             break;
             
         case 's':
+        case 'S':
             if(!meshRecorder.readyToPlay) return;
             if(!recording) return;
             if(playing) return;
@@ -673,15 +735,13 @@ void ofApp::keyPressed (int key) {
             }
             break;
             
-        case 't':
-            drawTriangles = !drawTriangles;//swap between point cloud rendering and primitive triangle rendering 
-            break;
-            
         case 'n':
+        case 'N':
             showNormals = !showNormals;//swap between normals on mesh on and off
             break;
         
         case 'i':
+        case 'I':
             if (!illuminateScene) { //swap on and off world light
                 light.enable();
                 illuminateScene=!illuminateScene;
@@ -692,10 +752,12 @@ void ofApp::keyPressed (int key) {
             break;
             
         case 'h':
+        case 'H':
             easyCam.reset();//reset easycam settings to re-centre 3d view
             break;
             
         case 'f':
+        case 'F':
             ofToggleFullscreen();
             break;
         
