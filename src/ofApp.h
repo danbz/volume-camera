@@ -3,13 +3,14 @@
 #include "ofMain.h"
 #include "ofxOpenCv.h"
 #include "ofxKinect.h"
+#include "ofxKinectV2.h"
 #include "ofxKinectMeshRecorder.h"
 #include "metaData.h"
 #include "ofxXmlSettings.h"
 #include "ofxImGui.h"
 #include "ofxCv.h"
 
-// VOLCA: experimental volumetric camera/apparatus v0.1
+// VOLCA: experimental volumetric camera/apparatus v0.1a
 // © 2017 Daniel Buzzo. Dan@buzzo.com http://www.buzzo.com
 // https://github.com/danbz/volume-camera
 // all rights reserved
@@ -48,6 +49,8 @@ public:
     void drawGui();
     
 	ofxKinect kinect;
+    ofxKinectV2 kinect2;
+    
     bool kinectConnected;
 	
 #ifdef USE_TWO_KINECTS
@@ -136,6 +139,17 @@ public:
     ofSoundPlayer startupSound;
     ofSoundPlayer shutterSound;
     ofSoundPlayer errorSound;
+    
+    
+    /// use kinect 2
+    
+    //vector < shared_ptr<ofxKinectV2> > kinects;
+    
+//    vector <ofTexture> texDepth;
+//    vector <ofTexture> texRGB;
+    ofTexture texDepth;
+    ofTexture texRGB;
+
     
     
 };

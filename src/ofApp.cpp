@@ -44,8 +44,15 @@ void ofApp::setup() {
     //////////////////////////////////////////////////////
     // application / depth sensing configuration
     //////////////////////////////////////////////////////
-    int  kWidth=kinect.width;
+    int kWidth=kinect.width;
     int kHeight=kinect.height;
+    
+    // if kinect 2 then
+    
+     kWidth=512;
+     kHeight=424;
+
+    
     colorImage.allocate(kWidth, kHeight, OF_IMAGE_COLOR);
     depthImage.allocate(kWidth, kHeight, OF_IMAGE_GRAYSCALE);
     
@@ -65,8 +72,8 @@ void ofApp::setup() {
     frame = 0; //play back frame initialisation
     paused = false;
     renderStyle = 1;
-    recordWidth =640; //default width for recording and playback of meshes, overridden by Exifmedta data when recorded files are loaded.
-    recordHeight=480;
+    recordWidth =kWidth; //default width for recording and playback of meshes, overridden by Exifmedta data when recorded files are loaded.
+    recordHeight=kHeight;
     singleShot = true;
     recordFPS = 25;
 
@@ -122,6 +129,29 @@ void ofApp::setup() {
 //    if( !kinect.hasAccelControl()) {
 //        ofSystemAlertDialog("Note: this is a newer Xbox Kinect or Kinect For Windows device, motor / led / accel controls are not currently supported" );
 //    }
+    
+    // add in kinect 2 support
+    
+//    ofxKinectV2 tmp;
+//    vector <ofxKinectV2::KinectDeviceInfo> deviceList = tmp.getDeviceList();
+//    
+//    //allocate for this many devices
+//    kinects.resize(deviceList.size());
+//    texDepth.resize(kinects.size());
+//    texRGB.resize(kinects.size());
+//    
+//    //Note you don't have to use ofxKinectV2 as a shared pointer, but if you want to have it in a vector ( ie: for multuple ) it needs to be.
+//    for(int d = 0; d < kinects.size(); d++){
+//        kinects[d] = shared_ptr <ofxKinectV2> (new ofxKinectV2());
+//        kinects[d]->open(deviceList[d].serial);
+//        //panel.add(kinects[d]->params);
+//        //kinect2 = new ofxKinectV2();
+//    }
+
+          kinect2.open(0);
+    cout << kinect2.params << endl;
+        kinect2.minDistance = 1.0;
+        kinect2.maxDistance = 10000.0;
     
 }
 
@@ -192,6 +222,32 @@ void ofApp::update() {
     easyCam.setNearClip(nearThreshold);
     easyCam.setFarClip(farThreshold);
     
+    // update kinect2
+    
+//    for(int d = 0; d < kinects.size(); d++){
+//        kinects[d]->update();
+//        if( kinects[d]->isFrameNew() ){
+//            texDepth[d].loadData( kinects[d]->getDepthPixels() );
+//            texRGB[d].loadData( kinects[d]->getRgbPixels() );
+//        }
+//    }
+    
+    
+    //for(int d = 0; d < kinects.size(); d++){
+        kinect2.update();
+        if( kinect2.isFrameNew() ){
+//            texDepth = kinect2.getDepthPixels() ;
+//            texRGB = kinect2.getRgbPixels();
+            depthImage.setFromPixels(kinect2.getDepthPixels()) ;
+            colorImage.setFromPixels(kinect2.getRgbPixels());
+            cout << "depth w x h:" << depthImage.getWidth() << " " << depthImage.getHeight()<< endl;
+            cout << "color w x h:" << colorImage.getWidth() << " " << colorImage.getHeight()<< endl;
+
+        }
+    //}
+    
+
+    
     ofSoundUpdate();
     
 #ifdef USE_TWO_KINECTS
@@ -217,6 +273,21 @@ void ofApp::draw() {
         ofxCv::invert(filteredDepthImage,filteredDepthImage);
         filteredDepthImage.update();
         filteredDepthImage.draw(490, 370, 480, 360);
+        
+        
+        // draw kinect 2 to screen
+        
+//        for(int d = 0; d < kinects.size(); d++){
+//            float dwHD = 1920/2;
+//            float dhHD = 1080/2;
+//            
+//            float shiftY = 100 + ((10 + texDepth[d].getHeight()) * d);
+//            
+//            texDepth[d].draw(200, shiftY);
+//            texRGB[d].draw(210 + texDepth[d].getWidth(), shiftY, dwHD, dhHD);
+//        }
+        
+        
 	}
 #ifdef USE_TWO_KINECTS
     kinect2.draw(420, 320, 400, 300);
@@ -235,6 +306,8 @@ void ofApp::draw() {
     if (showGui) {
         drawGui();
     }
+    
+    
 }
 
 //--------------------------------------------------------------
