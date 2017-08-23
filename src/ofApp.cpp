@@ -44,17 +44,15 @@ void ofApp::setup() {
     //////////////////////////////////////////////////////
     // application / depth sensing configuration
     //////////////////////////////////////////////////////
-    int kWidth=kinect.width;
-    int kHeight=kinect.height;
+     recordWidth=kinect.width; //from kinect1
+     recordHeight=kinect.height;
     
     // if kinect 2 then
+     recordWidth=512;
+     recordHeight=424; //default width and height for meshes, overridden by Exifmedta data when recorded files are loaded.
     
-     kWidth=512;
-     kHeight=424;
-
-    
-    colorImage.allocate(kWidth, kHeight, OF_IMAGE_COLOR);
-    depthImage.allocate(kWidth, kHeight, OF_IMAGE_GRAYSCALE);
+    colorImage.allocate(recordWidth, recordHeight, OF_IMAGE_COLOR);
+    depthImage.allocate(recordWidth, recordHeight, OF_IMAGE_GRAYSCALE);
     
 	bThreshWithOpenCV = true;
 	ofSetFrameRate(120); //make this into a separate variable for playback speed framerate alteration
@@ -72,8 +70,7 @@ void ofApp::setup() {
     frame = 0; //play back frame initialisation
     paused = false;
     renderStyle = 1;
-    recordWidth =kWidth; //default width for recording and playback of meshes, overridden by Exifmedta data when recorded files are loaded.
-    recordHeight=kHeight;
+//
     singleShot = true;
     recordFPS = 25;
 
@@ -113,7 +110,7 @@ void ofApp::setup() {
     dilateImage=false;
     dilateAmount=2;
     bfilterColorImage = true;
-    
+    showAxes = true;
     
     if (!startupSound.load("sounds/pad_confirm.wav", false)){
         ofSystemAlertDialog("Unable to load system sounds");
@@ -126,12 +123,9 @@ void ofApp::setup() {
         errorSound.load("sounds/beep_short_off.wav", false);
 
     };
-//    if( !kinect.hasAccelControl()) {
-//        ofSystemAlertDialog("Note: this is a newer Xbox Kinect or Kinect For Windows device, motor / led / accel controls are not currently supported" );
-//    }
+
     
     // add in kinect 2 support
-    
 //    ofxKinectV2 tmp;
 //    vector <ofxKinectV2::KinectDeviceInfo> deviceList = tmp.getDeviceList();
 //    
@@ -149,9 +143,10 @@ void ofApp::setup() {
 //    }
 
           kinect2.open(0);
+    kinectConnected = true;
     cout << kinect2.params << endl;
         kinect2.minDistance = 1.0;
-        kinect2.maxDistance = 10000.0;
+        kinect2.maxDistance = 100000.0;
     
 }
 
@@ -262,6 +257,7 @@ void ofApp::draw() {
     
 	if(bDrawPointCloud) {  // Draw Live rendering - show pointcloud view
 		easyCam.begin();
+        if (showAxes)ofDrawAxis(100);
         if (illuminateScene) light.enable(); //enable world light
         drawAnyPointCloud(); //call new generic point render function
         ofDisableLighting(); //disable world light
@@ -345,9 +341,17 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
                 v3.set((x - (recordWidth/2)) * (perspectiveFactor * z) ,(y -(recordHeight/2)) * (perspectiveFactor *z) , z * depthFactor);
                 mesh.addVertex(v3);
                 if (paintMesh) {
+//                    int colX = x * 3.75;
+//                    int colY = y * 2.55;
+                    
+                      //  c =  colorImage.getColor(colX, colY);
                     c = (filteredColorImage.getColor(x,y)); // getting RGB from ofShortImage
-                    mesh.addColor(c);
+                    
+                } else {
+                    float h = ofMap(z, 50, 200, 0, 255, true);
+                    c.setHsb(h, 255, 255);
                 }
+                mesh.addColor(c);
             }
         }
     }

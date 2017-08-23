@@ -102,7 +102,7 @@ public:
     
     ofxImGui::Gui imGui;
     ImVec4 imBackgroundColor;
-    bool show_test_window, blur, erodeImage, dilateImage, bfilterColorImage;
+    bool show_test_window, blur, erodeImage, dilateImage, bfilterColorImage, showAxes;
     int playbackFPS, blobSize, gridSize, backPlane, frontPlane, recordingStep, blurRadius, erodeAmount, dilateAmount;
     
     // shot timing GUI elements
