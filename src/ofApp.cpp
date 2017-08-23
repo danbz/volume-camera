@@ -242,7 +242,7 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
     
     ofColor c;
     ofShortColor zGrey = 0;
-   // int pCount =0;
+    // int pCount =0;
     ofMesh mesh;
     
     switch (renderStyle) { //set render style
@@ -258,7 +258,7 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
             mesh.setMode(OF_PRIMITIVE_LINE_STRIP);
             break;
     }
-
+    
     int index =0;
     //int i=0;
     int z = 0;
@@ -267,18 +267,44 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
         for(int x = 0; x < recordWidth; x += recordingStep) {
             zGrey = filteredDepthImage.getPixels()[x+y*recordWidth];
             z = zGrey.r;
-            if(z > frontPlane & z < backPlane) { // clip out pixels
-                v3.set(0,0,0);
-                v3.set((x - (recordWidth/2)) * (perspectiveFactor * z) ,(y -(recordHeight/2)) * (perspectiveFactor *z) , z * depthFactor);
-                mesh.addVertex(v3);
-                if (paintMesh) {
-                    c = (filteredColorImage.getColor(x,y)); // getting RGB from ofShortImage
-                    mesh.addColor(c);
-                }
+            v3.set(0,0,0);
+            if(z > frontPlane & z < backPlane) {
+                //do nothing
+            } else {
+                z= backPlane;
+            } // clip out pixels
+            
+            v3.set((x - (recordWidth/2)) * (perspectiveFactor * z) ,(y -(recordHeight/2)) * (perspectiveFactor *z) , z * depthFactor);
+            
+            if (paintMesh) {
+                c = (filteredColorImage.getColor(x,y)); // getting RGB from ofShortImage
+            } else {
+                float h = ofMap(z, frontPlane, backPlane, 0, 255, true);
+                c.setHsb(h, 255, 255);
             }
+            mesh.addVertex(v3);
+            mesh.addColor(c);
         }
     }
-    triangulateMesh(mesh);
+    
+    int meshW =  recordWidth/recordingStep ;
+    int meshH = recordHeight/recordingStep;
+    for (int y = 0; y<recordHeight-1; y+= recordingStep){
+        for (int x=0; x<recordWidth-1; x+= recordingStep){
+            v3.set(0,0,0);
+            //  if ((mesh.getVertex(x+y*meshW))==v3 or (mesh.getVertex((x+1)+y*(meshW)))==v3 or (mesh.getVertex(x+(y+1)*meshW)==v3)){
+            //   } else {
+            mesh.addIndex(x+y*meshW);               // 0
+            mesh.addIndex((x+1)+y*meshW);           // 1
+            mesh.addIndex(x+(y+1)*meshW);           // 10
+            //}
+            mesh.addIndex((x+1)+y*recordWidth/recordingStep);           // 1
+            mesh.addIndex((x+1)+(y+1)*recordWidth/recordingStep);       // 11
+            mesh.addIndex(x+(y+1)*recordWidth/recordingStep);           // 10
+        }
+    }
+
+   // triangulateMesh(mesh);
     
     if (showNormals) {//set normals for faces
         setNormals( mesh );
@@ -316,16 +342,48 @@ void ofApp::triangulateMesh(ofMesh &mesh){
     ofVec3f v2;
     
     for(int n = 0; n < numofVertices-1-recordWidth/recordingStep; n ++) { // add in culling for zero location points from  mesh & optimise for less of duplicate points
-         v2.set(0,0,0);
-        if ((mesh.getVertex(pCount))!=v2 and (mesh.getVertex(pCount+1))!=v2 and (mesh.getVertex(pCount+1+recordWidth/recordingStep))!=v2){
+        v2.set(0,0,0);
+        if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1))==v2 or (mesh.getVertex(pCount+1+recordWidth/recordingStep))==v2){
+            //do nothing
+        } else {
             mesh.addTriangle(n, n+1, n+1+recordWidth/recordingStep); //even triangles for each mesh square
         }
         
-        if ((mesh.getVertex(pCount))!=v2 and (mesh.getVertex(pCount+1+recordWidth/recordingStep))!=v2 and (mesh.getVertex(pCount+recordWidth/recordingStep))!=v2){
-            mesh.addTriangle(n, n+1+recordWidth/recordingStep, n+recordWidth/recordingStep); //odd triangles for each mesh square
+        
+        if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1+recordWidth/recordingStep))==v2 or (mesh.getVertex(pCount+recordWidth/recordingStep))==v2){
+            //do nothing
+        } else {
+             mesh.addTriangle(n, n+1+recordWidth/recordingStep, n+recordWidth/recordingStep); //odd triangles for each mesh square
         }
         pCount ++;
     }
+
+//
+//    // experiment - other way to join vertices
+//    int w = recordWidth;
+//    int h = recordHeight;
+////    for (int y = 0; y<h-1; y++){
+////        for (int x=0; x<w-1; x++){
+//    for(int y = 0; y < recordHeight-1; y += recordingStep) {
+//        for(int x = 0; x < recordWidth-1; x += recordingStep) {
+////            mesh.addIndex(x+y*w);				// 0
+////            mesh.addIndex((x+1)+y*w);			// 1
+////            mesh.addIndex(x+(y+1)*w);			// 10
+////            
+////            mesh.addIndex((x+1)+y*w);			// 1
+////            mesh.addIndex((x+1)+(y+1)*w);		// 11
+////            mesh.addIndex(x+(y+1)*w);			// 10
+//            
+//         mesh.addTriangle(x+y*w, (x+1)+y*w, x+(y+1)*w); //even triangles for each mesh square
+//            
+//            mesh.addTriangle((x+1)+y*w, (x+1)+(y+1)*w, x+(y+1)*w);
+//        }
+//    }
+    
+    
+    
+    //-------- end experiment
+
 }
 
 //--------------------------------------------------------------
