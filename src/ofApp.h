@@ -3,13 +3,14 @@
 #include "ofMain.h"
 #include "ofxOpenCv.h"
 #include "ofxKinect.h"
+#include "ofxKinectV2.h"
 #include "ofxKinectMeshRecorder.h"
 #include "metaData.h"
 #include "ofxXmlSettings.h"
 #include "ofxImGui.h"
 #include "ofxCv.h"
 
-// VOLCA: experimental volumetric camera/apparatus v0.1
+// VOLCA: experimental volumetric camera/apparatus v0.1a
 // © 2017 Daniel Buzzo. Dan@buzzo.com http://www.buzzo.com
 // https://github.com/danbz/volume-camera
 // all rights reserved
@@ -25,7 +26,10 @@
 // uncomment this to read from two kinects simultaneously
 //#define USE_TWO_KINECTS
 
-class ofApp : public ofBaseApp {
+class ofApp :
+
+public ofBaseApp {
+    
 public:
 	
 	void setup();
@@ -48,6 +52,11 @@ public:
     void drawGui();
     
 	ofxKinect kinect;
+    ofxKinectV2 kinect2;
+    
+    
+    static int recordWidth, recordHeight, recordStep;
+    static bool paintMesh;
     bool kinectConnected;
 	
 #ifdef USE_TWO_KINECTS
@@ -87,20 +96,18 @@ public:
     string generateFileName();
     int frame;
     string saveTo;
-    int recordWidth;
-    int recordHeight;
     
     // GUI  Configuration
 
     bool showGui;
-    bool paintMesh;
+ 
     bool recording;
     bool playing;
     
     ofxImGui::Gui imGui;
     ImVec4 imBackgroundColor;
-    bool show_test_window, blur, erodeImage, dilateImage, bfilterColorImage;
-    int playbackFPS, blobSize, gridSize, backPlane, frontPlane, recordingStep, blurRadius, erodeAmount, dilateAmount;
+    bool show_test_window, blur, erodeImage, dilateImage, bfilterColorImage, showAxes;
+    int playbackFPS, blobSize, gridSize, backPlane, frontPlane, blurRadius, erodeAmount, dilateAmount;
     
     // shot timing GUI elements
     bool singleShot;  // move these into new volca object/class
@@ -137,5 +144,11 @@ public:
     ofSoundPlayer shutterSound;
     ofSoundPlayer errorSound;
     
+    /// use kinect 2
+    ofTexture texDepth;
+    ofTexture texRGB;
+
+     vector < int > indexs;
+    vector < int > tempindexs;
     
 };

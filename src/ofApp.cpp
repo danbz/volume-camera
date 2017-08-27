@@ -44,10 +44,15 @@ void ofApp::setup() {
     //////////////////////////////////////////////////////
     // application / depth sensing configuration
     //////////////////////////////////////////////////////
-    int  kWidth=kinect.width;
-    int kHeight=kinect.height;
-    colorImage.allocate(kWidth, kHeight, OF_IMAGE_COLOR);
-    depthImage.allocate(kWidth, kHeight, OF_IMAGE_GRAYSCALE);
+     recordWidth=kinect.width; //from kinect1
+     recordHeight=kinect.height;
+    
+    // if kinect 2 then
+     recordWidth=512;
+     recordHeight=424; //default width and height for meshes, overridden by Exifmedta data when recorded files are loaded.
+    
+    colorImage.allocate(recordWidth, recordHeight, OF_IMAGE_COLOR);
+    depthImage.allocate(recordWidth, recordHeight, OF_IMAGE_GRAYSCALE);
     
 	bThreshWithOpenCV = true;
 	ofSetFrameRate(120); //make this into a separate variable for playback speed framerate alteration
@@ -65,8 +70,7 @@ void ofApp::setup() {
     frame = 0; //play back frame initialisation
     paused = false;
     renderStyle = 1;
-    recordWidth =640; //default width for recording and playback of meshes, overridden by Exifmedta data when recorded files are loaded.
-    recordHeight=480;
+//
     singleShot = true;
     recordFPS = 25;
 
@@ -98,7 +102,7 @@ void ofApp::setup() {
     blobSize =4;
     backPlane =25000;
     frontPlane=0;
-    recordingStep =1;
+    recordStep =1;
     blur =false;
     blurRadius=10;
     erodeImage=false;
@@ -106,7 +110,7 @@ void ofApp::setup() {
     dilateImage=false;
     dilateAmount=2;
     bfilterColorImage = true;
-    
+    showAxes = true;
     
     if (!startupSound.load("sounds/pad_confirm.wav", false)){
         ofSystemAlertDialog("Unable to load system sounds");
@@ -119,9 +123,30 @@ void ofApp::setup() {
         errorSound.load("sounds/beep_short_off.wav", false);
 
     };
-//    if( !kinect.hasAccelControl()) {
-//        ofSystemAlertDialog("Note: this is a newer Xbox Kinect or Kinect For Windows device, motor / led / accel controls are not currently supported" );
+
+    
+    // add in kinect 2 support
+//    ofxKinectV2 tmp;
+//    vector <ofxKinectV2::KinectDeviceInfo> deviceList = tmp.getDeviceList();
+//    
+//    //allocate for this many devices
+//    kinects.resize(deviceList.size());
+//    texDepth.resize(kinects.size());
+//    texRGB.resize(kinects.size());
+//    
+//    //Note you don't have to use ofxKinectV2 as a shared pointer, but if you want to have it in a vector ( ie: for multuple ) it needs to be.
+//    for(int d = 0; d < kinects.size(); d++){
+//        kinects[d] = shared_ptr <ofxKinectV2> (new ofxKinectV2());
+//        kinects[d]->open(deviceList[d].serial);
+//        //panel.add(kinects[d]->params);
+//        //kinect2 = new ofxKinectV2();
 //    }
+
+          kinect2.open(0);
+    kinectConnected = true;
+    cout << kinect2.params << endl;
+        kinect2.minDistance = 1.0;
+        kinect2.maxDistance = 100000.0;
     
 }
 
@@ -192,6 +217,16 @@ void ofApp::update() {
     easyCam.setNearClip(nearThreshold);
     easyCam.setFarClip(farThreshold);
     
+    // update kinect2
+    kinect2.update();
+    if( kinect2.isFrameNew() ){
+        depthImage.setFromPixels(kinect2.getDepthPixels()) ;
+        colorImage.setFromPixels(kinect2.getRgbPixels());
+        cout << "depth w x h:" << depthImage.getWidth() << " " << depthImage.getHeight()<< endl;
+        cout << "color w x h:" << colorImage.getWidth() << " " << colorImage.getHeight()<< endl;
+        
+    }
+    
     ofSoundUpdate();
     
 #ifdef USE_TWO_KINECTS
@@ -206,6 +241,7 @@ void ofApp::draw() {
     
 	if(bDrawPointCloud) {  // Draw Live rendering - show pointcloud view
 		easyCam.begin();
+        if (showAxes)ofDrawAxis(100);
         if (illuminateScene) light.enable(); //enable world light
         drawAnyPointCloud(); //call new generic point render function
         ofDisableLighting(); //disable world light
@@ -217,6 +253,16 @@ void ofApp::draw() {
         ofxCv::invert(filteredDepthImage,filteredDepthImage);
         filteredDepthImage.update();
         filteredDepthImage.draw(490, 370, 480, 360);
+        
+        // draw kinect 2 to screen
+//        for(int d = 0; d < kinects.size(); d++){
+//            float dwHD = 1920/2;
+//            float dhHD = 1080/2;
+//            float shiftY = 100 + ((10 + texDepth[d].getHeight()) * d);
+//            texDepth[d].draw(200, shiftY);
+//            texRGB[d].draw(210 + texDepth[d].getWidth(), shiftY, dwHD, dhHD);
+//        }
+        
 	}
 #ifdef USE_TWO_KINECTS
     kinect2.draw(420, 320, 400, 300);
@@ -235,6 +281,8 @@ void ofApp::draw() {
     if (showGui) {
         drawGui();
     }
+    
+    
 }
 
 //--------------------------------------------------------------
@@ -244,6 +292,8 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
     ofShortColor zGrey = 0;
     // int pCount =0;
     ofMesh mesh;
+   
+    indexs.clear();
     
     switch (renderStyle) { //set render style
         case 1:
@@ -262,35 +312,41 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
     int index =0;
     //int i=0;
     int z = 0;
+    int ind = 0;
     ofVec3f v3;
-    for(int y = 0; y < recordHeight; y += recordingStep) {
-        for(int x = 0; x < recordWidth; x += recordingStep) {
+    for(int y = 0; y < recordHeight; y += recordStep) {
+        
+       // vector tempindexs;
+       // indexs.push_back(tempindexs);
+        
+        for(int x = 0; x < recordWidth; x += recordStep) {
             zGrey = filteredDepthImage.getPixels()[x+y*recordWidth];
             z = zGrey.r;
             v3.set(0,0,0);
             if(z > frontPlane & z < backPlane) {
-                //do nothing
+              //  indexs[y/recordStep].push_back(ind);
+                ind++;
+                if (paintMesh) {
+                    c = (filteredColorImage.getColor(x,y)); // getting RGB from ofShortImage
+                } else {
+                    float h = ofMap(z, frontPlane, backPlane, 0, 255, true);
+                    c.setHsb(h, 255, 255);
+                }
             } else {
                 z= backPlane;
+                c.setHsb(0, 0, 0);
+             //    indexs[y/recordStep].push_back(-1);
             } // clip out pixels
-            
             v3.set((x - (recordWidth/2)) * (perspectiveFactor * z) ,(y -(recordHeight/2)) * (perspectiveFactor *z) , z * depthFactor);
-            
-            if (paintMesh) {
-                c = (filteredColorImage.getColor(x,y)); // getting RGB from ofShortImage
-            } else {
-                float h = ofMap(z, frontPlane, backPlane, 0, 255, true);
-                c.setHsb(h, 255, 255);
-            }
             mesh.addVertex(v3);
             mesh.addColor(c);
         }
     }
-    
-    int meshW =  recordWidth/recordingStep ;
-    int meshH = recordHeight/recordingStep;
-    for (int y = 0; y<recordHeight-1; y+= recordingStep){
-        for (int x=0; x<recordWidth-1; x+= recordingStep){
+//    
+    int meshW =  recordWidth/recordStep ;
+    int meshH = recordHeight/recordStep;
+    for (int y = 0; y<recordHeight-recordStep; y+= recordStep){
+        for (int x=0; x<recordWidth-recordStep; x+= recordStep){
             v3.set(0,0,0);
             //  if ((mesh.getVertex(x+y*meshW))==v3 or (mesh.getVertex((x+1)+y*(meshW)))==v3 or (mesh.getVertex(x+(y+1)*meshW)==v3)){
             //   } else {
@@ -298,13 +354,28 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
             mesh.addIndex((x+1)+y*meshW);           // 1
             mesh.addIndex(x+(y+1)*meshW);           // 10
             //}
-            mesh.addIndex((x+1)+y*recordWidth/recordingStep);           // 1
-            mesh.addIndex((x+1)+(y+1)*recordWidth/recordingStep);       // 11
-            mesh.addIndex(x+(y+1)*recordWidth/recordingStep);           // 10
+            mesh.addIndex((x+1)+y*meshW);           // 1
+            mesh.addIndex((x+1)+(y+1)*meshW);       // 11
+            mesh.addIndex(x+(y+1)*meshW);           // 10
         }
     }
-
-   // triangulateMesh(mesh);
+    
+        // meshにTriangle追加 from http://blog.rettuce.com/mediaart/kinect_of_delaunay/
+//    int W = int(recordWidth/recordStep);
+//    for (int b = 0; b < recordHeight-recordStep; b+=recordStep){
+//        for (int a = 0; a < recordWidth-1; a+=recordStep)
+//        {
+//            if( (indexs[int(b/recordStep)][int(a/recordStep)]!=-1 && indexs[int(b/recordStep)][int(a/recordStep+1)]!=-1) && (indexs[int(b/recordStep+1)][int(a/recordStep+1)]!=-1 && indexs[int(b/recordStep+1)][int(a/recordStep)]!=-1) ){
+//                
+//                mesh.addTriangle(indexs[int(b/recordStep)][int(a/recordStep)],indexs[int(b/recordStep)][int(a/recordStep+1)],indexs[int(b/recordStep+1)][int(a/recordStep+1)]);
+//                mesh.addTriangle(indexs[int(b/recordStep)][int(a/recordStep)],indexs[int(b/recordStep+1)][int(a/recordStep+1)],indexs[int(b/recordStep+1)][int(a/recordStep)]);
+//            }
+//        }
+//    }
+    
+    ///
+    
+    // triangulateMesh(mesh);
     
     if (showNormals) {//set normals for faces
         setNormals( mesh );
@@ -341,49 +412,21 @@ void ofApp::triangulateMesh(ofMesh &mesh){
     pCount = 0;
     ofVec3f v2;
     
-    for(int n = 0; n < numofVertices-1-recordWidth/recordingStep; n ++) { // add in culling for zero location points from  mesh & optimise for less of duplicate points
+    for(int n = 0; n < numofVertices-1-recordWidth/recordStep; n ++) { // add in culling for zero location points from  mesh & optimise for less of duplicate points
         v2.set(0,0,0);
-        if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1))==v2 or (mesh.getVertex(pCount+1+recordWidth/recordingStep))==v2){
+        if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1))==v2 or (mesh.getVertex(pCount+1+recordWidth/recordStep))==v2){
             //do nothing
         } else {
-            mesh.addTriangle(n, n+1, n+1+recordWidth/recordingStep); //even triangles for each mesh square
+            mesh.addTriangle(n, n+1, n+1+recordWidth/recordStep); //even triangles for each mesh square
         }
         
-        
-        if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1+recordWidth/recordingStep))==v2 or (mesh.getVertex(pCount+recordWidth/recordingStep))==v2){
+        if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1+recordWidth/recordStep))==v2 or (mesh.getVertex(pCount+recordWidth/recordStep))==v2){
             //do nothing
         } else {
-             mesh.addTriangle(n, n+1+recordWidth/recordingStep, n+recordWidth/recordingStep); //odd triangles for each mesh square
+             mesh.addTriangle(n, n+1+recordWidth/recordStep, n+recordWidth/recordStep); //odd triangles for each mesh square
         }
         pCount ++;
     }
-
-//
-//    // experiment - other way to join vertices
-//    int w = recordWidth;
-//    int h = recordHeight;
-////    for (int y = 0; y<h-1; y++){
-////        for (int x=0; x<w-1; x++){
-//    for(int y = 0; y < recordHeight-1; y += recordingStep) {
-//        for(int x = 0; x < recordWidth-1; x += recordingStep) {
-////            mesh.addIndex(x+y*w);				// 0
-////            mesh.addIndex((x+1)+y*w);			// 1
-////            mesh.addIndex(x+(y+1)*w);			// 10
-////            
-////            mesh.addIndex((x+1)+y*w);			// 1
-////            mesh.addIndex((x+1)+(y+1)*w);		// 11
-////            mesh.addIndex(x+(y+1)*w);			// 10
-//            
-//         mesh.addTriangle(x+y*w, (x+1)+y*w, x+(y+1)*w); //even triangles for each mesh square
-//            
-//            mesh.addTriangle((x+1)+y*w, (x+1)+(y+1)*w, x+(y+1)*w);
-//        }
-//    }
-    
-    
-    
-    //-------- end experiment
-
 }
 
 //--------------------------------------------------------------
@@ -508,8 +551,8 @@ void ofApp::saveExifData() { //put some some settings into a file
     exifSettings.setValue("exif:make", "Buzzo");
     exifSettings.setValue("exif:model", "Volca: Experimental volumetric camera/apparatus");
     exifSettings.setValue("exif:orientation", "top left");
-    exifSettings.setValue("exif:ImageWidth", recordWidth/recordingStep);
-    exifSettings.setValue("exif:ImageLength", recordHeight/recordingStep);
+    exifSettings.setValue("exif:ImageWidth", recordWidth/recordStep);
+    exifSettings.setValue("exif:ImageLength", recordHeight/recordStep);
     exifSettings.setValue("exif:DateTimeDigitized", today);
     exifSettings.setValue("exifSensingMethod", "Kinect depth sensor");
     exifSettings.setValue("exifDataProcess", "RGB and Depth Image"); //use to tag whether using old render or new render method.
@@ -532,7 +575,7 @@ bool ofApp::loadExifData(string filePath) { // load exifXML file from the sele t
             recordHeight = exifSettings.getValue("exif:ImageLength", 0);
             //dataProcess =exifSettings.getValue("exifDataProcess", 0); //use to tag whether using old render or new render method.
             
-            recordingStep = 1; // always default to 1:1 step when loading recorded meshes
+            recordStep = 1; // always default to 1:1 step when loading recorded meshes
             string recordingDate = exifSettings.getValue("exif:DateTimeDigitized", "");
             string myXml;
             exifSettings.copyXmlToString(myXml);
@@ -582,7 +625,7 @@ void ofApp::drawGui() {
         if (ImGui::CollapsingHeader("Capture options")) {
             ImGui::Text("Capture parameters");
             ImGui::Checkbox("Single shot capture", &singleShot);
-            ImGui::SliderInt("Mesh play/record spacing",&recordingStep, 1, 20);
+            ImGui::SliderInt("Mesh play/record spacing",&recordStep, 1, 20);
             ImGui::SliderInt("Recording FPS", &recordFPS, 1, 60);
             //ImGui::Text("Playback style");
             ImGui::SliderInt("Playback FPS", &playbackFPS, 1, 120);
@@ -641,7 +684,7 @@ void ofApp::drawGui() {
         }
         
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-        ImGui::Text("Recording mesh size %.1d , %1d", recordWidth/recordingStep , recordHeight/recordingStep);
+        ImGui::Text("Recording mesh size %.1d , %1d", recordWidth/recordStep , recordHeight/recordStep);
         if (playing){
            int totalFrames = meshRecorder.totalFrames;
             ImGui::Text("Playing frame %.1d of %.2d frames in sequence", frameToPlay +1, totalFrames);
