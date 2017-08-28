@@ -34,8 +34,7 @@ private:
     vector < vector<frameData> > recordedMeshData;
     vector <ofImage>  recordedColorImageData;
     vector <ofShortImage> recordedDepthImageData;
-    string fileToload;
-    
+    string fileToload;    
     
     //void loadMeshData(const string _file); // old routine to load mesh from text files
    // int countFrames(const string _file);

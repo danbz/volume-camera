@@ -32,50 +32,48 @@ class ofApp :
 public ofBaseApp {
     
 public:
-	
-	void setup();
-	void update();
-	void draw();
-	void exit();
+    
+    void setup();
+    void update();
+    void draw();
+    void exit();
     void drawAnyPointCloud();
-    //void triangulateMesh(ofMesh &mesh);
     void savePointCloud();
     void writeMetaData();
     void loadRecording();
-	void keyPressed(int key);
+    void keyPressed(int key);
     void keyReleased(int key);
-	void mouseDragged(int x, int y, int button);
-	void mousePressed(int x, int y, int button);
-	void mouseReleased(int x, int y, int button);
-	void mouseEntered(int x, int y);
-	void mouseExited(int x, int y);
-	void windowResized(int w, int h);
+    void mouseDragged(int x, int y, int button);
+    void mousePressed(int x, int y, int button);
+    void mouseReleased(int x, int y, int button);
+    void mouseEntered(int x, int y);
+    void mouseExited(int x, int y);
+    void windowResized(int w, int h);
     void drawGui();
+    int getRecordStep();
     
-	ofxKinect kinect;
+    ofxKinect kinect;
     ofxKinectV2 kinect2;
     
     
-     int recordWidth, recordHeight, recordStep;
-     bool paintMesh;
+    int recordWidth, recordHeight, recordStep;
+    bool paintMesh;
     bool kinectConnected;
-	
-#ifdef USE_TWO_KINECTS
-	ofxKinect kinect2;
-#endif
-        
-    ofImage colorImage, filteredColorImage;
     
+#ifdef USE_TWO_KINECTS
+    ofxKinect kinect2;
+#endif
+    
+    ofImage colorImage, filteredColorImage;
     ofShortImage depthImage, filteredDepthImage;
     ofShortPixels depthPixels, filteredDepthPixels;
     
-	
-	bool bThreshWithOpenCV;
-	bool bDrawPointCloud;
-	float nearThreshold;
-	float farThreshold;
-	int angle;
-	
+    bool bThreshWithOpenCV;
+    bool bDrawPointCloud;
+    float nearThreshold;
+    float farThreshold;
+    int angle;
+    
     ofEasyCam easyCam; 	// used for viewing the point cloud
     
     // with elements of kinect recorder hack from code by Pelayo MŽndez   https://github.com/pelayomendez
@@ -99,9 +97,8 @@ public:
     string saveTo;
     
     // GUI  Configuration
-
+    
     bool showGui;
- 
     bool recording;
     bool playing;
     
@@ -115,16 +112,11 @@ public:
     int recordFPS;
     
     // Rendering Reproduction
-    
     ofMesh mesh;
     ofLight light;
     ofxKinectMeshRecorder meshRecorder;
+    triangulateMesh volcaMesh;
     
-    triangulateMesh triMesh;
-    
-    //Universal function which sets normals for the triangle mesh
-    void setNormals( ofMesh &mesh ); // move this into meshrecorder // render section?
-
     int frameToPlay;
     int renderStyle;
     bool showNormals;
@@ -136,11 +128,10 @@ public:
     // XML exif data save and load
     
     ofxXmlSettings exifSettings;
-     
+    
     void saveExifData(); // move these into meshRecorder
     bool loadExifData( string filePath);
     string exifModel;
-    
     
     //GUI sounds
     ofSoundPlayer startupSound;
@@ -150,8 +141,11 @@ public:
     /// use kinect 2
     ofTexture texDepth;
     ofTexture texRGB;
-
-     vector < int > indexs;
+    
+    vector < int > indexs;
     vector < int > tempindexs;
+    
+    
+  
     
 };

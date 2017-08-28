@@ -288,9 +288,8 @@ void ofApp::draw() {
 //--------------------------------------------------------------
 void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rather than direct from kinect  - 28-7-17
     
-    ofColor c;
-    ofShortColor zGrey = 0;
-    // int pCount =0;
+//    ofColor c;
+//    ofShortColor zGrey = 0;
     ofMesh mesh;
    
     indexs.clear();
@@ -309,10 +308,8 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
             break;
     }
     
-    triMesh.makeMesh(filteredDepthImage, filteredColorImage, mesh);
+    volcaMesh.makeMesh(filteredDepthImage, filteredColorImage, mesh);
     
-    
-    //    //////// replace with triangulatemesh.cpp
 //    int index =0;
 //    //int i=0;
 //    int z = 0;
@@ -365,6 +362,8 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
 //    }
     
     // --- replaced with triangualte mesh .cpp
+    
+    
         // meshにTriangle追加 from http://blog.rettuce.com/mediaart/kinect_of_delaunay/
 //    int W = int(recordWidth/recordStep);
 //    for (int b = 0; b < recordHeight-recordStep; b+=recordStep){
@@ -377,13 +376,10 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
 //            }
 //        }
 //    }
-    
-    ///
-    
-    // triangulateMesh(mesh);
+
     
     if (showNormals) {//set normals for faces
-        setNormals( mesh );
+        volcaMesh.setNormals( mesh );
     }
     glPointSize(blobSize);
     //glEnable(GL_POINT_SMOOTH); // use circular points instead of square points
@@ -406,64 +402,6 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
     glDisable(GL_DEPTH_TEST);
     //mesh.clear();
     ofPopMatrix();
-}
-
-//--------------------------------------------------------------
-
-//void ofApp::triangulateMesh(ofMesh &mesh){
-//    
-//    int pCount =0;
-//    int numofVertices = mesh.getNumVertices(); //----- then generate triangles for mesh -- improve to clip edge triangles that wrap round....
-//    pCount = 0;
-//    ofVec3f v2;
-//    
-//    for(int n = 0; n < numofVertices-1-recordWidth/recordStep; n ++) { // add in culling for zero location points from  mesh & optimise for less of duplicate points
-//        v2.set(0,0,0);
-//        if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1))==v2 or (mesh.getVertex(pCount+1+recordWidth/recordStep))==v2){
-//            //do nothing
-//        } else {
-//            mesh.addTriangle(n, n+1, n+1+recordWidth/recordStep); //even triangles for each mesh square
-//        }
-//        
-//        if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1+recordWidth/recordStep))==v2 or (mesh.getVertex(pCount+recordWidth/recordStep))==v2){
-//            //do nothing
-//        } else {
-//             mesh.addTriangle(n, n+1+recordWidth/recordStep, n+recordWidth/recordStep); //odd triangles for each mesh square
-//        }
-//        pCount ++;
-//    }
-
-
-//}
-
-//--------------------------------------------------------------
-
-void ofApp::setNormals( ofMesh &mesh ){ //Universal function which sets normals for the triangle mesh
-    int nV = mesh.getNumVertices();     //The number of the vertices
-    int nT = mesh.getNumIndices() / 3;     //The number of the triangles
-
-    vector<ofPoint> norm( nV ); //Array for the normals
-    //Scan all the triangles. For each triangle add its normal to norm's vectors of triangle's vertices
-    for (int t=0; t<nT; t++) {
-        //Get indices of the triangle t
-        int i1 = mesh.getIndex( 3 * t );
-        int i2 = mesh.getIndex( 3 * t + 1 );
-        int i3 = mesh.getIndex( 3 * t + 2 );
-        //Get vertices of the triangle
-        const ofPoint &v1 = mesh.getVertex( i1 );
-        const ofPoint &v2 = mesh.getVertex( i2 );
-        const ofPoint &v3 = mesh.getVertex( i3 );
-        //Compute the triangle's normal
-        ofPoint dir = ( (v2 - v1).crossed( v3 - v1 ) ).normalized();
-        norm[ i1 ] += dir;  //Accumulate it to norm array for i1, i2, i3
-        norm[ i2 ] += dir;
-        norm[ i3 ] += dir;
-    }
-    for (int i=0; i<nV; i++) {     //Normalize the normal's length
-        norm[i].normalize();
-    }
-    mesh.clearNormals();     //Set the normals to mesh
-    mesh.addNormals( norm );
 }
 
 //------------------------------------------------------------
@@ -499,6 +437,7 @@ void ofApp::loadRecording() {
         
     }
 }
+
 //--------------------------------------------------------------
 
 string ofApp::generateFileName() {
@@ -602,6 +541,13 @@ bool ofApp::loadExifData(string filePath) { // load exifXML file from the sele t
 }
 
 //--------------------------------------------------------------
+
+int ofApp::getRecordStep() {
+    return recordStep;
+}
+
+//--------------------------------------------------------------
+
 
 void ofApp::exit() {
     
@@ -913,3 +859,5 @@ void ofApp::windowResized(int w, int h)
 {
 
 }
+
+
