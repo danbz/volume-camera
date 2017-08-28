@@ -11,7 +11,6 @@
 
 #include <stdio.h>
 #include "ofMain.h"
-#include "ofApp.h"
 
 
 #endif /* triangulateMesh_hpp */
@@ -21,8 +20,6 @@ class triangulateMesh
     public :
     
     void setup();
-    void makeMesh( ofShortImage* filteredDepthImage, ofImage* filteredColorImage);
+    void makeMesh( ofShortImage &filteredDepthImage, ofImage &filteredColorImage, ofMesh &mesh);
     
-    
-    ofMesh mesh;
 };

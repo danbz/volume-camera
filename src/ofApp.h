@@ -5,6 +5,7 @@
 #include "ofxKinect.h"
 #include "ofxKinectV2.h"
 #include "ofxKinectMeshRecorder.h"
+#include "triangulateMesh.h"
 #include "metaData.h"
 #include "ofxXmlSettings.h"
 #include "ofxImGui.h"
@@ -37,7 +38,7 @@ public:
 	void draw();
 	void exit();
     void drawAnyPointCloud();
-    void triangulateMesh(ofMesh &mesh);
+    //void triangulateMesh(ofMesh &mesh);
     void savePointCloud();
     void writeMetaData();
     void loadRecording();
@@ -55,8 +56,8 @@ public:
     ofxKinectV2 kinect2;
     
     
-    static int recordWidth, recordHeight, recordStep;
-    static bool paintMesh;
+     int recordWidth, recordHeight, recordStep;
+     bool paintMesh;
     bool kinectConnected;
 	
 #ifdef USE_TWO_KINECTS
@@ -118,6 +119,8 @@ public:
     ofMesh mesh;
     ofLight light;
     ofxKinectMeshRecorder meshRecorder;
+    
+    triangulateMesh triMesh;
     
     //Universal function which sets normals for the triangle mesh
     void setNormals( ofMesh &mesh ); // move this into meshrecorder // render section?

@@ -309,57 +309,62 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
             break;
     }
     
-    int index =0;
-    //int i=0;
-    int z = 0;
-    int ind = 0;
-    ofVec3f v3;
-    for(int y = 0; y < recordHeight; y += recordStep) {
-        
-       // vector tempindexs;
-       // indexs.push_back(tempindexs);
-        
-        for(int x = 0; x < recordWidth; x += recordStep) {
-            zGrey = filteredDepthImage.getPixels()[x+y*recordWidth];
-            z = zGrey.r;
-            v3.set(0,0,0);
-            if(z > frontPlane & z < backPlane) {
-              //  indexs[y/recordStep].push_back(ind);
-                ind++;
-                if (paintMesh) {
-                    c = (filteredColorImage.getColor(x,y)); // getting RGB from ofShortImage
-                } else {
-                    float h = ofMap(z, frontPlane, backPlane, 0, 255, true);
-                    c.setHsb(h, 255, 255);
-                }
-            } else {
-                z= backPlane;
-                c.setHsb(0, 0, 0);
-             //    indexs[y/recordStep].push_back(-1);
-            } // clip out pixels
-            v3.set((x - (recordWidth/2)) * (perspectiveFactor * z) ,(y -(recordHeight/2)) * (perspectiveFactor *z) , z * depthFactor);
-            mesh.addVertex(v3);
-            mesh.addColor(c);
-        }
-    }
-//    
-    int meshW =  recordWidth/recordStep ;
-    int meshH = recordHeight/recordStep;
-    for (int y = 0; y<recordHeight-recordStep; y+= recordStep){
-        for (int x=0; x<recordWidth-recordStep; x+= recordStep){
-            v3.set(0,0,0);
-            //  if ((mesh.getVertex(x+y*meshW))==v3 or (mesh.getVertex((x+1)+y*(meshW)))==v3 or (mesh.getVertex(x+(y+1)*meshW)==v3)){
-            //   } else {
-            mesh.addIndex(x+y*meshW);               // 0
-            mesh.addIndex((x+1)+y*meshW);           // 1
-            mesh.addIndex(x+(y+1)*meshW);           // 10
-            //}
-            mesh.addIndex((x+1)+y*meshW);           // 1
-            mesh.addIndex((x+1)+(y+1)*meshW);       // 11
-            mesh.addIndex(x+(y+1)*meshW);           // 10
-        }
-    }
+    triMesh.makeMesh(filteredDepthImage, filteredColorImage, mesh);
     
+    
+    //    //////// replace with triangulatemesh.cpp
+//    int index =0;
+//    //int i=0;
+//    int z = 0;
+//    int ind = 0;
+//    ofVec3f v3;
+//    for(int y = 0; y < recordHeight; y += recordStep) {
+//        
+//       // vector tempindexs;
+//       // indexs.push_back(tempindexs);
+//        
+//        for(int x = 0; x < recordWidth; x += recordStep) {
+//            zGrey = filteredDepthImage.getPixels()[x+y*recordWidth];
+//            z = zGrey.r;
+//            v3.set(0,0,0);
+//            if(z > frontPlane & z < backPlane) {
+//              //  indexs[y/recordStep].push_back(ind);
+//                ind++;
+//                if (paintMesh) {
+//                    c = (filteredColorImage.getColor(x,y)); // getting RGB from ofShortImage
+//                } else {
+//                    float h = ofMap(z, frontPlane, backPlane, 0, 255, true);
+//                    c.setHsb(h, 255, 255);
+//                }
+//            } else {
+//                z= backPlane;
+//                c.setHsb(0, 0, 0);
+//             //    indexs[y/recordStep].push_back(-1);
+//            } // clip out pixels
+//            v3.set((x - (recordWidth/2)) * (perspectiveFactor * z) ,(y -(recordHeight/2)) * (perspectiveFactor *z) , z * depthFactor);
+//            mesh.addVertex(v3);
+//            mesh.addColor(c);
+//        }
+//    }
+////    
+//    int meshW =  recordWidth/recordStep ;
+//    int meshH = recordHeight/recordStep;
+//    for (int y = 0; y<recordHeight-recordStep; y+= recordStep){
+//        for (int x=0; x<recordWidth-recordStep; x+= recordStep){
+//            v3.set(0,0,0);
+//            //  if ((mesh.getVertex(x+y*meshW))==v3 or (mesh.getVertex((x+1)+y*(meshW)))==v3 or (mesh.getVertex(x+(y+1)*meshW)==v3)){
+//            //   } else {
+//            mesh.addIndex(x+y*meshW);               // 0
+//            mesh.addIndex((x+1)+y*meshW);           // 1
+//            mesh.addIndex(x+(y+1)*meshW);           // 10
+//            //}
+//            mesh.addIndex((x+1)+y*meshW);           // 1
+//            mesh.addIndex((x+1)+(y+1)*meshW);       // 11
+//            mesh.addIndex(x+(y+1)*meshW);           // 10
+//        }
+//    }
+    
+    // --- replaced with triangualte mesh .cpp
         // meshにTriangle追加 from http://blog.rettuce.com/mediaart/kinect_of_delaunay/
 //    int W = int(recordWidth/recordStep);
 //    for (int b = 0; b < recordHeight-recordStep; b+=recordStep){
@@ -405,29 +410,31 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
 
 //--------------------------------------------------------------
 
-void ofApp::triangulateMesh(ofMesh &mesh){
-    
-    int pCount =0;
-    int numofVertices = mesh.getNumVertices(); //----- then generate triangles for mesh -- improve to clip edge triangles that wrap round....
-    pCount = 0;
-    ofVec3f v2;
-    
-    for(int n = 0; n < numofVertices-1-recordWidth/recordStep; n ++) { // add in culling for zero location points from  mesh & optimise for less of duplicate points
-        v2.set(0,0,0);
-        if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1))==v2 or (mesh.getVertex(pCount+1+recordWidth/recordStep))==v2){
-            //do nothing
-        } else {
-            mesh.addTriangle(n, n+1, n+1+recordWidth/recordStep); //even triangles for each mesh square
-        }
-        
-        if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1+recordWidth/recordStep))==v2 or (mesh.getVertex(pCount+recordWidth/recordStep))==v2){
-            //do nothing
-        } else {
-             mesh.addTriangle(n, n+1+recordWidth/recordStep, n+recordWidth/recordStep); //odd triangles for each mesh square
-        }
-        pCount ++;
-    }
-}
+//void ofApp::triangulateMesh(ofMesh &mesh){
+//    
+//    int pCount =0;
+//    int numofVertices = mesh.getNumVertices(); //----- then generate triangles for mesh -- improve to clip edge triangles that wrap round....
+//    pCount = 0;
+//    ofVec3f v2;
+//    
+//    for(int n = 0; n < numofVertices-1-recordWidth/recordStep; n ++) { // add in culling for zero location points from  mesh & optimise for less of duplicate points
+//        v2.set(0,0,0);
+//        if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1))==v2 or (mesh.getVertex(pCount+1+recordWidth/recordStep))==v2){
+//            //do nothing
+//        } else {
+//            mesh.addTriangle(n, n+1, n+1+recordWidth/recordStep); //even triangles for each mesh square
+//        }
+//        
+//        if ((mesh.getVertex(pCount))==v2 or (mesh.getVertex(pCount+1+recordWidth/recordStep))==v2 or (mesh.getVertex(pCount+recordWidth/recordStep))==v2){
+//            //do nothing
+//        } else {
+//             mesh.addTriangle(n, n+1+recordWidth/recordStep, n+recordWidth/recordStep); //odd triangles for each mesh square
+//        }
+//        pCount ++;
+//    }
+
+
+//}
 
 //--------------------------------------------------------------
 
