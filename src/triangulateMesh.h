@@ -13,6 +13,7 @@
 #include "ofMain.h"
 
 
+
 #endif /* triangulateMesh_hpp */
 
 class triangulateMesh
@@ -25,7 +26,7 @@ class triangulateMesh
     };
     
     void setup();
-    void makeMesh( ofShortImage &filteredDepthImage, ofImage &filteredColorImage, ofMesh &mesh );
+    void makeMesh( ofShortImage &filteredDepthImage, ofImage &filteredColorImage, ofMesh &mesh);
     void setNormals( ofMesh &mesh);
     
     ~triangulateMesh()
