@@ -1,8 +1,8 @@
 //
-//  triangulateMesh.cpp
-//  volume-camera
+// triangulateMesh.cpp
+// volca project
 //
-//  Created by Dan Buzzo on 24/08/2017.
+// Created by Dan Buzzo on 24/08/2017.
 // take input RGB & greycale depth images and create triangulated point cloud mesh
 //
 
@@ -23,7 +23,7 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
     // int pCount =0;
     //ofMesh mesh;
     
-   // int step = ofApp.getRecordStep();
+   //int step = volca.getRecordStep();
     int step =1;
    //int width = ofApp::recordWidth;
   // int height = ofApp::recordHeight;
@@ -62,7 +62,7 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
                 //    indexs[y/recordStep].push_back(-1);
             //} // clip out pixels
             //v3.set((x - (width/2)) * (perspectiveFactor * z) ,(y -(height/2)) * (perspectiveFactor *z) , z * depthFactor);
-            v3.set((x - (width/2))  ,(y -(height/2)) , z );
+            v3.set((x - (width/2))  ,(y -(height/2)) , z/10.0 ); 
 
             mesh.addVertex(v3);
             mesh.addColor(c);
@@ -85,6 +85,20 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
             mesh.addIndex(x+(y+1)*meshW);           // 10
         }
     }
+    
+    // example japanese code to cull non valid points and remove from triangualted mesh...
+    // mesh„Å´TriangleËøΩÂä† from http://blog.rettuce.com/mediaart/kinect_of_delaunay/
+    //    int W = int(recordWidth/recordStep);
+    //    for (int b = 0; b < recordHeight-recordStep; b+=recordStep){
+    //        for (int a = 0; a < recordWidth-1; a+=recordStep)
+    //        {
+    //            if( (indexs[int(b/recordStep)][int(a/recordStep)]!=-1 && indexs[int(b/recordStep)][int(a/recordStep+1)]!=-1) && (indexs[int(b/recordStep+1)][int(a/recordStep+1)]!=-1 && indexs[int(b/recordStep+1)][int(a/recordStep)]!=-1) ){
+    //
+    //                mesh.addTriangle(indexs[int(b/recordStep)][int(a/recordStep)],indexs[int(b/recordStep)][int(a/recordStep+1)],indexs[int(b/recordStep+1)][int(a/recordStep+1)]);
+    //                mesh.addTriangle(indexs[int(b/recordStep)][int(a/recordStep)],indexs[int(b/recordStep+1)][int(a/recordStep+1)],indexs[int(b/recordStep+1)][int(a/recordStep)]);
+    //            }
+    //        }
+    //    }
     
 };
 

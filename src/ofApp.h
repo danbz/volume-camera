@@ -55,9 +55,6 @@ public:
     ofxKinect kinect;
     ofxKinectV2 kinect2;
     
-    
-    int recordWidth, recordHeight, recordStep;
-    bool paintMesh;
     bool kinectConnected;
     
 #ifdef USE_TWO_KINECTS
@@ -78,55 +75,46 @@ public:
     
     // with elements of kinect recorder hack from code by Pelayo MŽndez   https://github.com/pelayomendez
     
-    typedef struct {
-        float x;
-        float y;
-        float z;
-        float w;
-    } pointData;
+    struct volca { // central volca object
+        bool recording;
+        bool playing;
+        bool paused;
+        bool singleShot;
+        int recordFPS;
+        int recordWidth, recordHeight, recordStep;
+    } volca;
     
-    typedef struct {
-        int x;
-        int y;
-        int z;
-    } colorData;
-    
+    struct vRenderer { // rendering data for volca object
+        bool showGui;
+        bool paintMesh;
+        int frameToPlay;
+        int renderStyle;
+        bool showNormals;
+        bool illuminateScene;
+        bool renderFlatQuads;
+        bool showAxes;
+        float depthFactor;
+        float perspectiveFactor;
+    } volcaRenderer;
+        
     ofDirectory dirHelper;
     string generateFileName();
     int frame;
     string saveTo;
     
-    // GUI  Configuration
-    
-    bool showGui;
-    bool recording;
-    bool playing;
-    
+    // GUI Configuration
     ofxImGui::Gui imGui;
     ImVec4 imBackgroundColor;
-    bool show_test_window, blur, erodeImage, dilateImage, bfilterColorImage, showAxes;
+    bool show_test_window, blur, erodeImage, dilateImage, bfilterColorImage ;
     int playbackFPS, blobSize, gridSize, backPlane, frontPlane, blurRadius, erodeAmount, dilateAmount;
-    
-    // shot timing GUI elements
-    bool singleShot;  // move these into new volca object/class
-    int recordFPS;
     
     // Rendering Reproduction
     ofMesh mesh;
+    ofxKinectMeshRecorder volcaRecorder;
+    triangulateMesh volcaMeshMaker;
     ofLight light;
-    ofxKinectMeshRecorder meshRecorder;
-    triangulateMesh volcaMesh;
-    
-    int frameToPlay;
-    int renderStyle;
-    bool showNormals;
-    bool illuminateScene;
-    bool renderFlatQuads;
-    float depthFactor;
-    float perspectiveFactor;
     
     // XML exif data save and load
-    
     ofxXmlSettings exifSettings;
     
     void saveExifData(); // move these into meshRecorder
@@ -144,8 +132,5 @@ public:
     
     vector < int > indexs;
     vector < int > tempindexs;
-    
-    
-  
     
 };

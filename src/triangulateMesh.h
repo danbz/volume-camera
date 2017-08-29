@@ -19,8 +19,18 @@ class triangulateMesh
 {
     public :
     
+    triangulateMesh()
+    {
+        
+    };
+    
     void setup();
-    void makeMesh( ofShortImage &filteredDepthImage, ofImage &filteredColorImage, ofMesh &mesh);
+    void makeMesh( ofShortImage &filteredDepthImage, ofImage &filteredColorImage, ofMesh &mesh );
     void setNormals( ofMesh &mesh);
+    
+    ~triangulateMesh()
+    {
+        
+    };
     
 };
