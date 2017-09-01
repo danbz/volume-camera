@@ -11,6 +11,8 @@
 #include "ofxImGui.h"
 #include "ofxCv.h"
 
+
+
 // VOLCA: experimental volumetric camera/apparatus v0.1a
 // © 2017 Daniel Buzzo. Dan@buzzo.com http://www.buzzo.com
 // https://github.com/danbz/volume-camera
@@ -26,6 +28,8 @@
 
 // uncomment this to read from two kinects simultaneously
 //#define USE_TWO_KINECTS
+
+
 
 class ofApp :
 
@@ -96,7 +100,7 @@ public:
         float depthFactor;
         float perspectiveFactor;
     } volcaRenderer;
-        
+    
     ofDirectory dirHelper;
     string generateFileName();
     int frame;
@@ -134,3 +138,6 @@ public:
     vector < int > tempindexs;
     
 };
+
+
+

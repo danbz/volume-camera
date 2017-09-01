@@ -7,6 +7,9 @@
 //
 
 #include "triangulateMesh.h"
+
+
+
 //--------------------------------------------------------------
 
 void triangulateMesh::setup(){
@@ -16,7 +19,7 @@ void triangulateMesh::setup(){
 
 //--------------------------------------------------------------
 
-void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filteredColorImage, ofMesh &mesh ){
+void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filteredColorImage, ofMesh &mesh, float &depthFactor, float &perspectiveFactor ){
     
     ofColor c;
     ofShortColor zGrey = 0;
@@ -61,8 +64,8 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
             //    c.setHsb(0, 0, 0);
                 //    indexs[y/recordStep].push_back(-1);
             //} // clip out pixels
-            //v3.set((x - (width/2)) * (perspectiveFactor * z) ,(y -(height/2)) * (perspectiveFactor *z) , z * depthFactor);
-            v3.set((x - (width/2))  ,(y -(height/2)) , z/10.0 ); 
+            v3.set((x - (width/2)) * (perspectiveFactor * z) ,(y -(height/2)) * (perspectiveFactor *z) , z * depthFactor);
+            //v3.set((x - (width/2)*0.1)  ,(y -(height/2)*0.1) , z*0.1 );
 
             mesh.addVertex(v3);
             mesh.addColor(c);

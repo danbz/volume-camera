@@ -450,6 +450,7 @@
 		F070AF5E3926EB2CB7A15D1B /* params.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = params.h; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/flann/params.h; sourceTree = SOURCE_ROOT; };
 		F0E2047B4D03D5151730B52B /* Gui.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = Gui.cpp; path = ../../../addons/ofxImGui/src/Gui.cpp; sourceTree = SOURCE_ROOT; };
 		F0FCA82EC2A69AEB3BA6AF38 /* filters.hpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = filters.hpp; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/gpu/device/filters.hpp; sourceTree = SOURCE_ROOT; };
+		F28699101F5971D00047A97B /* dataStructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dataStructures.h; sourceTree = "<group>"; };
 		F29FB6621F4EF2D00035B6B2 /* triangulateMesh.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = triangulateMesh.cpp; sourceTree = "<group>"; };
 		F29FB6631F4EF2D00035B6B2 /* triangulateMesh.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = triangulateMesh.h; sourceTree = "<group>"; };
 		F2F75C2513DDF24A79A894DF /* warpers.hpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = warpers.hpp; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/stitching/warpers.hpp; sourceTree = SOURCE_ROOT; };
@@ -1402,6 +1403,7 @@
 			isa = PBXGroup;
 			children = (
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
+				F28699101F5971D00047A97B /* dataStructures.h */,
 				E4B69E1E0A3A1BDC003C02F2 /* ofApp.cpp */,
 				E4B69E1F0A3A1BDC003C02F2 /* ofApp.h */,
 				F29FB6621F4EF2D00035B6B2 /* triangulateMesh.cpp */,

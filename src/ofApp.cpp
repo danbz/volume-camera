@@ -1,5 +1,7 @@
 #include "ofApp.h"
 
+
+
 // VOLCA: experimental volumetric camera/apparatus v0.1
 // © 2017 Daniel Buzzo. Dan@buzzo.com http://www.buzzo.com
 // https://github.com/danbz/volume-camera
@@ -17,7 +19,7 @@ uint64 timeNow =ofGetSystemTime(); // for timing elapsed time since past frame f
 
 //----------------------------------------------------------------
 void ofApp::setup() {
-	ofSetLogLevel(OF_LOG_VERBOSE);
+    ofSetLogLevel(OF_LOG_VERBOSE);
 	
     kinectConnected = false;
 	kinect.setRegistration(true); // enable depth->video image calibration
@@ -304,7 +306,7 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
             break;
     }
     
-    volcaMeshMaker.makeMesh(filteredDepthImage, filteredColorImage, mesh);
+    volcaMeshMaker.makeMesh(filteredDepthImage, filteredColorImage, mesh, volcaRenderer.depthFactor, volcaRenderer.perspectiveFactor);
     
     if (volcaRenderer.showNormals) {//set normals for faces
         volcaMeshMaker.setNormals( mesh );
@@ -313,7 +315,7 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
     //glEnable(GL_POINT_SMOOTH); // use circular points instead of square points
     ofPushMatrix();
     ofScale(1, -1, -1);  // the projected points are 'upside down' and 'backwards'
-    ofTranslate(0, 0, 50); // center the points a bit
+    ofTranslate(0, 0, -500); // center the points a bit
     glEnable(GL_DEPTH_TEST);
     //glDepthRange(0, 20000);//experiment with gldepth range
     //gluPerspective(57.0, 1.5, 0.1, 20000.0); // fov,
@@ -516,8 +518,8 @@ void ofApp::drawGui() {
         }
         
         if (ImGui::CollapsingHeader("Render options")) {
-           // ImGui::SliderFloat("Depth factor", &depthFactor, 0.05, 5.0);
-            //ImGui::SliderFloat("Perspective factor", &perspectiveFactor, 0.0001, 0.1);
+            ImGui::SliderFloat("Depth factor", &volcaRenderer.depthFactor, 0.05, 5.0);
+            ImGui::SliderFloat("Perspective factor", &volcaRenderer.perspectiveFactor, 0.0001, 0.1);
             
             ImGui::Text("Render style");
             ImGui::RadioButton("cloud", &volcaRenderer.renderStyle, 1); ImGui::SameLine();
