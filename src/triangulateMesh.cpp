@@ -9,7 +9,6 @@
 #include "triangulateMesh.h"
 
 
-
 //--------------------------------------------------------------
 
 void triangulateMesh::setup(){
@@ -35,7 +34,6 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
     int height = filteredDepthImage.getHeight();
     
     bool paintMesh = true;
-    
     int index =0;
     //int i=0;
     int z = 0;
@@ -64,8 +62,9 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
             //    c.setHsb(0, 0, 0);
                 //    indexs[y/recordStep].push_back(-1);
             //} // clip out pixels
+           
             v3.set((x - (width/2)) * (perspectiveFactor * z) ,(y -(height/2)) * (perspectiveFactor *z) , z * depthFactor);
-            //v3.set((x - (width/2)*0.1)  ,(y -(height/2)*0.1) , z*0.1 );
+           // v3.set((x - (width/2)*0.002)  ,(y -(height/2)*0.002) , z*1.0 );
 
             mesh.addVertex(v3);
             mesh.addColor(c);
