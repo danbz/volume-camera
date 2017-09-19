@@ -22,23 +22,37 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
     
     ofColor c;
     ofShortColor zGrey = 0;
-    // int pCount =0;
-    //ofMesh mesh;
     
-   //int step = volca.getRecordStep();
+    //int step = volca.getRecordStep();
+    //int width = ofApp::recordWidth;
+    // int height = ofApp::recordHeight;
+    
     int step =1;
-   //int width = ofApp::recordWidth;
-  // int height = ofApp::recordHeight;
-    
     int width = filteredDepthImage.getWidth();
     int height = filteredDepthImage.getHeight();
+    bool paintMesh = true;
     
-    bool paintMesh = false;
     int index =0;
-    //int i=0;
-    int z = 0;
+    int z = 0, minBrightness =0, minBrightnessX=0, minBrightnessY = 0;
     int ind = 0;
     ofVec3f v3;
+    
+    // find farthest pixel
+    for (int y=0; y<height; y+= step) {
+        for(int x=0; x<width; x+= step) {
+            zGrey = filteredDepthImage.getPixels()[x+y*width];
+            z = zGrey.r;
+            
+            if (z)
+            if (z > minBrightness){
+                minBrightness = z;
+                minBrightnessX = x;
+                minBrightnessY = y;
+            }
+        }
+    }
+    
+    
     for(int y = 0; y < height; y += step) {
         
         // vector tempindexs;
@@ -47,27 +61,30 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
         for(int x = 0; x < width; x +=  step) {
             zGrey = filteredDepthImage.getPixels()[x+y*width];
             z = zGrey.r;
+            
             v3.set(0,0,0);
-           // if(z > frontPlane & z < backPlane) {
+            if (z==0) z = minBrightness; //find and set to furthest (darkest pixel) data
+                // if(z > frontPlane & z < backPlane) {
                 //  indexs[y/recordStep].push_back(ind);
-           //     ind++;
-            if (paintMesh) {
+                //     ind++;
+                if (paintMesh) {
                     c = (filteredColorImage.getColor(x,y)); // getting RGB from ofShortImage
                 } else {
                     float h = ofMap(z, 0, 65535, 0, 255, true);
                     c.setHsb(h, 255, 255);
                 }
-            //} else {
-           //     z= backPlane;
-            //    c.setHsb(0, 0, 0);
+                //} else {
+                //     z= backPlane;
+                //    c.setHsb(0, 0, 0);
                 //    indexs[y/recordStep].push_back(-1);
-            //} // clip out pixels
-           
-            v3.set((x - (width/2)) * (perspectiveFactor * z) ,(y -(height/2)) * (perspectiveFactor *z) , z * depthFactor);
-           // v3.set((x - (width/2)*0.002)  ,(y -(height/2)*0.002) , z*1.0 );
-
-            mesh.addVertex(v3);
-            mesh.addColor(c);
+                //} // clip out pixels
+                
+                v3.set((x - (width/2)) * (perspectiveFactor * z) ,(y -(height/2)) * (perspectiveFactor *z) , z * depthFactor);
+                // v3.set((x - (width/2)*0.002)  ,(y -(height/2)*0.002) , z*1.0 );
+                
+                mesh.addVertex(v3);
+                mesh.addColor(c);
+           // }
         }
     }
     //
