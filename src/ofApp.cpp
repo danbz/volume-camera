@@ -169,8 +169,10 @@ void ofApp::update() {
     if(volca.playing) { // if we are in playback mode
         if(!volca.paused){ // and have not paused the playback
             if (timeNow < (ofGetSystemTime() - (1000/playbackFPS))) { // check playback FPS
-                volcaRenderer.frameToPlay += 1; // increment the frame we are playing
-                timeNow = ofGetSystemTime();
+                volcaRenderer.frameToPlay += 1; // increment the f
+                
+                
+
             }
             if(volcaRenderer.frameToPlay >= volcaRecorder.totalFrames) volcaRenderer.frameToPlay = 0; //or start at the beginning of the recorded loop
         }
@@ -187,7 +189,10 @@ void ofApp::update() {
     
     if (bfilterColorImage) { //process depth or RGB image holders //re-write as pipeline chain rather than discrete operations
         if (blur){
-            ofxCv::GaussianBlur(filteredColorImage, blurRadius);
+//            ofxCv::GaussianBlur(filteredColorImage, blurRadius);
+            ofxCv::medianBlur
+            (filteredColorImage, blurRadius);
+
         }
         if (erodeImage) {
             ofxCv::erode(colorImage, filteredColorImage, erodeAmount);
@@ -280,7 +285,10 @@ void ofApp::draw() {
     
     if (volcaRenderer.showGui) {
         drawGui();
+        drawScreenOverlay();
     }
+    
+    
 }
 
 //--------------------------------------------------------------
@@ -440,7 +448,7 @@ void ofApp::saveExifData() { //put some some settings into a file
 
 //-------------------------------------------------------------------
 
-bool ofApp::loadExifData(string filePath) { // load exifXML file from the sele ted folder and get the values out
+bool ofApp::loadExifData(string filePath) { // load exifXML file from the selected folder and get the values out
     
     if (exifSettings.loadFile(filePath + "/exifSettings.xml")){
         exifModel = exifSettings.getValue("exif:model", "");
@@ -452,7 +460,7 @@ bool ofApp::loadExifData(string filePath) { // load exifXML file from the sele t
             //dataProcess =exifSettings.getValue("exifDataProcess", 0); //use to tag whether using old render or new render method.
             
             volca.recordStep = 1; // always default to 1:1 step when loading recorded meshes
-            string recordingDate = exifSettings.getValue("exif:DateTimeDigitized", "");
+            volca.recordingDate = exifSettings.getValue("exif:DateTimeDigitized", "");
             string myXml;
             exifSettings.copyXmlToString(myXml);
             cout << "loaded exif data: " << myXml <<endl ;
@@ -493,7 +501,62 @@ void ofApp::exit() {
 
 //--------------------------------------------------------------
 
+void ofApp::drawScreenOverlay() {
+    
+    ofSetColor(255, 255, 255);
+    stringstream volcaStatusStream, volcaExifStream;
+    
+
+    switch (volcaRenderer.renderStyle) {
+        case 1:
+            volcaStatusStream   << "Cloud   " ;
+            break;
+            
+        case  2:
+            volcaStatusStream   << "Surface "  ;
+            break;
+            
+        case  3:
+            volcaStatusStream   << "Mesh    " ;
+            break;
+            
+        default:
+            break;
+    }
+    
+    
+    if (volcaRenderer.paintMesh) volcaStatusStream   << "RGBD "  ;
+    else volcaStatusStream   << "***D "  ;
+    
+    if (kinect.isConnected()) volcaStatusStream   << "Source    "  ; // add in souce name if multiple sources available in future
+    else volcaStatusStream   << "No source " ;
+    
+    if (volca.singleShot)   volcaStatusStream   << "Still   " ;
+    else volcaStatusStream   << "Sequence " ;
+    
+    volcaStatusStream   << volca.recordWidth << "x" <<volca.recordHeight << " step" << volca.recordStep;
+
+    ofDrawBitmapString(volcaStatusStream.str(), 20,  20);
+    
+    // display exif status if playing back
+    
+    
+    if (volca.playing) {
+        volcaExifStream   << "Rec date: " << volca.recordingDate ;
+//        string length = volcaExifStream;
+//        int exiflength = StrLength(volcaExifStream);
+        ofDrawBitmapString(volcaExifStream.str(), ofGetWindowWidth() -200,  20);
+    }
+}
+
+//--------------------------------------------------------------
+
 void ofApp::drawGui() {
+    
+    //draw on screen information
+    
+    
+    
     imGui.begin(); //begin GUI
     ImGuiIO& io = ImGui::GetIO(); // hide mouse input from rest of app
     

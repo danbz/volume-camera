@@ -33,7 +33,7 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
     int width = filteredDepthImage.getWidth();
     int height = filteredDepthImage.getHeight();
     
-    bool paintMesh = true;
+    bool paintMesh = false;
     int index =0;
     //int i=0;
     int z = 0;

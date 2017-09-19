@@ -54,6 +54,7 @@ public:
     void mouseExited(int x, int y);
     void windowResized(int w, int h);
     void drawGui();
+    void drawScreenOverlay();
     int getRecordStep();
     
     ofxKinect kinect;
@@ -69,10 +70,8 @@ public:
     ofShortImage depthImage, filteredDepthImage;
     ofShortPixels depthPixels, filteredDepthPixels;
     
-    bool bThreshWithOpenCV;
-    bool bDrawPointCloud;
-    float nearThreshold;
-    float farThreshold;
+    bool bThreshWithOpenCV, bDrawPointCloud;
+    float nearThreshold, farThreshold;
     int angle;
     
     ofEasyCam easyCam; 	// used for viewing the point cloud
@@ -86,6 +85,7 @@ public:
         bool singleShot;
         int recordFPS;
         int recordWidth, recordHeight, recordStep;
+        string recordingDate;
     } volca;
     
     struct vRenderer { // rendering data for volca object
