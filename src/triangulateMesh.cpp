@@ -23,10 +23,6 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
     ofColor c;
     ofShortColor zGrey = 0;
     
-    //int step = volca.getRecordStep();
-    //int width = ofApp::recordWidth;
-    // int height = ofApp::recordHeight;
-    
     int step =1;
     int width = filteredDepthImage.getWidth();
     int height = filteredDepthImage.getHeight();
@@ -37,23 +33,21 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
     int ind = 0;
     ofVec3f v3;
     
-    // find farthest pixel
-    for (int y=0; y<height; y+= step) {
+    for (int y=0; y<height; y+= step) { // find farthest pixel
         for(int x=0; x<width; x+= step) {
             zGrey = filteredDepthImage.getPixels()[x+y*width];
             z = zGrey.r;
             
             if (z)
-            if (z > minBrightness){
-                minBrightness = z;
-                minBrightnessX = x;
-                minBrightnessY = y;
-            }
+                if (z > minBrightness){
+                    minBrightness = z;
+                    minBrightnessX = x;
+                    minBrightnessY = y;
+                }
         }
     }
     
-    
-    for(int y = 0; y < height; y += step) {
+    for(int y = 0; y < height; y += step) { // create point cloud
         
         // vector tempindexs;
         // indexs.push_back(tempindexs);
@@ -64,33 +58,33 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
             
             v3.set(0,0,0);
             if (z==0) z = minBrightness; //find and set to furthest (darkest pixel) data
-                // if(z > frontPlane & z < backPlane) {
-                //  indexs[y/recordStep].push_back(ind);
-                //     ind++;
-                if (paintMesh) {
-                    c = (filteredColorImage.getColor(x,y)); // getting RGB from ofShortImage
-                } else {
-                    float h = ofMap(z, 0, 65535, 0, 255, true);
-                    c.setHsb(h, 255, 255);
-                }
-                //} else {
-                //     z= backPlane;
-                //    c.setHsb(0, 0, 0);
-                //    indexs[y/recordStep].push_back(-1);
-                //} // clip out pixels
-                
-                v3.set((x - (width/2)) * (perspectiveFactor * z) ,(y -(height/2)) * (perspectiveFactor *z) , z * depthFactor);
-                // v3.set((x - (width/2)*0.002)  ,(y -(height/2)*0.002) , z*1.0 );
-                
-                mesh.addVertex(v3);
-                mesh.addColor(c);
-           // }
+            // if(z > frontPlane & z < backPlane) {
+            //  indexs[y/recordStep].push_back(ind);
+            //     ind++;
+            if (paintMesh) {
+                c = (filteredColorImage.getColor(x,y)); // getting RGB from ofShortImage
+            } else {
+                float h = ofMap(z, 0, 65535, 0, 255, true);
+                c.setHsb(h, 255, 255);
+            }
+            //} else {
+            //     z= backPlane;
+            //    c.setHsb(0, 0, 0);
+            //    indexs[y/recordStep].push_back(-1);
+            //} // clip out pixels
+            
+            v3.set((x - (width/2)) * (perspectiveFactor * z) ,(y -(height/2)) * (perspectiveFactor *z) , z * depthFactor);
+            // v3.set((x - (width/2)*0.002)  ,(y -(height/2)*0.002) , z*1.0 );
+            
+            mesh.addVertex(v3);
+            mesh.addColor(c);
         }
     }
-    //
-    int meshW =  width/step ;
+    
+    int meshW = width/step ;
     int meshH = height/step;
-    for (int y = 0; y<height-step; y+= step){
+    
+    for (int y = 0; y<height-step; y+= step){ // triangulate mesh
         for (int x=0; x<width-step; x+= step){
             v3.set(0,0,0);
             //  if ((mesh.getVertex(x+y*meshW))==v3 or (mesh.getVertex((x+1)+y*(meshW)))==v3 or (mesh.getVertex(x+(y+1)*meshW)==v3)){
