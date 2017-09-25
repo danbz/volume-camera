@@ -1,7 +1,6 @@
 #include "ofApp.h"
 
 
-
 // VOLCA: experimental volumetric camera/apparatus v0.1
 // © 2017 Daniel Buzzo. Dan@buzzo.com http://www.buzzo.com
 // https://github.com/danbz/volume-camera
@@ -21,7 +20,6 @@ uint64 timeNow =ofGetSystemTime(); // for timing elapsed time since past frame f
 void ofApp::setup() {
     ofSetLogLevel(OF_LOG_VERBOSE);
 	
-    kinectConnected = false;
 	kinect.setRegistration(true); // enable depth->video image calibration
 	kinect.init(); //kinect.init(true); // shows infrared instead of RGB video image
     //kinect.init(false, false); // disable video image (faster fps)
@@ -29,8 +27,6 @@ void ofApp::setup() {
     kinect.setDepthClipping( 100,  20000); //set depth clipping range
 		
 	if(kinect.isConnected()) { // print the intrinsic IR sensor values
-        kinectConnected = true;
-        
 		ofLogNotice() << "sensor-emitter dist: " << kinect.getSensorEmitterDistance() << "cm";
 		ofLogNotice() << "sensor-camera dist:  " << kinect.getSensorCameraDistance() << "cm";
 		ofLogNotice() << "zero plane pixel size: " << kinect.getZeroPlanePixelSize() << "mm";
@@ -143,11 +139,10 @@ void ofApp::setup() {
 //        //kinect2 = new ofxKinectV2();
 //    }
 
-    kinect2.open(0);
-    //kinectConnected = true;
-    cout << kinect2.params << endl;
-    kinect2.minDistance = 1.0;
-    kinect2.maxDistance = 100000.0;
+//    kinect2.open(0);
+//    cout << kinect2.params << endl;
+//    kinect2.minDistance = 1.0;
+//    kinect2.maxDistance = 100000.0;
 }
 
 //--------------------------------------------------------------
@@ -331,7 +326,7 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
             break;
     }
     
-    volcaMeshMaker.makeMesh(filteredDepthImage, filteredColorImage, mesh, volcaRenderer);
+    volcaMeshMaker.makeMesh(filteredDepthImage, filteredColorImage, mesh, volca, volcaRenderer);
     
     if (volcaRenderer.showNormals) {//set normals for faces
         volcaMeshMaker.setNormals( mesh );
@@ -342,7 +337,6 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
     ofScale(1, -1, -1);  // the projected points are 'upside down' and 'backwards'
     ofTranslate(0, 0, -500); // center the points a bit
     glEnable(GL_DEPTH_TEST);
-    //glDepthRange(0, 20000);//experiment with gldepth range
     //gluPerspective(57.0, 1.5, 0.1, 20000.0); // fov,
     if (volcaRenderer.renderFlatQuads){ // render as flat quads
         glShadeModel(GL_FLAT);
@@ -384,12 +378,10 @@ void ofApp::loadRecording() {
             }
         }
     } else {
-        volca.playing = false;
-        // generate system dialog to ask if user wants to stop playing and load new files        
+        volca.playing = false; // generate system dialog to ask if user wants to stop playing and load new files
         volcaRecorder.clearImageData(); // clear mesh buffer
         errorSound.play();
-        ofSystemAlertDialog("You have stopped playing the currently loaded mesh ");
-        
+        ofSystemAlertDialog("You have stopped playing the currently loaded mesh ");        
     }
 }
 
@@ -707,9 +699,6 @@ void ofApp::keyPressed (int key) {
         case 'O':
 			kinect.setCameraTiltAngle(angle); // go back to prev tilt
 			kinect.open();
-            if(kinect.isConnected()) {
-                kinectConnected=true;
-            }
 			break;
 			
 		case 'c':

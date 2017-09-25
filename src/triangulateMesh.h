@@ -27,7 +27,7 @@ class triangulateMesh
     };
     
     void setup();
-    void makeMesh( ofShortImage &filteredDepthImage, ofImage &filteredColorImage, ofMesh &mesh, vRenderer &volcaRenderer);
+    void makeMesh( ofShortImage &filteredDepthImage, ofImage &filteredColorImage, ofMesh &mesh, volca volca, vRenderer &volcaRenderer);
     void setNormals( ofMesh &mesh);
     
     ~triangulateMesh()

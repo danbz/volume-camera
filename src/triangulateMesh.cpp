@@ -18,14 +18,14 @@ void triangulateMesh::setup(){
 
 //--------------------------------------------------------------
 
-void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filteredColorImage, ofMesh &mesh,
+void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filteredColorImage, ofMesh &mesh, volca volca,
                                vRenderer &volcaRenderer ){
     
     ofColor c;
     ofShortColor zGrey = 0;
     
     
-    int step =1;
+    int step =volca.recordStep;
     int width = filteredDepthImage.getWidth();
     int height = filteredDepthImage.getHeight();
     
@@ -65,7 +65,8 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
             if (volcaRenderer.paintMesh) {
                 c = (filteredColorImage.getColor(x,y)); // getting RGB from ofShortImage
             } else {
-                float h = ofMap(z, 0, 65535, 0, 255, true);
+                //float h = ofMap(z, 0, 65535, 0, 255, true);
+                float h = ofMap(z, 0, minBrightness, 0, 255, true);
                 c.setHsb(h, 255, 255);
             }
             //} else {
