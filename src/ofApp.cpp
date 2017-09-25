@@ -1,5 +1,7 @@
 #include "ofApp.h"
 
+
+
 // VOLCA: experimental volumetric camera/apparatus v0.1
 // © 2017 Daniel Buzzo. Dan@buzzo.com http://www.buzzo.com
 // https://github.com/danbz/volume-camera
@@ -10,14 +12,14 @@ using namespace cv;
 
 string _timestamp = "default"; //default value for filepath opening on playback
 string filePath ="";
-bool paused;
+//bool paused;
 bool doThemeColorsWindow = false;
 uint64 timeNow =ofGetSystemTime(); // for timing elapsed time since past frame for playbackFPS control
 
 
 //----------------------------------------------------------------
 void ofApp::setup() {
-	ofSetLogLevel(OF_LOG_VERBOSE);
+    ofSetLogLevel(OF_LOG_VERBOSE);
 	
     kinectConnected = false;
 	kinect.setRegistration(true); // enable depth->video image calibration
@@ -44,42 +46,48 @@ void ofApp::setup() {
     //////////////////////////////////////////////////////
     // application / depth sensing configuration
     //////////////////////////////////////////////////////
-    int  kWidth=kinect.width;
-    int kHeight=kinect.height;
-    colorImage.allocate(kWidth, kHeight, OF_IMAGE_COLOR);
-    depthImage.allocate(kWidth, kHeight, OF_IMAGE_GRAYSCALE);
     
-	bThreshWithOpenCV = true;
 	ofSetFrameRate(120); //make this into a separate variable for playback speed framerate alteration
 	angle = 0; // zero the tilt on startup
 	kinect.setCameraTiltAngle(angle);
+    //kinect.setDepthClipping( 100,  20000); //set depth clipping range
     
     //////////////////////////////////////////////////////
     // Recording / Playing configuration
     //////////////////////////////////////////////////////
-    recording = false;
-    playing = false;
-    paintMesh = true;
+    
+    colorImage.allocate(volca.recordWidth, volca.recordHeight, OF_IMAGE_COLOR);
+    depthImage.allocate(volca.recordWidth, volca.recordHeight, OF_IMAGE_GRAYSCALE);
+    
     bDrawPointCloud = true;   // start from the camera view
-    //kinect.setDepthClipping( 100,  20000); //set depth clipping range
     frame = 0; //play back frame initialisation
-    paused = false;
-    renderStyle = 1;
-    recordWidth =640; //default width for recording and playback of meshes, overridden by Exifmedta data when recorded files are loaded.
-    recordHeight=480;
-    singleShot = true;
-    recordFPS = 25;
-
+   
+    volca.paused = false;
+    volca.singleShot = true;
+    volca.recordFPS = 25;
+    volca.recording = false;
+    volca.playing = false;
+    volca.recordWidth=kinect.width; //from kinect1
+    volca.recordHeight=kinect.height;
+    volca.recordStep =1;
+    // if kinect 2 then
+    volca.recordWidth=512;
+    volca.recordHeight=424; //default width and height for meshes, overridden by Exifmedta data when recorded files are loaded
+    
     //////////////////////////////////////////////////////
     // Rendering Configuration
     //////////////////////////////////////////////////////
-    illuminateScene = false;
-    showNormals = false;
-    renderFlatQuads = false;
-    depthFactor=1.0; //multiplier for rendering zdepth
-    perspectiveFactor = 0.002;
+    volcaRenderer.paintMesh = true;
+    volcaRenderer.illuminateScene = false;
+    volcaRenderer.showNormals = false;
+    volcaRenderer.renderFlatQuads = false;
+    volcaRenderer.showGui = true;
+    volcaRenderer.depthFactor=1.0; //multiplier for rendering zdepth
+    volcaRenderer.perspectiveFactor = 0.002;
+    volcaRenderer.renderStyle = 1;
+    volcaRenderer.showAxes = true;
+
     // easyCam setup
-    
     nearThreshold = 10;
     farThreshold = 50000;
     easyCam.setNearClip(nearThreshold);
@@ -88,7 +96,6 @@ void ofApp::setup() {
     //////////////////////////////////////////////////////
     // Gui Configuration
     //////////////////////////////////////////////////////
-    showGui = true;
     imGui.setup(); //ofxImGui set up
     ImGui::CaptureMouseFromApp();
     ImGui::GetIO().MouseDrawCursor = false;
@@ -98,7 +105,8 @@ void ofApp::setup() {
     blobSize =4;
     backPlane =25000;
     frontPlane=0;
-    recordingStep =1;
+    
+    // CV processing settings
     blur =false;
     blurRadius=10;
     erodeImage=false;
@@ -106,7 +114,6 @@ void ofApp::setup() {
     dilateImage=false;
     dilateAmount=2;
     bfilterColorImage = true;
-    
     
     if (!startupSound.load("sounds/pad_confirm.wav", false)){
         ofSystemAlertDialog("Unable to load system sounds");
@@ -117,12 +124,30 @@ void ofApp::setup() {
     
         shutterSound.load("sounds/beep_short_on.wav", false);
         errorSound.load("sounds/beep_short_off.wav", false);
-
     };
-//    if( !kinect.hasAccelControl()) {
-//        ofSystemAlertDialog("Note: this is a newer Xbox Kinect or Kinect For Windows device, motor / led / accel controls are not currently supported" );
-//    }
     
+    // add in kinect 2 support
+//    ofxKinectV2 tmp;
+//    vector <ofxKinectV2::KinectDeviceInfo> deviceList = tmp.getDeviceList();
+//    
+//    //allocate for this many devices
+//    kinects.resize(deviceList.size());
+//    texDepth.resize(kinects.size());
+//    texRGB.resize(kinects.size());
+//    
+//    //Note you don't have to use ofxKinectV2 as a shared pointer, but if you want to have it in a vector ( ie: for multuple ) it needs to be.
+//    for(int d = 0; d < kinects.size(); d++){
+//        kinects[d] = shared_ptr <ofxKinectV2> (new ofxKinectV2());
+//        kinects[d]->open(deviceList[d].serial);
+//        //panel.add(kinects[d]->params);
+//        //kinect2 = new ofxKinectV2();
+//    }
+
+    kinect2.open(0);
+    //kinectConnected = true;
+    cout << kinect2.params << endl;
+    kinect2.minDistance = 1.0;
+    kinect2.maxDistance = 100000.0;
 }
 
 //--------------------------------------------------------------
@@ -137,21 +162,23 @@ void ofApp::update() {
     ofBackground(imBackgroundColor); // background color
     kinect.update();
     
-    if(recording) { // mesh capture
+    if(volca.recording) { // mesh capture
         savePointCloud();
     }
     
-    if(playing) { // if we are in playback mode
-        if(!paused){ // and have not paused the playback
+    if(volca.playing) { // if we are in playback mode
+        if(!volca.paused){ // and have not paused the playback
             if (timeNow < (ofGetSystemTime() - (1000/playbackFPS))) { // check playback FPS
-                frameToPlay += 1; // increment the frame we are playing
-                timeNow = ofGetSystemTime();
+                volcaRenderer.frameToPlay += 1; // increment the f
+                
+                
+
             }
-            if(frameToPlay >= meshRecorder.totalFrames) frameToPlay = 0; //or start at the beginning of the recorded loop
+            if(volcaRenderer.frameToPlay >= volcaRecorder.totalFrames) volcaRenderer.frameToPlay = 0; //or start at the beginning of the recorded loop
         }
-        if(meshRecorder.readyToPlay) {    // we are playing so load data from meshrecorder object into images
-            colorImage.setFromPixels(meshRecorder.getColorImageAt(frameToPlay));
-            depthImage.setFromPixels(meshRecorder.getDepthImageAt(frameToPlay));
+        if(volcaRecorder.readyToPlay) {    // we are playing so load data from volcaRecorder object into images
+            colorImage.setFromPixels(volcaRecorder.getColorImageAt(volcaRenderer.frameToPlay));
+            depthImage.setFromPixels(volcaRecorder.getDepthImageAt(volcaRenderer.frameToPlay));
         }
     } else { // we are running from live depth source
         if(kinect.isFrameNew()) {// if new frame and connected to kinect Live Render CV updating
@@ -162,7 +189,10 @@ void ofApp::update() {
     
     if (bfilterColorImage) { //process depth or RGB image holders //re-write as pipeline chain rather than discrete operations
         if (blur){
-            ofxCv::GaussianBlur(filteredColorImage, blurRadius);
+//            ofxCv::GaussianBlur(filteredColorImage, blurRadius);
+            ofxCv::medianBlur
+            (filteredColorImage, blurRadius);
+
         }
         if (erodeImage) {
             ofxCv::erode(colorImage, filteredColorImage, erodeAmount);
@@ -192,6 +222,16 @@ void ofApp::update() {
     easyCam.setNearClip(nearThreshold);
     easyCam.setFarClip(farThreshold);
     
+    // update kinect2
+    kinect2.update();
+    if( kinect2.isFrameNew() ){
+        depthImage.setFromPixels(kinect2.getDepthPixels()) ;
+        colorImage.setFromPixels(kinect2.getRgbPixels());
+        cout << "depth w x h:" << depthImage.getWidth() << " " << depthImage.getHeight()<< endl;
+        cout << "color w x h:" << colorImage.getWidth() << " " << colorImage.getHeight()<< endl;
+        
+    }
+    
     ofSoundUpdate();
     
 #ifdef USE_TWO_KINECTS
@@ -206,7 +246,8 @@ void ofApp::draw() {
     
 	if(bDrawPointCloud) {  // Draw Live rendering - show pointcloud view
 		easyCam.begin();
-        if (illuminateScene) light.enable(); //enable world light
+        if (volcaRenderer.showAxes)ofDrawAxis(100);
+        if (volcaRenderer.illuminateScene) light.enable(); //enable world light
         drawAnyPointCloud(); //call new generic point render function
         ofDisableLighting(); //disable world light
         easyCam.end();
@@ -217,81 +258,93 @@ void ofApp::draw() {
         ofxCv::invert(filteredDepthImage,filteredDepthImage);
         filteredDepthImage.update();
         filteredDepthImage.draw(490, 370, 480, 360);
+        
+        // draw kinect 2 to screen
+//        for(int d = 0; d < kinects.size(); d++){
+//            float dwHD = 1920/2;
+//            float dhHD = 1080/2;
+//            float shiftY = 100 + ((10 + texDepth[d].getHeight()) * d);
+//            texDepth[d].draw(200, shiftY);
+//            texRGB[d].draw(210 + texDepth[d].getWidth(), shiftY, dwHD, dhHD);
+//        }
+        
 	}
 #ifdef USE_TWO_KINECTS
     kinect2.draw(420, 320, 400, 300);
 #endif
-    if(!meshRecorder.readyToPlay) {    //-- recorder  // Loadinf info:
-        string l = ofToString(meshRecorder.framesLoaded);
-        string t = ofToString(meshRecorder.totalFrames);
+    if(!volcaRecorder.readyToPlay) {    //-- recorder  // Loadinf info:
+        string l = ofToString(volcaRecorder.framesLoaded);
+        string t = ofToString(volcaRecorder.totalFrames);
         ofDrawBitmapString("loading... " + l + "/" + t,700, 20); // if loading then draw progress to screen
     }
     
-    if (recording) {
+    if (volca.recording) {
         string f = to_string(frame);
         ofDrawBitmapString("recording frame: " + f, 700,20);
     }
     
-    if (showGui) {
+    if (volcaRenderer.showGui) {
         drawGui();
+        drawScreenOverlay();
     }
+    
+    
 }
 
 //--------------------------------------------------------------
 void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rather than direct from kinect  - 28-7-17
     
-    ofColor c;
-    ofShortColor zGrey = 0;
-   // int pCount =0;
+//    ofColor c;
+//    ofShortColor zGrey = 0;
     ofMesh mesh;
+   
+    indexs.clear();
     
-    switch (renderStyle) { //set render style
+    switch (volcaRenderer.renderStyle) { //set render style
         case 1:
             mesh.setMode(OF_PRIMITIVE_POINTS);
+            volcaRenderer.paintMesh =true;
             break;
             
         case 2:
-            mesh.setMode(OF_PRIMITIVE_TRIANGLES);
+            mesh.setMode(OF_PRIMITIVE_POINTS);
+            volcaRenderer.paintMesh =false;
             break;
             
         case 3:
+            mesh.setMode(OF_PRIMITIVE_TRIANGLES);
+            volcaRenderer.paintMesh =true;
+            break;
+        case 4:
+            mesh.setMode(OF_PRIMITIVE_TRIANGLES);
+            volcaRenderer.paintMesh =false;
+            break;
+            
+        case 5:
             mesh.setMode(OF_PRIMITIVE_LINE_STRIP);
+            volcaRenderer.paintMesh =true;
+            break;
+            
+        case 6:
+            mesh.setMode(OF_PRIMITIVE_LINE_STRIP);
+            volcaRenderer.paintMesh =false;
             break;
     }
-
-    int index =0;
-    //int i=0;
-    int z = 0;
-    ofVec3f v3;
-    for(int y = 0; y < recordHeight; y += recordingStep) {
-        for(int x = 0; x < recordWidth; x += recordingStep) {
-            zGrey = filteredDepthImage.getPixels()[x+y*recordWidth];
-            z = zGrey.r;
-            if(z > frontPlane & z < backPlane) { // clip out pixels
-                v3.set(0,0,0);
-                v3.set((x - (recordWidth/2)) * (perspectiveFactor * z) ,(y -(recordHeight/2)) * (perspectiveFactor *z) , z * depthFactor);
-                mesh.addVertex(v3);
-                if (paintMesh) {
-                    c = (filteredColorImage.getColor(x,y)); // getting RGB from ofShortImage
-                    mesh.addColor(c);
-                }
-            }
-        }
-    }
-    triangulateMesh(mesh);
     
-    if (showNormals) {//set normals for faces
-        setNormals( mesh );
+    volcaMeshMaker.makeMesh(filteredDepthImage, filteredColorImage, mesh, volcaRenderer.depthFactor, volcaRenderer.perspectiveFactor);
+    
+    if (volcaRenderer.showNormals) {//set normals for faces
+        volcaMeshMaker.setNormals( mesh );
     }
     glPointSize(blobSize);
     //glEnable(GL_POINT_SMOOTH); // use circular points instead of square points
     ofPushMatrix();
     ofScale(1, -1, -1);  // the projected points are 'upside down' and 'backwards'
-    ofTranslate(0, 0, -1000); // center the points a bit
+    ofTranslate(0, 0, -500); // center the points a bit
     glEnable(GL_DEPTH_TEST);
     //glDepthRange(0, 20000);//experiment with gldepth range
     //gluPerspective(57.0, 1.5, 0.1, 20000.0); // fov,
-    if (renderFlatQuads){ // render as flat quads
+    if (volcaRenderer.renderFlatQuads){ // render as flat quads
         glShadeModel(GL_FLAT);
     } else {
         glShadeModel(GL_TRIANGLES);
@@ -302,60 +355,8 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
     ofSetColor( 255, 255, 255);  //set render colour for unpainted points, faces and lines
     mesh.draw();
     glDisable(GL_DEPTH_TEST);
-    //mesh.clear();
+    mesh.clear();
     ofPopMatrix();
-}
-
-//--------------------------------------------------------------
-
-void ofApp::triangulateMesh(ofMesh &mesh){
-    
-    int pCount =0;
-    int numofVertices = mesh.getNumVertices(); //----- then generate triangles for mesh -- improve to clip edge triangles that wrap round....
-    pCount = 0;
-    ofVec3f v2;
-    
-    for(int n = 0; n < numofVertices-1-recordWidth/recordingStep; n ++) { // add in culling for zero location points from  mesh & optimise for less of duplicate points
-         v2.set(0,0,0);
-        if ((mesh.getVertex(pCount))!=v2 and (mesh.getVertex(pCount+1))!=v2 and (mesh.getVertex(pCount+1+recordWidth/recordingStep))!=v2){
-            mesh.addTriangle(n, n+1, n+1+recordWidth/recordingStep); //even triangles for each mesh square
-        }
-        
-        if ((mesh.getVertex(pCount))!=v2 and (mesh.getVertex(pCount+1+recordWidth/recordingStep))!=v2 and (mesh.getVertex(pCount+recordWidth/recordingStep))!=v2){
-            mesh.addTriangle(n, n+1+recordWidth/recordingStep, n+recordWidth/recordingStep); //odd triangles for each mesh square
-        }
-        pCount ++;
-    }
-}
-
-//--------------------------------------------------------------
-
-void ofApp::setNormals( ofMesh &mesh ){ //Universal function which sets normals for the triangle mesh
-    int nV = mesh.getNumVertices();     //The number of the vertices
-    int nT = mesh.getNumIndices() / 3;     //The number of the triangles
-
-    vector<ofPoint> norm( nV ); //Array for the normals
-    //Scan all the triangles. For each triangle add its normal to norm's vectors of triangle's vertices
-    for (int t=0; t<nT; t++) {
-        //Get indices of the triangle t
-        int i1 = mesh.getIndex( 3 * t );
-        int i2 = mesh.getIndex( 3 * t + 1 );
-        int i3 = mesh.getIndex( 3 * t + 2 );
-        //Get vertices of the triangle
-        const ofPoint &v1 = mesh.getVertex( i1 );
-        const ofPoint &v2 = mesh.getVertex( i2 );
-        const ofPoint &v3 = mesh.getVertex( i3 );
-        //Compute the triangle's normal
-        ofPoint dir = ( (v2 - v1).crossed( v3 - v1 ) ).normalized();
-        norm[ i1 ] += dir;  //Accumulate it to norm array for i1, i2, i3
-        norm[ i2 ] += dir;
-        norm[ i3 ] += dir;
-    }
-    for (int i=0; i<nV; i++) {     //Normalize the normal's length
-        norm[i].normalize();
-    }
-    mesh.clearNormals();     //Set the normals to mesh
-    mesh.addNormals( norm );
 }
 
 //------------------------------------------------------------
@@ -363,34 +364,35 @@ void ofApp::setNormals( ofMesh &mesh ){ //Universal function which sets normals 
 void ofApp::loadRecording() {
     
     bool loadSuccess = false;
-    if(!meshRecorder.readyToPlay) return;
-    if(recording) return;
-    if(!playing) {
+    if(!volcaRecorder.readyToPlay) return;
+    if(volca.recording) return;
+    if(!volca.playing) {
         ofFileDialogResult result = ofSystemLoadDialog("Choose a folder of recorded Volca PNG data", true, ofToDataPath(""));
         if (result.getPath() != "") {
             filePath =result.getPath();
-            frameToPlay = 0;
+            volcaRenderer.frameToPlay = 0;
             if (loadExifData(filePath)) {
-                loadSuccess = meshRecorder.loadImageData(filePath, recordWidth, recordHeight);
+                loadSuccess = volcaRecorder.loadImageData(filePath, volca.recordWidth, volca.recordHeight);
                 
                 if (loadSuccess){
-                    playing = true;
+                    volca.playing = true;
                     cout << loadSuccess << " playing is true" << endl;
                 } else {
-                    playing = false;
+                    volca.playing = false;
                     cout << loadSuccess << " playing is false" << endl;
                 }
             }
         }
     } else {
-        playing = false;
+        volca.playing = false;
         // generate system dialog to ask if user wants to stop playing and load new files        
-        meshRecorder.clearImageData(); // clear mesh buffer
+        volcaRecorder.clearImageData(); // clear mesh buffer
         errorSound.play();
         ofSystemAlertDialog("You have stopped playing the currently loaded mesh ");
         
     }
 }
+
 //--------------------------------------------------------------
 
 string ofApp::generateFileName() {
@@ -412,7 +414,7 @@ string ofApp::generateFileName() {
 
 void ofApp::savePointCloud() {
     
-    if (timeNow < (ofGetSystemTime() - (1000/recordFPS))) {     // timing element for recordFPS setting
+    if (timeNow < (ofGetSystemTime() - (1000/volca.recordFPS))) {     // timing element for recordFPS setting
         timeNow = ofGetSystemTime();
         string frameNum = to_string(frame);
         string path = saveTo;
@@ -422,8 +424,8 @@ void ofApp::savePointCloud() {
         frame++; // increment the frame we are recording
     }
     
-    if (singleShot) {
-        recording=false; //if in singleShot mode then stop after this frame is recorded
+    if (volca.singleShot) {
+        volca.recording=false; //if in singleShot mode then stop after this frame is recorded
         cout << "Single Shot mode, frame " << frame << endl;
     }
 }
@@ -450,8 +452,8 @@ void ofApp::saveExifData() { //put some some settings into a file
     exifSettings.setValue("exif:make", "Buzzo");
     exifSettings.setValue("exif:model", "Volca: Experimental volumetric camera/apparatus");
     exifSettings.setValue("exif:orientation", "top left");
-    exifSettings.setValue("exif:ImageWidth", recordWidth/recordingStep);
-    exifSettings.setValue("exif:ImageLength", recordHeight/recordingStep);
+    exifSettings.setValue("exif:ImageWidth", volca.recordWidth/volca.recordStep);
+    exifSettings.setValue("exif:ImageLength", volca.recordHeight/volca.recordStep);
     exifSettings.setValue("exif:DateTimeDigitized", today);
     exifSettings.setValue("exifSensingMethod", "Kinect depth sensor");
     exifSettings.setValue("exifDataProcess", "RGB and Depth Image"); //use to tag whether using old render or new render method.
@@ -463,19 +465,19 @@ void ofApp::saveExifData() { //put some some settings into a file
 
 //-------------------------------------------------------------------
 
-bool ofApp::loadExifData(string filePath) { // load exifXML file from the sele ted folder and get the values out
+bool ofApp::loadExifData(string filePath) { // load exifXML file from the selected folder and get the values out
     
     if (exifSettings.loadFile(filePath + "/exifSettings.xml")){
         exifModel = exifSettings.getValue("exif:model", "");
         string thisModel ="Volca";
         if (exifModel.find(thisModel) != string::npos){
             //cout << filePath << "/exifSettings.xml" << endl;
-            recordWidth = exifSettings.getValue("exif:ImageWidth", 0);
-            recordHeight = exifSettings.getValue("exif:ImageLength", 0);
+            volca.recordWidth = exifSettings.getValue("exif:ImageWidth", 0);
+            volca.recordHeight = exifSettings.getValue("exif:ImageLength", 0);
             //dataProcess =exifSettings.getValue("exifDataProcess", 0); //use to tag whether using old render or new render method.
             
-            recordingStep = 1; // always default to 1:1 step when loading recorded meshes
-            string recordingDate = exifSettings.getValue("exif:DateTimeDigitized", "");
+            volca.recordStep = 1; // always default to 1:1 step when loading recorded meshes
+            volca.recordingDate = exifSettings.getValue("exif:DateTimeDigitized", "");
             string myXml;
             exifSettings.copyXmlToString(myXml);
             cout << "loaded exif data: " << myXml <<endl ;
@@ -495,10 +497,17 @@ bool ofApp::loadExifData(string filePath) { // load exifXML file from the sele t
 
 //--------------------------------------------------------------
 
+int ofApp::getRecordStep() {
+    return volca.recordStep;
+}
+
+//--------------------------------------------------------------
+
+
 void ofApp::exit() {
     
-    meshRecorder.unlock();
-    meshRecorder.stopThread();
+    volcaRecorder.unlock();
+    volcaRecorder.stopThread();
 	kinect.setCameraTiltAngle(0); // zero the tilt on exit
 	kinect.close();
 	
@@ -509,7 +518,70 @@ void ofApp::exit() {
 
 //--------------------------------------------------------------
 
+void ofApp::drawScreenOverlay() {
+    
+    ofSetColor(255, 255, 255);
+    stringstream volcaStatusStream, volcaExifStream;
+    
+
+    switch (volcaRenderer.renderStyle) {
+        case 1:
+            volcaStatusStream   << "Cloud   : RGBD  " ;
+            break;
+            
+        case  2:
+            volcaStatusStream   << "Cloud   : ***D  "  ;
+            break;
+            
+        case  3:
+            volcaStatusStream   << "Surface : RGBD  " ;
+            break;
+        case 4:
+            volcaStatusStream   << "Surface : ***D  " ;
+            break;
+            
+        case  5:
+            volcaStatusStream   << "Mesh    : RGBD  "  ;
+            break;
+            
+        case  6:
+            volcaStatusStream   << "Mesh    : ***D  " ;
+            break;
+        default:
+            break;
+    }
+    
+
+    
+    if (kinect.isConnected()) volcaStatusStream   << "Source    "  ; // add in souce name if multiple sources available in future
+    else volcaStatusStream   << "No source " ;
+    
+    if (volca.singleShot)   volcaStatusStream   << "Still   " ;
+    else volcaStatusStream   << "Sequence " ;
+    
+    volcaStatusStream   << volca.recordWidth << "x" <<volca.recordHeight << " step" << volca.recordStep;
+
+    ofDrawBitmapString(volcaStatusStream.str(), 20,  20);
+    
+    // display exif status if playing back
+    
+    
+    if (volca.playing) {
+        volcaExifStream   << "Rec date: " << volca.recordingDate ;
+//        string length = volcaExifStream;
+//        int exiflength = StrLength(volcaExifStream);
+        ofDrawBitmapString(volcaExifStream.str(), ofGetWindowWidth() -200,  20);
+    }
+}
+
+//--------------------------------------------------------------
+
 void ofApp::drawGui() {
+    
+    //draw on screen information
+    
+    
+    
     imGui.begin(); //begin GUI
     ImGuiIO& io = ImGui::GetIO(); // hide mouse input from rest of app
     
@@ -523,9 +595,9 @@ void ofApp::drawGui() {
         ImGui::Text("Welcome to Volca v0.0");
         if (ImGui::CollapsingHeader("Capture options")) {
             ImGui::Text("Capture parameters");
-            ImGui::Checkbox("Single shot capture", &singleShot);
-            ImGui::SliderInt("Mesh play/record spacing",&recordingStep, 1, 20);
-            ImGui::SliderInt("Recording FPS", &recordFPS, 1, 60);
+            ImGui::Checkbox("Single shot capture", &volca.singleShot);
+            ImGui::SliderInt("Mesh play/record spacing",&volca.recordStep, 1, 20);
+            ImGui::SliderInt("Recording FPS", &volca.recordFPS, 1, 60);
             //ImGui::Text("Playback style");
             ImGui::SliderInt("Playback FPS", &playbackFPS, 1, 120);
             
@@ -534,19 +606,19 @@ void ofApp::drawGui() {
         }
         
         if (ImGui::CollapsingHeader("Render options")) {
-            ImGui::SliderFloat("Depth factor", &depthFactor, 0.05, 5.0);
-            ImGui::SliderFloat("Perspective factor", &perspectiveFactor, 0.0001, 0.1);
+            ImGui::SliderFloat("Depth factor", &volcaRenderer.depthFactor, 0.05, 5.0);
+            ImGui::SliderFloat("Perspective factor", &volcaRenderer.perspectiveFactor, 0.0001, 0.1);
             
             ImGui::Text("Render style");
-            ImGui::RadioButton("cloud", &renderStyle, 1); ImGui::SameLine();
-            ImGui::RadioButton("faces", &renderStyle, 2); ImGui::SameLine();
-            ImGui::RadioButton("mesh", &renderStyle, 3);
+            ImGui::RadioButton("cloud", &volcaRenderer.renderStyle, 1); ImGui::SameLine();
+            ImGui::RadioButton("faces", &volcaRenderer.renderStyle, 2); ImGui::SameLine();
+            ImGui::RadioButton("mesh", &volcaRenderer.renderStyle, 3);
             
             ImGui::Text("Surface style");
-            ImGui::Checkbox("paint mesh", &paintMesh); ImGui::SameLine();
-            ImGui::Checkbox("world light", &illuminateScene); ImGui::SameLine();
-            ImGui::Checkbox("normals", &showNormals); ImGui::SameLine();
-            ImGui::Checkbox("flatQuads", &renderFlatQuads);
+            ImGui::Checkbox("paint mesh", &volcaRenderer.paintMesh); ImGui::SameLine();
+            ImGui::Checkbox("world light", &volcaRenderer.illuminateScene); ImGui::SameLine();
+            ImGui::Checkbox("normals", &volcaRenderer.showNormals); ImGui::SameLine();
+            ImGui::Checkbox("flatQuads", &volcaRenderer.renderFlatQuads);
             ImGui::SliderInt("Cloud pointsize", &blobSize, 1, 15);
             ImGui::ColorEdit3("Background Color", (float*)&imBackgroundColor);
             
@@ -583,10 +655,10 @@ void ofApp::drawGui() {
         }
         
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-        ImGui::Text("Recording mesh size %.1d , %1d", recordWidth/recordingStep , recordHeight/recordingStep);
-        if (playing){
-           int totalFrames = meshRecorder.totalFrames;
-            ImGui::Text("Playing frame %.1d of %.2d frames in sequence", frameToPlay +1, totalFrames);
+        ImGui::Text("Recording mesh size %.1d , %1d", volca.recordWidth/volca.recordStep , volca.recordHeight/volca.recordStep);
+        if (volca.playing){
+           int totalFrames = volcaRecorder.totalFrames;
+            ImGui::Text("Playing frame %.1d of %.2d frames in sequence", volcaRenderer.frameToPlay +1, totalFrames);
         }
 
     }
@@ -607,7 +679,7 @@ void ofApp::drawGui() {
 void ofApp::keyPressed (int key) {
 	switch (key) {
 		case ' ':
-            paused=!paused;
+            volca.paused=!volca.paused;
 			break;
 			
 		case'p':
@@ -646,17 +718,18 @@ void ofApp::keyPressed (int key) {
 			kinect.close();
 			break;
 			
-		case '1':
-			renderStyle=1;
+		case 'm':
+        case 'M':
+            if (volcaRenderer.renderStyle <6) {
+			volcaRenderer.renderStyle ++;
+                
+            } else {
+                volcaRenderer.renderStyle=1;
+            }
+            
 			break;
 			
-		case '2':
-			renderStyle=2;
-			break;
-			
-		case '3':
-			renderStyle=3;
-			break;
+		
 			
 		case OF_KEY_UP:
 			angle++;
@@ -672,12 +745,12 @@ void ofApp::keyPressed (int key) {
             
         case 'g':
         case 'G':
-            showGui=!showGui;
+            volcaRenderer.showGui=!volcaRenderer.showGui;
             break;
             
         case 'a':
         case 'A':
-            paintMesh=!paintMesh;
+            volcaRenderer.paintMesh=!volcaRenderer.paintMesh;
             break;
             
         case 'l':
@@ -687,14 +760,15 @@ void ofApp::keyPressed (int key) {
             
         case 'r':
         case 'R':
-            if(!meshRecorder.readyToPlay) return;
-            if(recording) return;
-            if(playing) return;
-            if (kinectConnected){
+            
+            if(!volcaRecorder.readyToPlay) return;
+            if(volca.recording) return;
+            if(volca.playing) return;
+            if (kinect.isConnected()){
                 shutterSound.play();
                 saveTo = generateFileName();
                 frame = 0;
-                recording = true;
+                volca.recording = true;
                 saveExifData();
                 kinect.setLed(ofxKinect::LED_BLINK_YELLOW_RED);
             } else {
@@ -706,20 +780,20 @@ void ofApp::keyPressed (int key) {
             
         case 's':
         case 'S':
-            if(!meshRecorder.readyToPlay) return;
-            if(!recording) return;
-            if(playing) return;
+            if(!volcaRecorder.readyToPlay) return;
+            if(!volca.recording) return;
+            if(volca.playing) return;
             saveTo = "";
-            recording = false;
+            volca.recording = false;
             kinect.setLed(ofxKinect::LED_GREEN);
             break;
             
         case '<':
         case ',':
-            if(playing) {
-                if(paused){
-                    if (frameToPlay>1){
-                        frameToPlay --;
+            if(volca.playing) {
+                if(volca.paused){
+                    if (volcaRenderer.frameToPlay>1){
+                        volcaRenderer.frameToPlay --;
                     }
                 }
             }
@@ -727,10 +801,10 @@ void ofApp::keyPressed (int key) {
             
         case '>':
         case '.':
-            if(playing) {
-                if(paused){
-                    if(frameToPlay < meshRecorder.totalFrames){
-                     frameToPlay ++;
+            if(volca.playing) {
+                if(volca.paused){
+                    if(volcaRenderer.frameToPlay < volcaRecorder.totalFrames){
+                     volcaRenderer.frameToPlay ++;
                     }
                 }
             }
@@ -738,17 +812,17 @@ void ofApp::keyPressed (int key) {
             
         case 'n':
         case 'N':
-            showNormals = !showNormals;//swap between normals on mesh on and off
+            volcaRenderer.showNormals = !volcaRenderer.showNormals;//swap between normals on mesh on and off
             break;
         
         case 'i':
         case 'I':
-            if (!illuminateScene) { //swap on and off world light
+            if (!volcaRenderer.illuminateScene) { //swap on and off world light
                 light.enable();
-                illuminateScene=!illuminateScene;
+                volcaRenderer.illuminateScene=!volcaRenderer.illuminateScene;
             } else {
                 ofDisableLighting();
-                illuminateScene=!illuminateScene;
+                volcaRenderer.illuminateScene=!volcaRenderer.illuminateScene;
             }
             break;
             
@@ -805,3 +879,5 @@ void ofApp::windowResized(int w, int h)
 {
 
 }
+
+

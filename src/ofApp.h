@@ -3,13 +3,17 @@
 #include "ofMain.h"
 #include "ofxOpenCv.h"
 #include "ofxKinect.h"
+#include "ofxKinectV2.h"
 #include "ofxKinectMeshRecorder.h"
+#include "triangulateMesh.h"
 #include "metaData.h"
 #include "ofxXmlSettings.h"
 #include "ofxImGui.h"
 #include "ofxCv.h"
 
-// VOLCA: experimental volumetric camera/apparatus v0.1
+
+
+// VOLCA: experimental volumetric camera/apparatus v0.1a
 // © 2017 Daniel Buzzo. Dan@buzzo.com http://www.buzzo.com
 // https://github.com/danbz/volume-camera
 // all rights reserved
@@ -25,117 +29,115 @@
 // uncomment this to read from two kinects simultaneously
 //#define USE_TWO_KINECTS
 
-class ofApp : public ofBaseApp {
+
+
+class ofApp :
+
+public ofBaseApp {
+    
 public:
-	
-	void setup();
-	void update();
-	void draw();
-	void exit();
+    
+    void setup();
+    void update();
+    void draw();
+    void exit();
     void drawAnyPointCloud();
-    void triangulateMesh(ofMesh &mesh);
     void savePointCloud();
     void writeMetaData();
     void loadRecording();
-	void keyPressed(int key);
+    void keyPressed(int key);
     void keyReleased(int key);
-	void mouseDragged(int x, int y, int button);
-	void mousePressed(int x, int y, int button);
-	void mouseReleased(int x, int y, int button);
-	void mouseEntered(int x, int y);
-	void mouseExited(int x, int y);
-	void windowResized(int w, int h);
+    void mouseDragged(int x, int y, int button);
+    void mousePressed(int x, int y, int button);
+    void mouseReleased(int x, int y, int button);
+    void mouseEntered(int x, int y);
+    void mouseExited(int x, int y);
+    void windowResized(int w, int h);
     void drawGui();
+    void drawScreenOverlay();
+    int getRecordStep();
     
-	ofxKinect kinect;
+    ofxKinect kinect;
+    ofxKinectV2 kinect2;
+    
     bool kinectConnected;
-	
-#ifdef USE_TWO_KINECTS
-	ofxKinect kinect2;
-#endif
-        
-    ofImage colorImage, filteredColorImage;
     
+#ifdef USE_TWO_KINECTS
+    ofxKinect kinect2;
+#endif
+    
+    ofImage colorImage, filteredColorImage;
     ofShortImage depthImage, filteredDepthImage;
     ofShortPixels depthPixels, filteredDepthPixels;
     
-	
-	bool bThreshWithOpenCV;
-	bool bDrawPointCloud;
-	float nearThreshold;
-	float farThreshold;
-	int angle;
-	
+    bool bThreshWithOpenCV, bDrawPointCloud;
+    float nearThreshold, farThreshold;
+    int angle;
+    
     ofEasyCam easyCam; 	// used for viewing the point cloud
     
     // with elements of kinect recorder hack from code by Pelayo MŽndez   https://github.com/pelayomendez
     
-    typedef struct {
-        float x;
-        float y;
-        float z;
-        float w;
-    } pointData;
+    struct volca { // central volca object
+        bool recording;
+        bool playing;
+        bool paused;
+        bool singleShot;
+        int recordFPS;
+        int recordWidth, recordHeight, recordStep;
+        string recordingDate;
+    } volca;
     
-    typedef struct {
-        int x;
-        int y;
-        int z;
-    } colorData;
+    struct vRenderer { // rendering data for volca object
+        bool showGui;
+        bool paintMesh;
+        int frameToPlay;
+        int renderStyle;
+        bool showNormals;
+        bool illuminateScene;
+        bool renderFlatQuads;
+        bool showAxes;
+        float depthFactor;
+        float perspectiveFactor;
+    } volcaRenderer;
     
     ofDirectory dirHelper;
     string generateFileName();
     int frame;
     string saveTo;
-    int recordWidth;
-    int recordHeight;
     
-    // GUI  Configuration
-
-    bool showGui;
-    bool paintMesh;
-    bool recording;
-    bool playing;
-    
+    // GUI Configuration
     ofxImGui::Gui imGui;
     ImVec4 imBackgroundColor;
-    bool show_test_window, blur, erodeImage, dilateImage, bfilterColorImage;
-    int playbackFPS, blobSize, gridSize, backPlane, frontPlane, recordingStep, blurRadius, erodeAmount, dilateAmount;
-    
-    // shot timing GUI elements
-    bool singleShot;  // move these into new volca object/class
-    int recordFPS;
+    bool show_test_window, blur, erodeImage, dilateImage, bfilterColorImage ;
+    int playbackFPS, blobSize, gridSize, backPlane, frontPlane, blurRadius, erodeAmount, dilateAmount;
     
     // Rendering Reproduction
-    
     ofMesh mesh;
+    ofxKinectMeshRecorder volcaRecorder;
+    triangulateMesh volcaMeshMaker;
     ofLight light;
-    ofxKinectMeshRecorder meshRecorder;
-    
-    //Universal function which sets normals for the triangle mesh
-    void setNormals( ofMesh &mesh ); // move this into meshrecorder // render section?
-
-    int frameToPlay;
-    int renderStyle;
-    bool showNormals;
-    bool illuminateScene;
-    bool renderFlatQuads;
-    float depthFactor;
-    float perspectiveFactor;
     
     // XML exif data save and load
-    
     ofxXmlSettings exifSettings;
-     
+    
     void saveExifData(); // move these into meshRecorder
     bool loadExifData( string filePath);
     string exifModel;
-    
     
     //GUI sounds
     ofSoundPlayer startupSound;
     ofSoundPlayer shutterSound;
     ofSoundPlayer errorSound;
     
+    /// use kinect 2
+    ofTexture texDepth;
+    ofTexture texRGB;
+    
+    vector < int > indexs;
+    vector < int > tempindexs;
     
 };
+
+
+
