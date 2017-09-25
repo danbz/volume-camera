@@ -6,11 +6,14 @@
 //
 //
 
+#pragma once
+
 #ifndef triangulateMesh_h
 #define triangulateMesh_h
 
 #include <stdio.h>
 #include "ofMain.h"
+#include "dataStructures.h"
 
 #endif /* triangulateMesh_h */
 
@@ -24,7 +27,7 @@ class triangulateMesh
     };
     
     void setup();
-    void makeMesh( ofShortImage &filteredDepthImage, ofImage &filteredColorImage, ofMesh &mesh, float &depthFactor, float &perspectiveFactor);
+    void makeMesh( ofShortImage &filteredDepthImage, ofImage &filteredColorImage, ofMesh &mesh, vRenderer &volcaRenderer);
     void setNormals( ofMesh &mesh);
     
     ~triangulateMesh()

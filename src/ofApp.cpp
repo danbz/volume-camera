@@ -331,7 +331,7 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
             break;
     }
     
-    volcaMeshMaker.makeMesh(filteredDepthImage, filteredColorImage, mesh, volcaRenderer.depthFactor, volcaRenderer.perspectiveFactor);
+    volcaMeshMaker.makeMesh(filteredDepthImage, filteredColorImage, mesh, volcaRenderer);
     
     if (volcaRenderer.showNormals) {//set normals for faces
         volcaMeshMaker.setNormals( mesh );

@@ -10,6 +10,7 @@
 #include "ofxXmlSettings.h"
 #include "ofxImGui.h"
 #include "ofxCv.h"
+#include "dataStructures.h"
 
 
 
@@ -25,10 +26,9 @@
 // You CANNOT use this driver and the OpenNI driver with the same device. You
 // will have to manually update the kinect device to use the libfreenect drivers
 // and/or uninstall/reinstall it in Device Manager. No way around the Windows driver dance, sorry.
-
+// inspired in part by kinect recorder hack by Pelayo MŽndez   https://github.com/pelayomendez
 // uncomment this to read from two kinects simultaneously
 //#define USE_TWO_KINECTS
-
 
 
 class ofApp :
@@ -76,31 +76,33 @@ public:
     
     ofEasyCam easyCam; 	// used for viewing the point cloud
     
-    // with elements of kinect recorder hack from code by Pelayo MŽndez   https://github.com/pelayomendez
-    
-    struct volca { // central volca object
-        bool recording;
-        bool playing;
-        bool paused;
-        bool singleShot;
-        int recordFPS;
-        int recordWidth, recordHeight, recordStep;
-        string recordingDate;
-    } volca;
-    
-    struct vRenderer { // rendering data for volca object
-        bool showGui;
-        bool paintMesh;
-        int frameToPlay;
-        int renderStyle;
-        bool showNormals;
-        bool illuminateScene;
-        bool renderFlatQuads;
-        bool showAxes;
-        float depthFactor;
-        float perspectiveFactor;
-    } volcaRenderer;
-    
+    volca volca;
+    vRenderer volcaRenderer;
+    ///// moved into datastructures.h
+    //    struct volca { // central volca object
+    //        bool recording;
+    //        bool playing;
+    //        bool paused;
+    //        bool singleShot;
+    //        int recordFPS;
+    //        int recordWidth, recordHeight, recordStep;
+    //        string recordingDate;
+    //    } volca;
+    //
+    //    struct vRenderer { // rendering data for volca object
+    //        bool showGui;
+    //        bool paintMesh;
+    //        int frameToPlay;
+    //        int renderStyle;
+    //        bool showNormals;
+    //        bool illuminateScene;
+    //        bool renderFlatQuads;
+    //        bool showAxes;
+    //        float depthFactor;
+    //        float perspectiveFactor;
+    //    } volcaRenderer;
+    ///// end // moved into datastructures.h
+
     ofDirectory dirHelper;
     string generateFileName();
     int frame;
