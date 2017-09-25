@@ -144,7 +144,7 @@ void ofApp::setup() {
 //    }
 
     kinect2.open(0);
-    kinectConnected = true;
+    //kinectConnected = true;
     cout << kinect2.params << endl;
     kinect2.minDistance = 1.0;
     kinect2.maxDistance = 100000.0;
@@ -303,14 +303,31 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
     switch (volcaRenderer.renderStyle) { //set render style
         case 1:
             mesh.setMode(OF_PRIMITIVE_POINTS);
+            volcaRenderer.paintMesh =true;
             break;
             
         case 2:
-            mesh.setMode(OF_PRIMITIVE_TRIANGLES);
+            mesh.setMode(OF_PRIMITIVE_POINTS);
+            volcaRenderer.paintMesh =false;
             break;
             
         case 3:
+            mesh.setMode(OF_PRIMITIVE_TRIANGLES);
+            volcaRenderer.paintMesh =true;
+            break;
+        case 4:
+            mesh.setMode(OF_PRIMITIVE_TRIANGLES);
+            volcaRenderer.paintMesh =false;
+            break;
+            
+        case 5:
             mesh.setMode(OF_PRIMITIVE_LINE_STRIP);
+            volcaRenderer.paintMesh =true;
+            break;
+            
+        case 6:
+            mesh.setMode(OF_PRIMITIVE_LINE_STRIP);
+            volcaRenderer.paintMesh =false;
             break;
     }
     
@@ -509,24 +526,32 @@ void ofApp::drawScreenOverlay() {
 
     switch (volcaRenderer.renderStyle) {
         case 1:
-            volcaStatusStream   << "Cloud   " ;
+            volcaStatusStream   << "Cloud   : RGBD  " ;
             break;
             
         case  2:
-            volcaStatusStream   << "Surface "  ;
+            volcaStatusStream   << "Cloud   : ***D  "  ;
             break;
             
         case  3:
-            volcaStatusStream   << "Mesh    " ;
+            volcaStatusStream   << "Surface : RGBD  " ;
+            break;
+        case 4:
+            volcaStatusStream   << "Surface : ***D  " ;
             break;
             
+        case  5:
+            volcaStatusStream   << "Mesh    : RGBD  "  ;
+            break;
+            
+        case  6:
+            volcaStatusStream   << "Mesh    : ***D  " ;
+            break;
         default:
             break;
     }
     
-    
-    if (volcaRenderer.paintMesh) volcaStatusStream   << "RGBD "  ;
-    else volcaStatusStream   << "***D "  ;
+
     
     if (kinect.isConnected()) volcaStatusStream   << "Source    "  ; // add in souce name if multiple sources available in future
     else volcaStatusStream   << "No source " ;
@@ -693,17 +718,18 @@ void ofApp::keyPressed (int key) {
 			kinect.close();
 			break;
 			
-		case '1':
-			volcaRenderer.renderStyle=1;
+		case 'm':
+        case 'M':
+            if (volcaRenderer.renderStyle <6) {
+			volcaRenderer.renderStyle ++;
+                
+            } else {
+                volcaRenderer.renderStyle=1;
+            }
+            
 			break;
 			
-		case '2':
-			volcaRenderer.renderStyle=2;
-			break;
-			
-		case '3':
-			volcaRenderer.renderStyle=3;
-			break;
+		
 			
 		case OF_KEY_UP:
 			angle++;
@@ -734,10 +760,11 @@ void ofApp::keyPressed (int key) {
             
         case 'r':
         case 'R':
+            
             if(!volcaRecorder.readyToPlay) return;
             if(volca.recording) return;
             if(volca.playing) return;
-            if (kinectConnected){
+            if (kinect.isConnected()){
                 shutterSound.play();
                 saveTo = generateFileName();
                 frame = 0;
