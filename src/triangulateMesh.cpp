@@ -18,15 +18,16 @@ void triangulateMesh::setup(){
 
 //--------------------------------------------------------------
 
-void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filteredColorImage, ofMesh &mesh, float &depthFactor, float &perspectiveFactor ){
+void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filteredColorImage, ofMesh &mesh,
+                               vRenderer &volcaRenderer ){
     
     ofColor c;
     ofShortColor zGrey = 0;
     
+    
     int step =1;
     int width = filteredDepthImage.getWidth();
     int height = filteredDepthImage.getHeight();
-    bool paintMesh = true;
     
     int index =0;
     int z = 0, minBrightness =0, minBrightnessX=0, minBrightnessY = 0;
@@ -61,7 +62,7 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
             // if(z > frontPlane & z < backPlane) {
             //  indexs[y/recordStep].push_back(ind);
             //     ind++;
-            if (paintMesh) {
+            if (volcaRenderer.paintMesh) {
                 c = (filteredColorImage.getColor(x,y)); // getting RGB from ofShortImage
             } else {
                 float h = ofMap(z, 0, 65535, 0, 255, true);
@@ -73,7 +74,7 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
             //    indexs[y/recordStep].push_back(-1);
             //} // clip out pixels
             
-            v3.set((x - (width/2)) * (perspectiveFactor * z) ,(y -(height/2)) * (perspectiveFactor *z) , z * depthFactor);
+            v3.set((x - (width/2)) * (volcaRenderer.perspectiveFactor * z) ,(y -(height/2)) * (volcaRenderer.perspectiveFactor *z) , z * volcaRenderer.depthFactor );
             // v3.set((x - (width/2)*0.002)  ,(y -(height/2)*0.002) , z*1.0 );
             
             mesh.addVertex(v3);
