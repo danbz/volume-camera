@@ -17,7 +17,7 @@
 
 struct volca { // central volca object
     bool recording, playing, paused, singleShot;
-    int recordFPS, recordWidth, recordHeight, recordStep;
+    int recordFPS, recordWidth, recordHeight, recordStep, frontPlane, backPlane;
     string recordingDate;
 };
 

@@ -69,6 +69,8 @@ void ofApp::setup() {
     // if kinect 2 then
     volca.recordWidth=512;
     volca.recordHeight=424; //default width and height for meshes, overridden by Exifmedta data when recorded files are loaded
+    volca.backPlane =25000;
+    volca.frontPlane=0;
     
     //////////////////////////////////////////////////////
     // Rendering Configuration
@@ -99,8 +101,7 @@ void ofApp::setup() {
     show_test_window = false;
     playbackFPS=15;
     blobSize =4;
-    backPlane =25000;
-    frontPlane=0;
+    
     
     // CV processing settings
     blur =false;
@@ -293,7 +294,7 @@ void ofApp::drawAnyPointCloud() { // modified to read from loaded ofcvimages rat
 //    ofShortColor zGrey = 0;
     ofMesh mesh;
    
-    indexs.clear();
+ //   indexs.clear();
     
     switch (volcaRenderer.renderStyle) { //set render style
         case 1:
@@ -593,8 +594,8 @@ void ofApp::drawGui() {
             //ImGui::Text("Playback style");
             ImGui::SliderInt("Playback FPS", &playbackFPS, 1, 120);
             
-            ImGui::SliderInt("Frontplane", &frontPlane, 0, 10000);
-            ImGui::SliderInt("Backplane", &backPlane, 100, 20000);
+            ImGui::SliderInt("Frontplane", &volca.frontPlane, 0, 10000);
+            ImGui::SliderInt("Backplane", &volca.backPlane, 100, 20000);
         }
         
         if (ImGui::CollapsingHeader("Render options")) {

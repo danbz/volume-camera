@@ -30,9 +30,18 @@ class triangulateMesh
     void makeMesh( ofShortImage &filteredDepthImage, ofImage &filteredColorImage, ofMesh &mesh, volca volca, vRenderer &volcaRenderer);
     void setNormals( ofMesh &mesh);
     
-    ~triangulateMesh()
+    
+  
+    
+    ~triangulateMesh() // destructor
     {
         
     };
+    
+    /// japanese experiment
+    
+  
+    
+    
     
 };

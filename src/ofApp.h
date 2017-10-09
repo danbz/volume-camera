@@ -136,8 +136,7 @@ public:
     ofTexture texDepth;
     ofTexture texRGB;
     
-    vector < int > indexs;
-    vector < int > tempindexs;
+   
     
 };
 

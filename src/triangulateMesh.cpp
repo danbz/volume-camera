@@ -20,10 +20,8 @@ void triangulateMesh::setup(){
 
 void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filteredColorImage, ofMesh &mesh, volca volca,
                                vRenderer &volcaRenderer ){
-    
     ofColor c;
     ofShortColor zGrey = 0;
-    
     
     int step =volca.recordStep;
     int width = filteredDepthImage.getWidth();
@@ -31,10 +29,9 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
     
     int index =0;
     int z = 0, minBrightness =0, minBrightnessX=0, minBrightnessY = 0;
-    int ind = 0;
     ofVec3f v3;
     
-    for (int y=0; y<height; y+= step) { // find farthest pixel
+    for (int y=0; y<height; y+= step) { // find farthest pixel in depth map
         for(int x=0; x<width; x+= step) {
             zGrey = filteredDepthImage.getPixels()[x+y*width];
             z = zGrey.r;
@@ -59,27 +56,26 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
             
             v3.set(0,0,0);
             if (z==0) z = minBrightness; //find and set to furthest (darkest pixel) data
-            // if(z > frontPlane & z < backPlane) {
-            //  indexs[y/recordStep].push_back(ind);
-            //     ind++;
-            if (volcaRenderer.paintMesh) {
-                c = (filteredColorImage.getColor(x,y)); // getting RGB from ofShortImage
-            } else {
-                //float h = ofMap(z, 0, 65535, 0, 255, true);
-                float h = ofMap(z, 0, minBrightness, 0, 255, true);
-                c.setHsb(h, 255, 255);
+            if(z > volca.frontPlane & z < volca.backPlane) {
+                //  indexs[y/recordStep].push_back(ind);
+                //     ind++;
+                if (volcaRenderer.paintMesh) {
+                    c = (filteredColorImage.getColor(x,y)); // getting RGB from ofShortImage
+                } else {
+                    //float h = ofMap(z, 0, 65535, 0, 255, true);
+                    float h = ofMap(z, 0, minBrightness, 0, 255, true);
+                    c.setHsb(h, 255, 255);
+                }
+                //} else {
+                //     z= backPlane;
+                //    c.setHsb(0, 0, 0);
+                //    indexs[y/recordStep].push_back(-1);
+                //} // clip out pixels
+                
+                v3.set((x - (width/2)) * (volcaRenderer.perspectiveFactor * z) ,(y -(height/2)) * (volcaRenderer.perspectiveFactor * z) , z * volcaRenderer.depthFactor );
+                mesh.addVertex(v3);
+                mesh.addColor(c);
             }
-            //} else {
-            //     z= backPlane;
-            //    c.setHsb(0, 0, 0);
-            //    indexs[y/recordStep].push_back(-1);
-            //} // clip out pixels
-            
-            v3.set((x - (width/2)) * (volcaRenderer.perspectiveFactor * z) ,(y -(height/2)) * (volcaRenderer.perspectiveFactor *z) , z * volcaRenderer.depthFactor );
-            // v3.set((x - (width/2)*0.002)  ,(y -(height/2)*0.002) , z*1.0 );
-            
-            mesh.addVertex(v3);
-            mesh.addColor(c);
         }
     }
     
@@ -89,12 +85,12 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
     for (int y = 0; y<height-step; y+= step){ // triangulate mesh
         for (int x=0; x<width-step; x+= step){
             v3.set(0,0,0);
-            //  if ((mesh.getVertex(x+y*meshW))==v3 or (mesh.getVertex((x+1)+y*(meshW)))==v3 or (mesh.getVertex(x+(y+1)*meshW)==v3)){
-            //   } else {
+//              if ((mesh.getVertex(x+y*meshW))==v3 or (mesh.getVertex((x+1)+y*(meshW)))==v3 or (mesh.getVertex(x+(y+1)*meshW)==v3)){
+//              } else {
             mesh.addIndex(x+y*meshW);               // 0
             mesh.addIndex((x+1)+y*meshW);           // 1
             mesh.addIndex(x+(y+1)*meshW);           // 10
-            //}
+           // }
             mesh.addIndex((x+1)+y*meshW);           // 1
             mesh.addIndex((x+1)+(y+1)*meshW);       // 11
             mesh.addIndex(x+(y+1)*meshW);           // 10
@@ -114,6 +110,98 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
     //            }
     //        }
     //    }
+    
+    
+//    //////////   new version
+//    
+//    vector < ofVec3f > points;
+//    vector < ofColor > colors;
+//    vector < int > indexs;
+//    vector < int > tempindexs;
+//    
+//    //// update ////
+//    
+//    //clear
+//    mesh.clear();
+//    points.clear();
+//    colors.clear();
+//    indexs.clear();
+//    
+//    // 3点情報と色情報取得
+//   // int step = int(5 + int(scaledVol*15));
+//    int total = 0;
+//    for (int j = 0; j < height; j+=step)
+//    {
+//        ofVec3f  temppoints;
+//        ofColor tempcolors;
+//        points.push_back(temppoints);
+//        colors.push_back(tempcolors);
+//        
+//        for (int i = 0; i < width; i+=step)
+//        {
+//            float distance = kinect.getDistanceAt(i, j);
+//            
+//            if(distance>50 && distance<1000)
+//            {
+//                ofVec3f tempPoint;
+//                ofColor tempColor;
+//                
+//                tempPoint = ofVec3f(i, j, distance*-2.0 );
+//               // tempColor = ofColor(kinect.getColorAt(i,j));
+//                tempColor = filteredColorImage.getColor(i,j);
+//                
+//               ind points[j/step].push_back(tempPoint);
+//                colors[j/step].push_back(tempColor);
+//                
+//                total++;
+//            }else{
+//                ofVec3f tempPoint2;
+//                ofColor tempColor2;
+//                tempPoint2 = ofVec3f(i,j,0);	//範囲外には深度0
+//                tempColor2 = ofColor(0);
+//                points[j/step].push_back(tempPoint2);
+//                colors[j/step].push_back(tempColor2);
+//            }
+//        }
+//    }
+//    
+//    // 深度情報をindexを付与
+//    int ind = 0;
+//    for (int m = 0; m < kinect.height; m+=step)
+//    {
+//        vector tempindexs;
+//        indexs.push_back(tempindexs);
+//        
+//        for (int n = 0; n < kinect.width; n+=step)
+//        {
+//            if(points[m/step][n/step].z != 0){
+//                //          cout << points[m][n] << endl;
+//                mesh.addColor(colors[m/step][n/step]);
+//                mesh.addVertex(points[m/step][n/step]);
+//                
+//                indexs[m/step].push_back(ind);
+//                ind++;
+//            }else{
+//                indexs[m/step].push_back(-1);
+//            }
+//        }
+//    }
+//    
+//    
+//    
+//    // meshにTriangle追加
+//    int W = int(kinect.width/step);
+//    for (int b = 0; b < kinect.height-step; b+=step){
+//        for (int a = 0; a < kinect.width-1; a+=step)
+//        {
+//            if( (indexs[int(b/step)][int(a/step)]!=-1 && indexs[int(b/step)][int(a/step+1)]!=-1) && (indexs[int(b/step+1)][int(a/step+1)]!=-1 && indexs[int(b/step+1)][int(a/step)]!=-1) ){
+//                
+//                mesh.addTriangle(indexs[int(b/step)][int(a/step)],indexs[int(b/step)][int(a/step+1)],indexs[int(b/step+1)][int(a/step+1)]);
+//                mesh.addTriangle(indexs[int(b/step)][int(a/step)],indexs[int(b/step+1)][int(a/step+1)],indexs[int(b/step+1)][int(a/step)]);
+//            }
+//        }
+//    }
+    
     
 };
 
