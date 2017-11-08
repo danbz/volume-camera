@@ -17,14 +17,14 @@
 
 struct volca { // central volca object
     bool recording, playing, paused, singleShot;
-    int recordFPS, recordWidth, recordHeight, recordStep, frontPlane, backPlane;
+    int recordFPS, recordWidth, recordHeight, recordStep, frontPlane, backPlane ;
     string recordingDate;
 };
 
 
 struct vRenderer { // rendering data for volca object passed to render object and triangulate object.
-    bool paintMesh, showGui, showNormals, illuminateScene, renderFlatQuads, showAxes;
-    int frameToPlay, renderStyle;
+    bool paintMesh, paintMeshWhite, showGui, showNormals, illuminateScene, renderFlatQuads, showAxes, setBackWall;
+    int frameToPlay, renderStyle, backWallDepth;
     float depthFactor, perspectiveFactor;
 } ;
 

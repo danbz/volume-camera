@@ -55,16 +55,27 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
             z = zGrey.r;
             
             v3.set(0,0,0);
-            if (z==0) z = minBrightness; //find and set to furthest (darkest pixel) data
+            // if (volcaRenderer.setBackWall) { // this crashes as it makes holes in array that mesh creator falls over on.. need to implement japanese iterating vertices routine to render around holes...
+                if (z==0 && minBrightness>volcaRenderer.backWallDepth){
+                    
+                z = minBrightness; //find and set to furthest (darkest pixel) data
+                } else {
+                 if (z==0)  z= volcaRenderer.backWallDepth; //or use override back wall depth from GUI;
+                }
+            //} // end set backwall 
             if(z > volca.frontPlane & z < volca.backPlane) {
                 //  indexs[y/recordStep].push_back(ind);
                 //     ind++;
                 if (volcaRenderer.paintMesh) {
                     c = (filteredColorImage.getColor(x,y)); // getting RGB from ofShortImage
                 } else {
-                    //float h = ofMap(z, 0, 65535, 0, 255, true);
-                    float h = ofMap(z, 0, minBrightness, 0, 255, true);
-                    c.setHsb(h, 255, 255);
+                    if (volcaRenderer.paintMeshWhite) {
+                        c.set(255, 255, 255);
+                    } else {
+                        //float h = ofMap(z, 0, 65535, 0, 255, true);
+                        float h = ofMap(z, 0, minBrightness, 0, 255, true);
+                        c.setHsb(h, 255, 255);
+                    }
                 }
                 //} else {
                 //     z= backPlane;

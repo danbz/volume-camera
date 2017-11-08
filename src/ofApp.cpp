@@ -76,6 +76,7 @@ void ofApp::setup() {
     // Rendering Configuration
     //////////////////////////////////////////////////////
     volcaRenderer.paintMesh = true;
+    volcaRenderer.paintMeshWhite =true;
     volcaRenderer.illuminateScene = false;
     volcaRenderer.showNormals = false;
     volcaRenderer.renderFlatQuads = false;
@@ -83,7 +84,9 @@ void ofApp::setup() {
     volcaRenderer.depthFactor=1.0; //multiplier for rendering zdepth
     volcaRenderer.perspectiveFactor = 0.002;
     volcaRenderer.renderStyle = 1;
-    volcaRenderer.showAxes = true;
+    volcaRenderer.showAxes = false;
+    volcaRenderer.setBackWall = true;
+    volcaRenderer.backWallDepth = 10000;
 
     // easyCam setup
     camDist = 0;
@@ -92,6 +95,8 @@ void ofApp::setup() {
     easyCam.setNearClip(nearThreshold);
     easyCam.setFarClip(farThreshold);    
     easyCam.setDistance(camDist);
+    
+    light.setAreaLight(5000.0, 5000.0);
 
     //////////////////////////////////////////////////////
     // Gui Configuration
@@ -619,6 +624,10 @@ void ofApp::drawGui() {
             
             ImGui::SliderFloat("Far threshhold", &farThreshold, 0, 100000);
             ImGui::SliderFloat("Near threshhold", &nearThreshold, 0, 10000);
+            ImGui::Checkbox("Show backwall", &volcaRenderer.setBackWall);
+            ImGui::SliderInt("Backwall depth", &volcaRenderer.backWallDepth, 100, 25000);
+            
+
 
         }
         
@@ -693,10 +702,10 @@ void ofApp::keyPressed (int key) {
 			if (backPlane < frontPlane) backPlane = frontPlane;
 			break;
 			
-		case 'w':
-        case 'W':
-			kinect.enableDepthNearValueWhite(!kinect.isDepthNearValueWhite());
-			break;
+//		case 'w':
+//        case 'W':
+//			kinect.enableDepthNearValueWhite(!kinect.isDepthNearValueWhite());
+//			break;
 			
 		case 'o':
         case 'O':
@@ -723,13 +732,13 @@ void ofApp::keyPressed (int key) {
         case OF_KEY_UP:
             camDist -= 20;
             easyCam.setDistance(camDist);
-            cout << "camDist: " << camDist << endl;
+            //cout << "camDist: " << camDist << endl;
             break;
             
         case OF_KEY_DOWN:
             camDist += 20;
             easyCam.setDistance(camDist);
-             cout << "camDist: " << camDist << endl;
+            // cout << "camDist: " << camDist << endl;
             break;
             
             
@@ -742,6 +751,18 @@ void ofApp::keyPressed (int key) {
         case 'A':
             volcaRenderer.paintMesh=!volcaRenderer.paintMesh;
             break;
+            
+        case 'b':
+        case 'B':
+            volcaRenderer.setBackWall=!volcaRenderer.setBackWall;
+            break;
+            
+        case 'w':
+        case 'W':
+            volcaRenderer.paintMeshWhite=!volcaRenderer.paintMeshWhite;
+            break;
+            
+            
             
         case 'l':
         case 'L':
