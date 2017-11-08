@@ -75,7 +75,7 @@ public:
     int angle;
     
     ofEasyCam easyCam; 	// used for viewing the point cloud
-    
+    int camDist;
     volca volca;
     vRenderer volcaRenderer;
     ///// moved into datastructures.h

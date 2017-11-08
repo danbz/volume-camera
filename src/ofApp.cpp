@@ -86,10 +86,12 @@ void ofApp::setup() {
     volcaRenderer.showAxes = true;
 
     // easyCam setup
+    camDist = 0;
     nearThreshold = 10;
     farThreshold = 50000;
     easyCam.setNearClip(nearThreshold);
-    easyCam.setFarClip(farThreshold);
+    easyCam.setFarClip(farThreshold);    
+    easyCam.setDistance(camDist);
 
     //////////////////////////////////////////////////////
     // Gui Configuration
@@ -97,7 +99,7 @@ void ofApp::setup() {
     imGui.setup(); //ofxImGui set up
     ImGui::CaptureMouseFromApp();
     ImGui::GetIO().MouseDrawCursor = false;
-    imBackgroundColor = ofColor(44, 44, 54);
+    imBackgroundColor = ofColor(0, 0, 0);
     show_test_window = false;
     playbackFPS=15;
     blobSize =4;
@@ -707,31 +709,29 @@ void ofApp::keyPressed (int key) {
 			kinect.setCameraTiltAngle(0); // zero the tilt
 			kinect.close();
 			break;
-			
-		case 'm':
-        case 'M':
+            
+        case 'k':
+        case 'K':
             if (volcaRenderer.renderStyle <6) {
-			volcaRenderer.renderStyle ++;
+                volcaRenderer.renderStyle ++;
                 
             } else {
                 volcaRenderer.renderStyle=1;
             }
+            break;
             
-			break;
-			
-		
-			
-		case OF_KEY_UP:
-			angle++;
-			if(angle>30) angle=30;
-			kinect.setCameraTiltAngle(angle);
-			break;
-			
-		case OF_KEY_DOWN:
-			angle--;
-			if(angle<-30) angle=-30;
-			kinect.setCameraTiltAngle(angle);
-			break;
+        case OF_KEY_UP:
+            camDist -= 20;
+            easyCam.setDistance(camDist);
+            cout << "camDist: " << camDist << endl;
+            break;
+            
+        case OF_KEY_DOWN:
+            camDist += 20;
+            easyCam.setDistance(camDist);
+             cout << "camDist: " << camDist << endl;
+            break;
+            
             
         case 'g':
         case 'G':
