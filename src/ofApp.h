@@ -75,7 +75,7 @@ public:
     int angle;
     
     ofEasyCam easyCam; 	// used for viewing the point cloud
-    
+    int camDist;
     volca volca;
     vRenderer volcaRenderer;
     ///// moved into datastructures.h
@@ -111,7 +111,7 @@ public:
     // GUI Configuration
     ofxImGui::Gui imGui;
     ImVec4 imBackgroundColor;
-    bool show_test_window, blur, erodeImage, dilateImage, bfilterColorImage ;
+    bool show_test_window, blur, erodeImage, dilateImage, bfilterColorImage, paintMeshWhite;
     int playbackFPS, blobSize, gridSize, backPlane, frontPlane, blurRadius, erodeAmount, dilateAmount;
     
     // Rendering Reproduction

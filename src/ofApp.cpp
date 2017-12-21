@@ -76,6 +76,7 @@ void ofApp::setup() {
     // Rendering Configuration
     //////////////////////////////////////////////////////
     volcaRenderer.paintMesh = true;
+    volcaRenderer.paintMeshWhite =true;
     volcaRenderer.illuminateScene = false;
     volcaRenderer.showNormals = false;
     volcaRenderer.renderFlatQuads = false;
@@ -83,13 +84,20 @@ void ofApp::setup() {
     volcaRenderer.depthFactor=1.0; //multiplier for rendering zdepth
     volcaRenderer.perspectiveFactor = 0.002;
     volcaRenderer.renderStyle = 1;
-    volcaRenderer.showAxes = true;
+    volcaRenderer.showAxes = false;
+    volcaRenderer.setBackWall = true;
+    volcaRenderer.backWallDepth = 10000;
+    volcaRenderer.triLength =20;
 
     // easyCam setup
+    camDist = 0;
     nearThreshold = 10;
     farThreshold = 50000;
     easyCam.setNearClip(nearThreshold);
-    easyCam.setFarClip(farThreshold);
+    easyCam.setFarClip(farThreshold);    
+    easyCam.setDistance(camDist);
+    
+    light.setAreaLight(5000.0, 5000.0);
 
     //////////////////////////////////////////////////////
     // Gui Configuration
@@ -97,7 +105,7 @@ void ofApp::setup() {
     imGui.setup(); //ofxImGui set up
     ImGui::CaptureMouseFromApp();
     ImGui::GetIO().MouseDrawCursor = false;
-    imBackgroundColor = ofColor(44, 44, 54);
+    imBackgroundColor = ofColor(0, 0, 0);
     show_test_window = false;
     playbackFPS=15;
     blobSize =4;
@@ -617,6 +625,11 @@ void ofApp::drawGui() {
             
             ImGui::SliderFloat("Far threshhold", &farThreshold, 0, 100000);
             ImGui::SliderFloat("Near threshhold", &nearThreshold, 0, 10000);
+            ImGui::Checkbox("Show backwall", &volcaRenderer.setBackWall);
+            ImGui::SliderInt("Backwall depth", &volcaRenderer.backWallDepth, 100, 25000);
+            ImGui::SliderInt("Triangulation depth", &volcaRenderer.triLength, 1, 200);
+            
+
 
         }
         
@@ -691,10 +704,10 @@ void ofApp::keyPressed (int key) {
 			if (backPlane < frontPlane) backPlane = frontPlane;
 			break;
 			
-		case 'w':
-        case 'W':
-			kinect.enableDepthNearValueWhite(!kinect.isDepthNearValueWhite());
-			break;
+//		case 'w':
+//        case 'W':
+//			kinect.enableDepthNearValueWhite(!kinect.isDepthNearValueWhite());
+//			break;
 			
 		case 'o':
         case 'O':
@@ -707,31 +720,29 @@ void ofApp::keyPressed (int key) {
 			kinect.setCameraTiltAngle(0); // zero the tilt
 			kinect.close();
 			break;
-			
-		case 'm':
-        case 'M':
+            
+        case 'k':
+        case 'K':
             if (volcaRenderer.renderStyle <6) {
-			volcaRenderer.renderStyle ++;
+                volcaRenderer.renderStyle ++;
                 
             } else {
                 volcaRenderer.renderStyle=1;
             }
+            break;
             
-			break;
-			
-		
-			
-		case OF_KEY_UP:
-			angle++;
-			if(angle>30) angle=30;
-			kinect.setCameraTiltAngle(angle);
-			break;
-			
-		case OF_KEY_DOWN:
-			angle--;
-			if(angle<-30) angle=-30;
-			kinect.setCameraTiltAngle(angle);
-			break;
+        case OF_KEY_UP:
+            camDist -= 20;
+            easyCam.setDistance(camDist);
+            //cout << "camDist: " << camDist << endl;
+            break;
+            
+        case OF_KEY_DOWN:
+            camDist += 20;
+            easyCam.setDistance(camDist);
+            // cout << "camDist: " << camDist << endl;
+            break;
+            
             
         case 'g':
         case 'G':
@@ -742,6 +753,18 @@ void ofApp::keyPressed (int key) {
         case 'A':
             volcaRenderer.paintMesh=!volcaRenderer.paintMesh;
             break;
+            
+        case 'b':
+        case 'B':
+            volcaRenderer.setBackWall=!volcaRenderer.setBackWall;
+            break;
+            
+        case 'w':
+        case 'W':
+            volcaRenderer.paintMeshWhite=!volcaRenderer.paintMeshWhite;
+            break;
+            
+            
             
         case 'l':
         case 'L':
@@ -826,6 +849,15 @@ void ofApp::keyPressed (int key) {
             ofToggleFullscreen();
             break;
         
+        case 'e'://export mesh into ply format
+        case 'E':
+            ofFileDialogResult saveFileResult = ofSystemSaveDialog(ofGetTimestampString() + ".ply", "Export your mesh as a.ply file");
+            if (saveFileResult.bSuccess){
+                volcaMeshMaker.makeMesh(filteredDepthImage, filteredColorImage, mesh, volca, volcaRenderer);
+
+                mesh.save(saveFileResult.filePath);
+            }
+            break;
     }
 }
 
