@@ -847,6 +847,15 @@ void ofApp::keyPressed (int key) {
             ofToggleFullscreen();
             break;
         
+        case 'e'://export mesh into ply format
+        case 'E':
+            ofFileDialogResult saveFileResult = ofSystemSaveDialog(ofGetTimestampString() + ".ply", "Export your mesh as a.ply file");
+            if (saveFileResult.bSuccess){
+                volcaMeshMaker.makeMesh(filteredDepthImage, filteredColorImage, mesh, volca, volcaRenderer);
+
+                mesh.save(saveFileResult.filePath);
+            }
+            break;
     }
 }
 

@@ -98,6 +98,7 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
             v3.set(0,0,0);
 //              if ((mesh.getVertex(x+y*meshW))==v3 or (mesh.getVertex((x+1)+y*(meshW)))==v3 or (mesh.getVertex(x+(y+1)*meshW)==v3)){
 //              } else {
+          
             mesh.addIndex(x+y*meshW);               // 0
             mesh.addIndex((x+1)+y*meshW);           // 1
             mesh.addIndex(x+(y+1)*meshW);           // 10
