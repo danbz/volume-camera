@@ -29,7 +29,7 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
     
     int index =0;
     int z = 0, minBrightness =0, minBrightnessX=0, minBrightnessY = 0;
-    ofVec3f v3;
+    ofVec3f v3, v3b;
     
     for (int y=0; y<height; y+= step) { // find farthest pixel in depth map
         for(int x=0; x<width; x+= step) {
@@ -92,13 +92,17 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
     
     int meshW = width/step ;
     int meshH = height/step;
-    
+     index =0;
     for (int y = 0; y<height-step; y+= step){ // triangulate mesh
         for (int x=0; x<width-step; x+= step){
             v3.set(0,0,0);
 //              if ((mesh.getVertex(x+y*meshW))==v3 or (mesh.getVertex((x+1)+y*(meshW)))==v3 or (mesh.getVertex(x+(y+1)*meshW)==v3)){
 //              } else {
-          
+            v3 = mesh.getVertex(index);
+            v3b = mesh.getVertex(index+1);
+            index ++;
+           // if (abs (v3.z-v3b.z)>0 && abs(v3.z-v3b.z) < volcaRenderer.triLength){
+                //cout <<v3.z - v3b.z << endl;
             mesh.addIndex(x+y*meshW);               // 0
             mesh.addIndex((x+1)+y*meshW);           // 1
             mesh.addIndex(x+(y+1)*meshW);           // 10
@@ -106,6 +110,7 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
             mesh.addIndex((x+1)+y*meshW);           // 1
             mesh.addIndex((x+1)+(y+1)*meshW);       // 11
             mesh.addIndex(x+(y+1)*meshW);           // 10
+           // }
         }
     }
     

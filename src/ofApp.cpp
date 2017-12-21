@@ -87,6 +87,7 @@ void ofApp::setup() {
     volcaRenderer.showAxes = false;
     volcaRenderer.setBackWall = true;
     volcaRenderer.backWallDepth = 10000;
+    volcaRenderer.triLength =20;
 
     // easyCam setup
     camDist = 0;
@@ -626,6 +627,7 @@ void ofApp::drawGui() {
             ImGui::SliderFloat("Near threshhold", &nearThreshold, 0, 10000);
             ImGui::Checkbox("Show backwall", &volcaRenderer.setBackWall);
             ImGui::SliderInt("Backwall depth", &volcaRenderer.backWallDepth, 100, 25000);
+            ImGui::SliderInt("Triangulation depth", &volcaRenderer.triLength, 1, 200);
             
 
 

@@ -24,7 +24,7 @@ struct volca { // central volca object
 
 struct vRenderer { // rendering data for volca object passed to render object and triangulate object.
     bool paintMesh, paintMeshWhite, showGui, showNormals, illuminateScene, renderFlatQuads, showAxes, setBackWall;
-    int frameToPlay, renderStyle, backWallDepth;
+    int frameToPlay, renderStyle, backWallDepth, triLength;
     float depthFactor, perspectiveFactor;
 } ;
 
