@@ -14,6 +14,7 @@
 
 
 
+
 // VOLCA: experimental volumetric camera/apparatus v0.1a
 // © 2017 Daniel Buzzo. Dan@buzzo.com http://www.buzzo.com
 // https://github.com/danbz/volume-camera
@@ -70,6 +71,7 @@ public:
     ofShortImage depthImage, filteredDepthImage;
     ofShortPixels depthPixels, filteredDepthPixels;
     
+    
     bool bThreshWithOpenCV, bDrawPointCloud;
     float nearThreshold, farThreshold;
     int angle;
@@ -78,31 +80,7 @@ public:
     int camDist;
     volca volca;
     vRenderer volcaRenderer;
-    ///// moved into datastructures.h
-    //    struct volca { // central volca object
-    //        bool recording;
-    //        bool playing;
-    //        bool paused;
-    //        bool singleShot;
-    //        int recordFPS;
-    //        int recordWidth, recordHeight, recordStep;
-    //        string recordingDate;
-    //    } volca;
-    //
-    //    struct vRenderer { // rendering data for volca object
-    //        bool showGui;
-    //        bool paintMesh;
-    //        int frameToPlay;
-    //        int renderStyle;
-    //        bool showNormals;
-    //        bool illuminateScene;
-    //        bool renderFlatQuads;
-    //        bool showAxes;
-    //        float depthFactor;
-    //        float perspectiveFactor;
-    //    } volcaRenderer;
-    ///// end // moved into datastructures.h
-
+    
     ofDirectory dirHelper;
     string generateFileName();
     int frame;
@@ -136,7 +114,15 @@ public:
     ofTexture texDepth;
     ofTexture texRGB;
     
-   
+    
+    //ofxCv routines
+    
+    ofVideoGrabber cam;
+
+    ofxCv::ObjectFinder finder;  //for face finder
+
+        
+    
     
 };
 

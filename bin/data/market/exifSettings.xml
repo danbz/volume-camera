@@ -1,0 +1,10 @@
+<exif>
+    <make>Buzzo</make>
+    <model>Volca: Experimental volumetric camera/apparatus</model>
+    <orientation>top left</orientation>
+    <ImageWidth>512</ImageWidth>
+    <ImageLength>424</ImageLength>
+    <DateTimeDigitized>6112017184417</DateTimeDigitized>
+</exif>
+<exifSensingMethod>Kinect depth sensor</exifSensingMethod>
+<exifDataProcess>RGB and Depth Image</exifDataProcess>

@@ -87,12 +87,14 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
                 mesh.addVertex(v3);
                 mesh.addColor(c);
             }
+            
         }
     }
     
     int meshW = width/step ;
     int meshH = height/step;
-     index =0;
+    index =0;
+    
     for (int y = 0; y<height-step; y+= step){ // triangulate mesh
         for (int x=0; x<width-step; x+= step){
             v3.set(0,0,0);

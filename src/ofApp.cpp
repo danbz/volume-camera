@@ -152,6 +152,16 @@ void ofApp::setup() {
 //    cout << kinect2.params << endl;
 //    kinect2.minDistance = 1.0;
 //    kinect2.maxDistance = 100000.0;
+    
+    
+    //ofxCv face finder setup
+    
+    finder.setup("haarcascade_frontalface_default.xml");
+    finder.setPreset(ObjectFinder::Fast);
+    cam.setup(640, 480);
+    
+    
+    
 }
 
 //--------------------------------------------------------------
@@ -183,6 +193,17 @@ void ofApp::update() {
         if(volcaRecorder.readyToPlay) {    // we are playing so load data from volcaRecorder object into images
             colorImage.setFromPixels(volcaRecorder.getColorImageAt(volcaRenderer.frameToPlay));
             depthImage.setFromPixels(volcaRecorder.getDepthImageAt(volcaRenderer.frameToPlay));
+            
+            
+            //ofImage faceDetect;
+        
+           // cam.update();
+            if(colorImage.getWidth()>0) {
+                finder.update(colorImage); //for ofxCv face finder
+                cout << "looking for faces" << endl;
+            }
+
+        
         }
     } else { // we are running from live depth source
         if(kinect.isFrameNew()) {// if new frame and connected to kinect Live Render CV updating
@@ -194,8 +215,7 @@ void ofApp::update() {
     if (bfilterColorImage) { //process depth or RGB image holders //re-write as pipeline chain rather than discrete operations
         if (blur){
 //            ofxCv::GaussianBlur(filteredColorImage, blurRadius);
-            ofxCv::medianBlur
-            (filteredColorImage, blurRadius);
+            ofxCv::medianBlur (filteredColorImage, blurRadius);
 
         }
         if (erodeImage) {
@@ -220,6 +240,11 @@ void ofApp::update() {
     
     depthImage.update();
     colorImage.update();
+    
+    
+ 
+    
+    
     filteredDepthImage.update();
     filteredColorImage.update();
     
@@ -252,16 +277,29 @@ void ofApp::draw() {
 		easyCam.begin();
         if (volcaRenderer.showAxes)ofDrawAxis(100);
         if (volcaRenderer.illuminateScene) light.enable(); //enable world light
+        finder.draw(); // draw face finder
+
         drawAnyPointCloud(); //call new generic point render function
         ofDisableLighting(); //disable world light
+        
+        
+        
         easyCam.end();
 	} else { // draw from the live kinect and image arrays
 		depthImage.draw(10, 10, 480, 360);
-        colorImage.draw(490, 10, 480, 360);
+        //colorImage.draw(490, 10, 480, 360);
         filteredColorImage.draw(10, 370, 480, 360);
         ofxCv::invert(filteredDepthImage,filteredDepthImage);
         filteredDepthImage.update();
         filteredDepthImage.draw(490, 370, 480, 360);
+        
+        //ofxCv face finder draw
+       // cam.draw(0,0);
+        colorImage.draw(0, 0);
+        finder.draw();
+        ofDrawBitmapStringHighlight(ofToString(finder.size()), 10, 20);
+        
+
         
         // draw kinect 2 to screen
 //        for(int d = 0; d < kinects.size(); d++){
