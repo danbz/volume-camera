@@ -95,8 +95,8 @@ void triangulateMesh::makeMesh( ofShortImage &filteredDepthImage, ofImage &filte
     int meshH = height/step;
     index =0;
     
-    for (int y = 0; y<height-step; y+= step){ // triangulate mesh
-        for (int x=0; x<width-step; x+= step){
+    for (int y = 0; y<height-step-1; y+= step){ // triangulate mesh
+        for (int x=0; x<width-step-1; x+= step){
             v3.set(0,0,0);
 //              if ((mesh.getVertex(x+y*meshW))==v3 or (mesh.getVertex((x+1)+y*(meshW)))==v3 or (mesh.getVertex(x+(y+1)*meshW)==v3)){
 //              } else {

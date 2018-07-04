@@ -157,7 +157,7 @@ void ofApp::setup() {
     //ofxCv face finder setup
     
     finder.setup("haarcascade_frontalface_default.xml");
-    finder.setPreset(ObjectFinder::Fast);
+    finder.setPreset(ObjectFinder::Accurate);
     cam.setup(640, 480);
     
     
@@ -199,8 +199,8 @@ void ofApp::update() {
         
            // cam.update();
             if(colorImage.getWidth()>0) {
-                finder.update(colorImage); //for ofxCv face finder
-                cout << "looking for faces" << endl;
+               // finder.update(colorImage); //for ofxCv face finder
+                //cout << "looking for faces" << endl;
             }
 
         
@@ -892,7 +892,6 @@ void ofApp::keyPressed (int key) {
             ofFileDialogResult saveFileResult = ofSystemSaveDialog(ofGetTimestampString() + ".ply", "Export your mesh as a.ply file");
             if (saveFileResult.bSuccess){
                 volcaMeshMaker.makeMesh(filteredDepthImage, filteredColorImage, mesh, volca, volcaRenderer);
-
                 mesh.save(saveFileResult.filePath);
             }
             break;
